@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tester - Criteria - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-6xl px-6 py-6">
+
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="queue.html" class="hover:text-slate-900">Test queue</a>
+        <span>/</span>
+        <span class="text-slate-900 font-medium font-mono">my-org/text-stats-pipeline</span>
+      </div>
+      <a href="queue.html" class="text-sm text-slate-500 hover:text-slate-900">Save & Exit</a>
+    </div>
+
+    <div id="wizard-stepper" class="mb-8"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6">
+
+      <aside class="bg-white border border-slate-200 rounded-lg p-4 h-fit">
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Tips</div>
+        <ul class="text-sm text-slate-600 space-y-2 list-disc pl-4">
+          <li>Group related checks into <b>categories</b>. Each becomes its own score.</li>
+          <li>Compile into <code class="bg-slate-100 px-1 rounded">tests/rewardkit.yaml</code> automatically.</li>
+          <li>The reward is the weighted mean across categories.</li>
+        </ul>
+      </aside>
+
+      <section class="space-y-4">
+
+        <!-- Ownership banner -->
+        <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-4 flex items-start gap-3">
+          <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          </div>
+          <div class="flex-1 text-sm text-slate-700">
+            <div class="font-semibold text-emerald-900">Files you author in this step</div>
+            <div class="mt-1 flex flex-wrap gap-1.5">
+              <span class="inline-flex items-center gap-1 font-mono text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                tests/test.sh
+              </span>
+              <span class="inline-flex items-center gap-1 font-mono text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                tests/rewardkit.yaml
+              </span>
+            </div>
+            <div class="mt-1 text-xs text-slate-600">Use the criteria builder, upload your own test files, or edit raw test.sh. All three compile to the same files in the Harbor folder.</div>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <div class="px-6 pt-5 flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-900">Grading criteria</h2>
+              <p class="text-sm text-slate-500 mt-1">How should the AI agent's work be graded?</p>
+            </div>
+            <button id="add-category"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-md hover:bg-slate-50">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+              Add category
+            </button>
+          </div>
+
+          <div class="tab-bar px-6 pt-3">
+            <button data-crit-tab="builder" class="active">Criteria builder</button>
+            <button data-crit-tab="upload">Upload test files</button>
+            <button data-crit-tab="raw">Edit raw test.sh</button>
+          </div>
+
+          <div id="crit-tab-builder" class="p-6 space-y-4">
+            <div id="categories" class="space-y-4"></div>
+            <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4 text-sm text-indigo-900 flex items-start gap-3">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 mt-0.5 shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              <div>
+                <b>Total: <span id="total-criteria">0</span> criteria across <span id="total-cats">0</span> categories.</b>
+                Each category produces its own score; the trial reward is the per-category mean.
+              </div>
+            </div>
+          </div>
+
+          <div id="crit-tab-upload" class="p-6 space-y-4 hidden">
+            <div class="border-2 border-dashed border-slate-200 rounded-lg p-8 text-center hover:border-indigo-300 hover:bg-indigo-50/40 cursor-pointer">
+              <div class="flex flex-col items-center gap-2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-8 h-8 text-slate-400"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                <div class="text-sm text-slate-600"><span class="text-indigo-600 font-medium">Click to upload</span> or drop <code class="font-mono bg-slate-100 px-1 rounded">test.sh</code> + <code class="font-mono bg-slate-100 px-1 rounded">rewardkit.yaml</code> here</div>
+                <div class="text-xs text-slate-400">They land in the task's <code class="font-mono bg-slate-100 px-1 rounded">tests/</code> directory.</div>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <div class="text-sm font-medium text-slate-700 mb-1">Uploaded</div>
+              <div class="flex items-center gap-3 text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-emerald-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                <span class="font-mono flex-1">test.sh</span>
+                <span class="text-xs text-slate-400">410 B</span>
+                <button class="text-slate-400 hover:text-indigo-600 mr-2 text-xs">Preview</button>
+                <button class="text-slate-400 hover:text-red-500" title="Remove">&times;</button>
+              </div>
+              <div class="flex items-center gap-3 text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-emerald-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                <span class="font-mono flex-1">rewardkit.yaml</span>
+                <span class="text-xs text-slate-400">688 B</span>
+                <button class="text-slate-400 hover:text-indigo-600 mr-2 text-xs">Preview</button>
+                <button class="text-slate-400 hover:text-red-500" title="Remove">&times;</button>
+              </div>
+            </div>
+            <div class="bg-amber-50 border border-amber-100 rounded-md px-3 py-2 text-xs text-amber-900 flex items-start gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 mt-0.5 shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              <div>
+                <b>Heads up</b> - when you upload, the criteria builder above is disabled.
+                You are responsible for writing the verifier so it emits a reward to <code class="font-mono bg-white px-1 rounded">/logs/verifier/reward.json</code>.
+              </div>
+            </div>
+          </div>
+
+          <div id="crit-tab-raw" class="p-6 space-y-3 hidden">
+            <div class="flex items-center gap-2 text-sm">
+              <span class="font-medium text-slate-700">tests/test.sh</span>
+              <span class="text-xs text-slate-500">Edit directly. Saved to the Harbor folder verbatim.</span>
+              <button id="raw-load-generated-test" class="ml-auto text-xs px-2 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50">Load from criteria builder</button>
+            </div>
+            <textarea id="raw-testsh" rows="14"
+                      class="w-full px-3 py-3 text-sm border border-slate-200 rounded-md font-mono focus:outline-none focus:ring-2 focus:ring-indigo-200">#!/usr/bin/env bash
+set -euo pipefail
+# Skill Bench generated verifier - runs Reward Kit criteria.
+pip install --quiet reward-kit pytest pandas
+python -m reward_kit run --config /tests/rewardkit.yaml --workdir /app --output /logs/verifier/reward.json
+</textarea>
+            <div class="text-xs text-slate-500">The generated rewardkit.yaml lives next to this file - inspect it in the Harbor preview below.</div>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <div id="harbor-preview-section" class="mt-6 bg-white border border-slate-200 rounded-lg p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="font-semibold text-slate-900">Full Harbor preview</div>
+          <div class="text-xs text-slate-500">Your criteria are compiled into <code>tests/rewardkit.yaml</code>.</div>
+        </div>
+      </div>
+      <div id="harbor-preview"></div>
+    </div>
+
+    <div class="mt-8 flex items-center justify-between">
+      <a href="wizard-1-environment.html" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Back</a>
+      <div class="flex items-center gap-3">
+        <button class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50">Save draft</button>
+        <a href="wizard-3-oracle.html"
+           class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md inline-flex items-center gap-2">
+          Next: Oracle test
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Add criterion modal -->
+  <div id="criterion-modal" class="modal-overlay" hidden>
+    <div class="bg-white rounded-lg max-w-xl w-full max-h-[80vh] flex flex-col shadow-xl">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h3 class="font-semibold text-slate-900">Add a criterion</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Choose from the Reward Kit library.</p>
+        </div>
+        <button onclick="SB.closeModal('criterion-modal')" class="text-slate-400 hover:text-slate-700">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="px-5 py-3 border-b border-slate-200">
+        <div class="relative">
+          <span class="absolute inset-y-0 left-2 flex items-center text-slate-400">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </span>
+          <input id="crit-search" type="text" placeholder="Search criteria..."
+                 class="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        </div>
+      </div>
+      <div id="crit-list" class="flex-1 overflow-y-auto scroll-y px-5 py-3 space-y-3"></div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('tester');
+    SB.renderNav();
+    SB.renderWizardStepper(2, 'tester');
+
+    const categories = JSON.parse(JSON.stringify(SBData.wizardTask.criteria));
+    let modalTargetCategory = null;
+
+    const KIND_BADGE = {
+      file_exists: { label: 'Files', cls: 'bg-blue-100 text-blue-700' },
+      file_contains: { label: 'Files', cls: 'bg-blue-100 text-blue-700' },
+      file_contains_regex: { label: 'Files', cls: 'bg-blue-100 text-blue-700' },
+      files_equal: { label: 'Files', cls: 'bg-blue-100 text-blue-700' },
+      command_succeeds: { label: 'Commands', cls: 'bg-emerald-100 text-emerald-700' },
+      command_output: { label: 'Commands', cls: 'bg-emerald-100 text-emerald-700' },
+      json_key_equals: { label: 'Data', cls: 'bg-amber-100 text-amber-700' },
+      csv_cell_equals: { label: 'Data', cls: 'bg-amber-100 text-amber-700' },
+      llm_judge: { label: 'AI Judge', cls: 'bg-purple-100 text-purple-700' },
+      agent_judge: { label: 'AI Judge', cls: 'bg-purple-100 text-purple-700' },
+    };
+
+    function refreshPreview() {
+      const task = JSON.parse(JSON.stringify(SBData.wizardTask));
+      task.criteria = categories;
+      task.oraclePassed = false;
+      SB.renderHarborPreview('harbor-preview', task, { initial: 'tests/rewardkit.yaml', role: 'tester' });
+    }
+
+    /* Criteria tab switcher */
+    const critTabs = document.querySelectorAll('button[data-crit-tab]');
+    const critPanels = { builder: document.getElementById('crit-tab-builder'), upload: document.getElementById('crit-tab-upload'), raw: document.getElementById('crit-tab-raw') };
+    critTabs.forEach(b => b.addEventListener('click', () => {
+      critTabs.forEach(t => t.classList.remove('active'));
+      b.classList.add('active');
+      for (const k of Object.keys(critPanels)) critPanels[k].classList.add('hidden');
+      critPanels[b.dataset.critTab].classList.remove('hidden');
+    }));
+    const rawTestBtn = document.getElementById('raw-load-generated-test');
+    if (rawTestBtn) rawTestBtn.addEventListener('click', () => {
+      SB.toast('Loaded test.sh from criteria builder.', 'success');
+    });
+
+    function render() {
+      const root = document.getElementById('categories');
+      root.innerHTML = '';
+      let totalItems = 0;
+      categories.forEach((c, ci) => {
+        totalItems += c.items.length;
+        const card = document.createElement('div');
+        card.className = 'bg-white border border-slate-200 rounded-lg overflow-hidden';
+        card.innerHTML = `
+          <div class="px-5 py-3 border-b border-slate-200 flex items-center gap-3 bg-slate-50">
+            <div class="flex-1">
+              <div class="font-semibold text-slate-900">${c.name}</div>
+              <div class="text-xs text-slate-500">${c.items.length} criteri${c.items.length === 1 ? 'on' : 'a'}</div>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+              <label class="text-slate-500">Weight</label>
+              <input type="number" step="0.1" value="${c.weight}" class="w-16 px-2 py-1 text-sm border border-slate-200 rounded-md text-center">
+            </div>
+            <button data-rm-cat="${ci}" class="text-slate-400 hover:text-red-500" title="Remove category">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="divide-y divide-slate-100">
+            ${c.items.map((it, ii) => {
+              const b = KIND_BADGE[it.kind] || { label: '', cls: 'bg-slate-100 text-slate-700' };
+              return `
+                <div class="px-5 py-3 flex items-start gap-3">
+                  <div class="w-7 h-7 rounded-md bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M20 6 9 17l-5-5"/></svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="font-medium text-slate-900">${it.label}</span>
+                      <span class="text-xs px-1.5 py-0.5 rounded ${b.cls}">${b.label}</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-0.5 font-mono whitespace-pre-wrap">${it.config}</div>
+                  </div>
+                  <div class="text-xs text-slate-500 mr-2">weight ${it.weight}</div>
+                  <button data-rm-item="${ci}:${ii}" class="text-slate-400 hover:text-red-500" title="Remove">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>`;
+            }).join('')}
+          </div>
+          <div class="px-5 py-3 bg-slate-50 border-t border-slate-200">
+            <button data-add-item="${ci}" class="inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+              Add criterion
+            </button>
+          </div>`;
+        root.appendChild(card);
+      });
+
+      document.getElementById('total-criteria').textContent = totalItems;
+      document.getElementById('total-cats').textContent = categories.length;
+
+      root.querySelectorAll('[data-add-item]').forEach(b => {
+        b.addEventListener('click', () => {
+          modalTargetCategory = Number(b.dataset.addItem);
+          openCriterionPicker();
+        });
+      });
+      root.querySelectorAll('[data-rm-cat]').forEach(b => {
+        b.addEventListener('click', () => { categories.splice(Number(b.dataset.rmCat), 1); render(); refreshPreview(); });
+      });
+      root.querySelectorAll('[data-rm-item]').forEach(b => {
+        b.addEventListener('click', () => {
+          const [ci, ii] = b.dataset.rmItem.split(':').map(Number);
+          categories[ci].items.splice(ii, 1);
+          render(); refreshPreview();
+        });
+      });
+    }
+
+    function openCriterionPicker() {
+      const list = document.getElementById('crit-list');
+      const groups = {};
+      SBData.criteriaLibrary.forEach(c => {
+        (groups[c.group] = groups[c.group] || []).push(c);
+      });
+      list.innerHTML = '';
+      for (const [g, items] of Object.entries(groups)) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `<div class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">${g}</div>`;
+        items.forEach(c => {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'w-full text-left border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 rounded-md p-3 transition-colors flex items-start gap-3 mb-2';
+          row.innerHTML = `
+            <div class="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-600">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-slate-900">${c.name}</div>
+              <div class="text-xs text-slate-500">${c.desc}</div>
+            </div>`;
+          row.addEventListener('click', () => {
+            categories[modalTargetCategory].items.push({
+              kind: c.id, label: c.name, config: 'Configure this criterion...', weight: c.weight,
+            });
+            SB.closeModal('criterion-modal');
+            render(); refreshPreview();
+            SB.toast('Criterion added to <b>' + categories[modalTargetCategory].name + '</b>', 'success');
+          });
+          wrap.appendChild(row);
+        });
+        list.appendChild(wrap);
+      }
+      SB.openModal('criterion-modal');
+      document.getElementById('crit-search').focus();
+    }
+
+    document.getElementById('add-category').addEventListener('click', () => {
+      categories.push({ name: 'New category', weight: 1.0, items: [] });
+      render(); refreshPreview();
+    });
+
+    render(); refreshPreview();
+  </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New prompt - Preview & Submit - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-6xl px-6 py-6">
+
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="dashboard.html" class="hover:text-slate-900">My Prompts</a>
+        <span>/</span>
+        <span class="text-slate-900 font-medium">New prompt</span>
+      </div>
+      <a href="dashboard.html" class="text-sm text-slate-500 hover:text-slate-900">Save & Exit</a>
+    </div>
+
+    <div id="wizard-stepper" class="mb-8"></div>
+
+    <!-- Header strip -->
+    <div class="bg-white border border-slate-200 rounded-lg p-5 mb-4 flex flex-wrap items-start gap-4 justify-between">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900">Review your prompt before handing off</h2>
+        <p class="text-sm text-slate-500 mt-1">
+          This is what the tester (and later the reviewer) will see, rendered as a proper Harbor task package.
+          You contributed the indigo-tagged files; the tester will fill in the green ones.
+        </p>
+      </div>
+      <span class="pill pill-draft">Status - Prompter draft</span>
+    </div>
+
+    <!-- Readiness checklist -->
+    <div class="bg-white border border-slate-200 rounded-lg p-5 mb-4">
+      <div class="text-sm font-semibold text-slate-900 mb-3">Submit checklist</div>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-center gap-2 text-emerald-700">
+          <span class="w-5 h-5 inline-flex items-center justify-center rounded-full bg-emerald-100">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3 h-3"><path d="M20 6 9 17l-5-5"/></svg>
+          </span>
+          Brief filled (name, difficulty, keywords)
+        </li>
+        <li class="flex items-center gap-2 text-emerald-700">
+          <span class="w-5 h-5 inline-flex items-center justify-center rounded-full bg-emerald-100">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3 h-3"><path d="M20 6 9 17l-5-5"/></svg>
+          </span>
+          Instruction written (<span class="font-mono">instruction.md</span>)
+        </li>
+        <li class="flex items-center gap-2 text-emerald-700">
+          <span class="w-5 h-5 inline-flex items-center justify-center rounded-full bg-emerald-100">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3 h-3"><path d="M20 6 9 17l-5-5"/></svg>
+          </span>
+          Golden solution provided (<span class="font-mono">solution/</span>)
+        </li>
+        <li class="flex items-center gap-2 text-slate-600">
+          <span class="w-5 h-5 inline-flex items-center justify-center rounded-full bg-slate-100">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3 h-3"><path d="M12 6v6l4 2"/></svg>
+          </span>
+          Skills attached (optional) - <span id="skill-status" class="font-medium">2 skills</span>
+        </li>
+        <li class="flex items-center gap-2 text-slate-500">
+          <span class="w-5 h-5 inline-flex items-center justify-center rounded-full bg-slate-100">-</span>
+          Environment + grading + Oracle - <span class="italic">a tester will add these</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Harbor preview -->
+    <div class="bg-white border border-slate-200 rounded-lg p-5 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="font-semibold text-slate-900">Harbor task preview</div>
+          <div class="text-xs text-slate-500">Click any file in the tree to view its content.</div>
+        </div>
+        <div class="text-xs text-slate-500">Generated from your inputs</div>
+      </div>
+      <div id="harbor-preview"></div>
+    </div>
+
+    <!-- Footer / submit -->
+    <div class="mt-8 flex items-center justify-between">
+      <a href="wizard-5-solution.html" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Back</a>
+      <div class="flex items-center gap-3">
+        <button class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50">Save draft</button>
+        <button id="submit-btn"
+                class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-md inline-flex items-center gap-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M20 6 9 17l-5-5"/></svg>
+          Submit for testing
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('prompter');
+    SB.renderNav();
+    SB.renderWizardStepper(6, 'prompter');
+
+    /* Build the previewable task: everything the prompter has done.
+       Tester sections start empty/placeholder so the preview shows
+       which parts are missing. */
+    const task = JSON.parse(JSON.stringify(SBData.wizardTask));
+    task.environment = { os: 'Ubuntu 24.04', languages: [], packages: [], files: [], cpus: 1, memoryGB: 2, storageGB: 10, internet: true };
+    task.criteria = [];
+    task.oraclePassed = false;
+    SB.renderHarborPreview('harbor-preview', task, { initial: 'instruction.md', role: 'prompter' });
+
+    document.getElementById('skill-status').textContent = task.skills.length + ' skill' + (task.skills.length === 1 ? '' : 's');
+
+    document.getElementById('submit-btn').addEventListener('click', () => {
+      SB.toast('Submitted for testing. <b>Tara Wu</b> will be notified.', 'success');
+      setTimeout(() => location.href = 'dashboard.html', 1500);
+    });
+  </script>
+</body>
+</html>

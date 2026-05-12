@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tester - Oracle test - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-6xl px-6 py-6">
+
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="queue.html" class="hover:text-slate-900">Test queue</a>
+        <span>/</span>
+        <span class="text-slate-900 font-medium font-mono">my-org/text-stats-pipeline</span>
+      </div>
+      <a href="queue.html" class="text-sm text-slate-500 hover:text-slate-900">Save & Exit</a>
+    </div>
+
+    <div id="wizard-stepper" class="mb-8"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[20rem_1fr] gap-6">
+
+      <aside class="space-y-4">
+        <div class="bg-white border border-slate-200 rounded-lg p-5">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Summary</div>
+          <dl class="text-sm space-y-2">
+            <div class="flex justify-between gap-2"><dt class="text-slate-500">Name</dt><dd class="font-mono text-right text-slate-900 truncate">my-org/text-stats-pipeline</dd></div>
+            <div class="flex justify-between gap-2"><dt class="text-slate-500">OS</dt><dd>Ubuntu 24.04</dd></div>
+            <div class="flex justify-between gap-2"><dt class="text-slate-500">Packages</dt><dd class="text-right">pandas, numpy, pytest</dd></div>
+            <div class="flex justify-between gap-2"><dt class="text-slate-500">Skills</dt><dd>2 attached</dd></div>
+            <div class="flex justify-between gap-2"><dt class="text-slate-500">Resources</dt><dd>1 CPU, 2 GB</dd></div>
+            <div class="flex justify-between gap-2"><dt class="text-slate-500">Criteria</dt><dd>3 cat, 7 checks</dd></div>
+          </dl>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-100 rounded-lg p-4 text-sm text-amber-900 flex items-start gap-3">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 mt-0.5 shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <div>
+            <b>Demo controls</b>
+            <div class="mt-1">Use the buttons to simulate a PASS or FAIL outcome.</div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="bg-white border border-slate-200 rounded-lg p-6">
+        <h2 class="text-lg font-semibold text-slate-900">Run the Oracle test</h2>
+        <p class="text-sm text-slate-500 mt-1">
+          Skill Bench will provision a Daytona sandbox, run the prompter's golden solution, and then run your grading rules.
+          When this returns a reward of 1.0 you can submit for review.
+        </p>
+
+        <div id="state-idle" class="mt-6 flex items-center gap-3 flex-wrap">
+          <button id="run-pass" class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M8 5v14l11-7z"/></svg>
+            Run Oracle Test
+          </button>
+          <button id="run-fail" class="inline-flex items-center gap-2 px-3 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-md text-sm">
+            Demo: run with FAIL outcome
+          </button>
+        </div>
+
+        <div id="state-running" class="mt-6 hidden">
+          <div class="border border-slate-200 rounded-lg overflow-hidden">
+            <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-3">
+              <span class="live-dot"></span>
+              <div class="font-medium text-slate-900">Oracle test running</div>
+              <div id="run-elapsed" class="ml-auto text-xs text-slate-500 font-mono">0.0s</div>
+            </div>
+            <div class="p-4 space-y-3">
+              <div class="progress-bar"><div id="run-bar" style="width: 0%"></div></div>
+              <ul id="run-stages" class="text-sm text-slate-700 space-y-2"></ul>
+            </div>
+          </div>
+        </div>
+
+        <div id="state-pass" class="mt-6 hidden">
+          <div class="border border-emerald-200 bg-emerald-50 rounded-lg p-5 flex items-start gap-3">
+            <div class="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-5 h-5"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="font-semibold text-emerald-900">Oracle PASSED &middot; reward 1.0</div>
+              <div class="text-sm text-emerald-800 mt-1">The prompter's golden solution scores 1.0 against your criteria. You can submit this task for review.</div>
+              <div class="mt-3 flex flex-wrap gap-4 text-xs text-emerald-900">
+                <div><b>Structure:</b> 1.0</div>
+                <div><b>Correctness:</b> 1.0</div>
+                <div><b>Quality:</b> 1.0</div>
+                <div><b>Runtime:</b> 5.7s</div>
+              </div>
+            </div>
+          </div>
+
+          <details class="mt-3 border border-slate-200 rounded-lg">
+            <summary class="px-4 py-2 cursor-pointer text-sm font-medium text-slate-700 hover:bg-slate-50">View Oracle log</summary>
+            <pre class="code-block m-3">[10:24:11] Building image from Dockerfile ... done (8.1s)
+[10:24:19] Starting Daytona sandbox sb-3d2a1f ... ready
+[10:24:20] Mounting environment/skills -> /skills (2 skills)
+[10:24:20] Running /solution/solve.sh ... exit 0
+[10:24:23] Uploading /tests to sandbox ... done
+[10:24:24] Running /tests/test.sh ... done
+[10:24:29] Wrote /logs/verifier/reward.json
+[10:24:29] {"Structure": 1.0, "Correctness": 1.0, "Quality": 1.0}
+[10:24:29] Trial reward 1.0  PASS
+[10:24:30] Stopping sandbox ... done</pre>
+          </details>
+
+          <div class="mt-6 flex items-center gap-3 flex-wrap">
+            <a href="queue.html" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50">Save & exit</a>
+            <a id="continue-btn" href="wizard-4-preview.html" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md">
+              Next: Preview & Submit
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <div id="state-fail" class="mt-6 hidden">
+          <div class="border border-red-200 bg-red-50 rounded-lg p-5 flex items-start gap-3">
+            <div class="w-9 h-9 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-5 h-5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="font-semibold text-red-900">Oracle FAILED &middot; reward 0.67</div>
+              <div class="text-sm text-red-800 mt-1">The prompter's solution does not meet all your criteria. Either fix the criteria, ask the prompter to fix the solution, or relax a check.</div>
+              <div class="mt-3 space-y-2 text-sm">
+                <div class="flex items-center gap-2 text-red-800">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  <span><b>Correctness</b> &middot; JSON key equals failed: <code>/app/results.json</code> not created by solution.</span>
+                </div>
+                <div class="flex items-center gap-2 text-emerald-800">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M20 6 9 17l-5-5"/></svg>
+                  <span>Structure passed (3 of 3 checks)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-6 flex items-center gap-3 flex-wrap">
+            <a href="wizard-2-criteria.html" class="px-4 py-2 text-sm font-medium bg-white border border-slate-200 rounded-md hover:bg-slate-50">Edit criteria</a>
+            <button class="px-4 py-2 text-sm font-medium bg-white border border-slate-200 rounded-md hover:bg-slate-50">Ping prompter to fix solution</button>
+            <button id="retry-btn" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+              Retry Oracle test
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <div class="mt-8 flex items-center justify-between">
+      <a href="wizard-2-criteria.html" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Back</a>
+      <div class="text-xs text-slate-500">Step 3 of 4</div>
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('tester');
+    SB.renderNav();
+    SB.renderWizardStepper(3, 'tester');
+
+    const stateIdle = document.getElementById('state-idle');
+    const stateRun  = document.getElementById('state-running');
+    const statePass = document.getElementById('state-pass');
+    const stateFail = document.getElementById('state-fail');
+    const stagesEl  = document.getElementById('run-stages');
+    const barEl     = document.getElementById('run-bar');
+    const elapsedEl = document.getElementById('run-elapsed');
+
+    function go(state) {
+      [stateIdle, stateRun, statePass, stateFail].forEach(el => el.classList.add('hidden'));
+      state.classList.remove('hidden');
+    }
+
+    function start(fail) {
+      go(stateRun);
+      stagesEl.innerHTML = '';
+      barEl.style.width = '0%';
+      let t0 = performance.now();
+      const elapsedTimer = setInterval(() => {
+        const s = ((performance.now() - t0) / 1000).toFixed(1);
+        elapsedEl.textContent = s + 's';
+      }, 100);
+
+      SB.runOracle({
+        fail: fail,
+        onProgress: ev => {
+          let li = stagesEl.querySelector('[data-i="' + ev.stageIndex + '"]');
+          if (!li) {
+            li = document.createElement('li');
+            li.dataset.i = ev.stageIndex;
+            li.className = 'flex items-center gap-2 text-slate-600';
+            li.innerHTML = `
+              <span data-icon class="w-4 h-4 inline-flex items-center justify-center">
+                <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+              </span>
+              <span data-label>${ev.stage}</span>`;
+            stagesEl.appendChild(li);
+          }
+          if (ev.state === 'done') {
+            li.querySelector('[data-icon]').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-4 h-4 text-emerald-500"><path d="M20 6 9 17l-5-5"/></svg>`;
+            li.classList.remove('text-slate-600');
+            li.classList.add('text-slate-900');
+          }
+          barEl.style.width = ev.percent + '%';
+        },
+        onComplete: r => {
+          clearInterval(elapsedTimer);
+          barEl.style.width = '100%';
+          setTimeout(() => {
+            go(r.pass ? statePass : stateFail);
+          }, 300);
+        },
+      });
+    }
+
+    document.getElementById('run-pass').addEventListener('click', () => start(false));
+    document.getElementById('run-fail').addEventListener('click', () => start(true));
+    document.getElementById('retry-btn').addEventListener('click', () => start(false));
+
+    const p = new URLSearchParams(location.search).get('state');
+    if (p === 'fail') start(true);
+    if (p === 'pass') start(false);
+  </script>
+</body>
+</html>

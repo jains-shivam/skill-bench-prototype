@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skill Bench - Sign in</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-900">
+  <div class="min-h-screen flex flex-col">
+
+    <header class="px-6 py-5">
+      <div class="mx-auto max-w-7xl flex items-center justify-between">
+        <div class="flex items-center gap-2 font-semibold">
+          <span class="inline-flex items-center justify-center w-9 h-9 rounded-md bg-indigo-600 text-white">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </span>
+          <span class="text-lg">Skill Bench</span>
+          <span class="ml-1 text-xs font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">V1 - original prototype</span>
+        </div>
+        <div class="flex items-center gap-4 text-sm">
+          <a href="../index.html" class="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 font-medium">&larr; Compare to V2</a>
+          <span class="text-slate-500">Built on <span class="font-medium text-slate-700">Harbor</span> + <span class="font-medium text-slate-700">Daytona</span></span>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 flex items-center justify-center px-6 py-10">
+      <div class="w-full max-w-2xl">
+
+        <div class="text-center mb-10">
+          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium mb-4">
+            <span class="live-dot"></span>
+            Click any role below to explore the prototype
+          </span>
+          <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
+            Build evaluation tasks for AI agents
+          </h1>
+          <p class="mt-3 text-slate-600 max-w-xl mx-auto">
+            A no-code platform where subject matter experts design Skill Bench tasks,
+            reviewers QA them, and evaluators run them against AI agents on Daytona.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+          <a href="trainer/dashboard.html" data-role="trainer"
+             class="role-card group card-hover bg-white border border-slate-200 rounded-xl p-5 flex items-start gap-4 text-left">
+            <div class="w-11 h-11 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center justify-between">
+                <div class="font-semibold text-slate-900">Continue as Trainer</div>
+                <span class="text-slate-400 group-hover:text-indigo-600 transition-colors">&rarr;</span>
+              </div>
+              <div class="text-sm text-slate-500 mt-1">Jane Doe &middot; creates tasks via the no-code wizard.</div>
+            </div>
+          </a>
+
+          <a href="reviewer/queue.html" data-role="reviewer"
+             class="role-card group card-hover bg-white border border-slate-200 rounded-xl p-5 flex items-start gap-4 text-left">
+            <div class="w-11 h-11 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center justify-between">
+                <div class="font-semibold text-slate-900">Continue as Reviewer</div>
+                <span class="text-slate-400 group-hover:text-indigo-600 transition-colors">&rarr;</span>
+              </div>
+              <div class="text-sm text-slate-500 mt-1">Bob Smith &middot; QAs tasks before they are published.</div>
+            </div>
+          </a>
+
+          <a href="evaluator/home.html" data-role="evaluator"
+             class="role-card group card-hover bg-white border border-slate-200 rounded-xl p-5 flex items-start gap-4 text-left">
+            <div class="w-11 h-11 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M3 3v18h18M7 14l4-4 4 4 5-5"/></svg>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center justify-between">
+                <div class="font-semibold text-slate-900">Continue as Evaluator</div>
+                <span class="text-slate-400 group-hover:text-indigo-600 transition-colors">&rarr;</span>
+              </div>
+              <div class="text-sm text-slate-500 mt-1">Carol Lee &middot; runs agents on Daytona and compares results.</div>
+            </div>
+          </a>
+
+          <a href="admin/dashboard.html" data-role="admin"
+             class="role-card group card-hover bg-white border border-slate-200 rounded-xl p-5 flex items-start gap-4 text-left">
+            <div class="w-11 h-11 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .67.4 1.27 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center justify-between">
+                <div class="font-semibold text-slate-900">Continue as Admin</div>
+                <span class="text-slate-400 group-hover:text-indigo-600 transition-colors">&rarr;</span>
+              </div>
+              <div class="text-sm text-slate-500 mt-1">Dave Patel &middot; manages users, templates and quotas.</div>
+            </div>
+          </a>
+
+        </div>
+
+        <div class="mt-10 text-center text-xs text-slate-500">
+          This is a click-through prototype. No real authentication, no real data.
+          See <a href="README.md" class="text-indigo-600 hover:underline">README</a> for the demo script.
+        </div>
+
+      </div>
+    </main>
+
+    <footer class="px-6 py-4 text-center text-xs text-slate-400">
+      &copy; Skill Bench &middot; built for the team review
+    </footer>
+  </div>
+
+  <script src="assets/data.js"></script>
+  <script src="assets/script.js"></script>
+  <script>
+    document.querySelectorAll('.role-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        SB.setRole(card.dataset.role);
+      });
+    });
+  </script>
+</body>
+</html>

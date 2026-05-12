@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skill Bench - Compare versions</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .v-card { transition: all 0.2s ease; }
+    .v-card:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(15,23,42,0.15); }
+    .diff-row td { vertical-align: top; }
+    .stripe-v1 { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+    .stripe-v2 { background: linear-gradient(135deg, #c7d2fe, #a5b4fc); }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-900">
+
+  <header class="px-6 py-5">
+    <div class="mx-auto max-w-7xl flex items-center justify-between">
+      <div class="flex items-center gap-2 font-semibold">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-md bg-indigo-600 text-white">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </span>
+        <span class="text-lg">Skill Bench prototype</span>
+        <span class="ml-1 text-xs font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">compare versions</span>
+      </div>
+      <div class="text-sm text-slate-500">
+        Built on <span class="font-medium text-slate-700">Harbor</span> + <span class="font-medium text-slate-700">Daytona</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="px-6 pb-16">
+    <div class="mx-auto max-w-6xl">
+
+      <!-- Intro -->
+      <div class="text-center mb-10">
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Two click-through versions for the team review</h1>
+        <p class="mt-3 text-slate-600 max-w-2xl mx-auto">
+          Pick a version below. <b>V1</b> is the first prototype we shared. <b>V2</b> reworks it around the feedback we collected.
+          The intent is to look at the same flows in both, not to redo all the work.
+        </p>
+      </div>
+
+      <!-- Two version tiles -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+
+        <a href="v1/index.html" class="v-card block bg-white border border-slate-200 rounded-2xl overflow-hidden">
+          <div class="stripe-v1 px-6 py-4 flex items-center justify-between">
+            <div>
+              <div class="text-xs uppercase tracking-wider text-amber-700 font-semibold">Iteration 1</div>
+              <div class="text-2xl font-bold text-slate-900">V1 - Original prototype</div>
+            </div>
+            <span class="text-xs px-2 py-1 rounded-full bg-white text-amber-700 font-medium border border-amber-200">First draft</span>
+          </div>
+          <div class="p-6 space-y-4">
+            <p class="text-sm text-slate-600">
+              One <b>Trainer</b> persona owns the whole task: instruction, environment, criteria, solution, Oracle. 7 wizard steps.
+              No skills, no Harbor folder preview, no with/without-skills evaluation.
+            </p>
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Roles</div>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2 py-1 rounded bg-indigo-100 text-indigo-700 text-xs font-medium">Trainer</span>
+              <span class="px-2 py-1 rounded bg-amber-100 text-amber-700 text-xs font-medium">Reviewer</span>
+              <span class="px-2 py-1 rounded bg-fuchsia-100 text-fuchsia-700 text-xs font-medium">Evaluator</span>
+              <span class="px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs font-medium">Admin</span>
+            </div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 pt-2">Screens</div>
+            <div class="text-sm text-slate-600">18 screens, 4 personas</div>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs text-slate-500">~6 min walkthrough</span>
+              <span class="text-sm font-semibold text-amber-700 inline-flex items-center gap-1">Open V1 &rarr;</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="v2/index.html" class="v-card block bg-white border border-slate-200 rounded-2xl overflow-hidden">
+          <div class="stripe-v2 px-6 py-4 flex items-center justify-between">
+            <div>
+              <div class="text-xs uppercase tracking-wider text-indigo-700 font-semibold">Iteration 2</div>
+              <div class="text-2xl font-bold text-slate-900">V2 - Relay + skills + Harbor preview</div>
+            </div>
+            <span class="text-xs px-2 py-1 rounded-full bg-white text-indigo-700 font-medium border border-indigo-200">Updated</span>
+          </div>
+          <div class="p-6 space-y-4">
+            <p class="text-sm text-slate-600">
+              Split into <b>Prompter</b> (prompt + skills + solution) -> <b>Tester</b> (env + criteria + Oracle) -> <b>Reviewer</b>.
+              Adds the skill library, agent skills in tasks, with/without/A-B evaluation, and a proper Harbor folder preview everywhere.
+            </p>
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Roles</div>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2 py-1 rounded bg-indigo-100 text-indigo-700 text-xs font-medium">Prompter</span>
+              <span class="px-2 py-1 rounded bg-emerald-100 text-emerald-700 text-xs font-medium">Tester</span>
+              <span class="px-2 py-1 rounded bg-amber-100 text-amber-700 text-xs font-medium">Reviewer</span>
+              <span class="px-2 py-1 rounded bg-fuchsia-100 text-fuchsia-700 text-xs font-medium">Evaluator</span>
+              <span class="px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs font-medium">Admin</span>
+            </div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 pt-2">Screens</div>
+            <div class="text-sm text-slate-600">23 screens, 5 personas, Harbor-format preview embedded</div>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs text-slate-500">~8 min walkthrough</span>
+              <span class="text-sm font-semibold text-indigo-700 inline-flex items-center gap-1">Open V2 &rarr;</span>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Diff table -->
+      <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden mb-10">
+        <div class="px-6 py-4 border-b border-slate-200">
+          <h2 class="text-lg font-semibold">What changed in V2 (and why)</h2>
+          <p class="text-sm text-slate-500 mt-1">Each row maps to one feedback point from the V1 walkthrough.</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <tr>
+                <th class="text-left px-6 py-3">Feedback</th>
+                <th class="text-left px-6 py-3 w-1/3">V1 today</th>
+                <th class="text-left px-6 py-3 w-1/3">V2 proposal</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr class="diff-row">
+                <td class="px-6 py-4 font-medium text-slate-900">Allow submit after prompt + golden solution</td>
+                <td class="px-6 py-4 text-slate-600">Trainer has to also build environment, criteria, and pass Oracle before they can submit anything.</td>
+                <td class="px-6 py-4 text-slate-700"><b>Prompter wizard ends after Solution</b>; submission unblocks the next role. A Tester takes it from there.</td>
+              </tr>
+              <tr class="diff-row">
+                <td class="px-6 py-4 font-medium text-slate-900">Full preview in draft and review mode</td>
+                <td class="px-6 py-4 text-slate-600">Each step shows only its own form; reviewer sees a tabbed summary, no folder view.</td>
+                <td class="px-6 py-4 text-slate-700"><b>"Harbor preview"</b> panel (folder tree + file viewer) on every submit step, in Task detail, and as the default reviewer tab.</td>
+              </tr>
+              <tr class="diff-row">
+                <td class="px-6 py-4 font-medium text-slate-900">Separate multi-step forms for Tester and Prompter</td>
+                <td class="px-6 py-4 text-slate-600">One Trainer role with a single 7-step form covering everything.</td>
+                <td class="px-6 py-4 text-slate-700"><b>Two relay flows:</b> Prompter (6 steps) and Tester (4 steps), each with its own dashboard / queue and stepper.</td>
+              </tr>
+              <tr class="diff-row">
+                <td class="px-6 py-4 font-medium text-slate-900">Allow Prompter to add skills</td>
+                <td class="px-6 py-4 text-slate-600">No skill concept anywhere in the UI.</td>
+                <td class="px-6 py-4 text-slate-700">New <b>Skills wizard step</b> with "From library" and "Author new" tabs. Skills compile into <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">environment/skills/&lt;id&gt;/SKILL.md</code>.</td>
+              </tr>
+              <tr class="diff-row">
+                <td class="px-6 py-4 font-medium text-slate-900">Evaluator: run with / without skills</td>
+                <td class="px-6 py-4 text-slate-600">Evaluator picks agents, attempts, concurrency only.</td>
+                <td class="px-6 py-4 text-slate-700">Required <b>Skill mode</b> radio: With / Without / Both (A/B). The cost estimate and feed reflect the choice; comparison shows a per-task skill lift.</td>
+              </tr>
+              <tr class="diff-row">
+                <td class="px-6 py-4 font-medium text-slate-900">Proper Harbor format preview</td>
+                <td class="px-6 py-4 text-slate-600">Sections of the task are displayed in custom UI cards (no folder shape).</td>
+                <td class="px-6 py-4 text-slate-700">Generated <b>Harbor folder tree</b> showing <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">task.toml</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">instruction.md</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">environment/Dockerfile</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">environment/skills/</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">tests/rewardkit.yaml</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">solution/</code> - click any file to view.</td>
+              </tr>
+              <tr class="diff-row">
+                <td class="px-6 py-4 font-medium text-slate-900">File ownership during testing</td>
+                <td class="px-6 py-4 text-slate-600">Single Trainer authors everything; no concept of who-owns-what during testing.</td>
+                <td class="px-6 py-4 text-slate-700">
+                  <b>Tester authors</b> <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">environment/Dockerfile</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">tests/test.sh</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">tests/rewardkit.yaml</code> (visual builder / upload / raw editor).
+                  <b>Prompter retains</b> <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">instruction.md</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">environment/skills/</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">solution/</code> and can revise them while testing is in progress (<b>Revise my parts</b> CTA).
+                  Everything else is read-only preview for each role.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- How to demo -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        <div class="bg-white border border-slate-200 rounded-2xl p-6">
+          <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Suggested demo order</div>
+          <ol class="mt-3 space-y-2 text-sm text-slate-700 list-decimal pl-5">
+            <li>Open V1 - briefly walk through the Trainer wizard (Template &rarr; Test).</li>
+            <li>Note any pain points the team mentioned (e.g. Trainer doing everything; no Harbor view).</li>
+            <li>Open V2 - run the relay: Prompter submits prompt + solution + skills.</li>
+            <li>Switch to Tester, pick up the prompt, add env + criteria, run Oracle, submit.</li>
+            <li>Switch to Reviewer - first tab is the Harbor folder preview.</li>
+            <li>Switch to Evaluator - new job with Skill mode <b>Both (A/B)</b>, then comparison + trial detail.</li>
+          </ol>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-6">
+          <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Hopping between versions</div>
+          <ul class="mt-3 space-y-2 text-sm text-slate-700 list-disc pl-5">
+            <li>Every page in V1 and V2 has a <b>Compare versions</b> link in the top-right - returns here.</li>
+            <li>Inside a version, <b>Switch role</b> goes back to that version's role picker.</li>
+            <li>Read the section above to see exactly which feedback each V2 change targets.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Direct links -->
+      <div class="bg-slate-900 text-slate-100 rounded-2xl p-6">
+        <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2">Direct deep links - same flow, both versions</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <div class="font-semibold text-amber-300 mb-1">V1 (original Trainer flow)</div>
+            <ul class="space-y-1">
+              <li><a href="v1/trainer/dashboard.html" class="text-slate-300 hover:text-white underline">Trainer dashboard</a></li>
+              <li><a href="v1/trainer/wizard-1-template.html" class="text-slate-300 hover:text-white underline">Trainer wizard, step 1</a></li>
+              <li><a href="v1/reviewer/workspace.html" class="text-slate-300 hover:text-white underline">Reviewer workspace</a></li>
+              <li><a href="v1/evaluator/new-job.html" class="text-slate-300 hover:text-white underline">Evaluator new job</a></li>
+              <li><a href="v1/evaluator/comparison.html" class="text-slate-300 hover:text-white underline">Evaluator comparison</a></li>
+            </ul>
+          </div>
+          <div>
+            <div class="font-semibold text-indigo-300 mb-1">V2 (relay + skills + Harbor preview)</div>
+            <ul class="space-y-1">
+              <li><a href="v2/trainer/dashboard.html" class="text-slate-300 hover:text-white underline">Prompter dashboard</a></li>
+              <li><a href="v2/trainer/wizard-4-skills.html" class="text-slate-300 hover:text-white underline">Prompter - Skills step (new)</a></li>
+              <li><a href="v2/trainer/wizard-6-preview.html" class="text-slate-300 hover:text-white underline">Prompter - Harbor preview (new)</a></li>
+              <li><a href="v2/trainer/revise.html" class="text-slate-300 hover:text-white underline">Prompter - Revise during testing (new)</a></li>
+              <li><a href="v2/tester/queue.html" class="text-slate-300 hover:text-white underline">Tester queue (new)</a></li>
+              <li><a href="v2/tester/wizard-1-environment.html" class="text-slate-300 hover:text-white underline">Tester env - upload / edit Dockerfile (new)</a></li>
+              <li><a href="v2/tester/wizard-2-criteria.html" class="text-slate-300 hover:text-white underline">Tester criteria - upload / edit test.sh (new)</a></li>
+              <li><a href="v2/reviewer/workspace.html" class="text-slate-300 hover:text-white underline">Reviewer workspace (Harbor preview tab)</a></li>
+              <li><a href="v2/evaluator/new-job.html" class="text-slate-300 hover:text-white underline">Evaluator - Skill mode radio</a></li>
+              <li><a href="v2/evaluator/comparison.html" class="text-slate-300 hover:text-white underline">Comparison - Skill lift</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="px-6 py-6 text-center text-xs text-slate-400">
+    Skill Bench prototype - two iterations for team review
+  </footer>
+</body>
+</html>

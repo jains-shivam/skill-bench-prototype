@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live job - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-7xl px-6 py-8">
+
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="home.html" class="hover:text-slate-900">Evaluations</a>
+        <span>/</span>
+        <span class="text-slate-900 font-medium">Job j2025</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="comparison.html" class="px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-md hover:bg-slate-50">View comparison</a>
+        <button class="px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-md hover:bg-slate-50">Cancel job</button>
+      </div>
+    </div>
+
+    <header class="mb-6">
+      <div class="flex items-center gap-3 flex-wrap">
+        <h1 class="text-2xl font-bold tracking-tight">skill-bench-v1 x 2 agents</h1>
+        <span class="pill pill-running"><span class="live-dot mr-1"></span>Running</span>
+        <span id="skill-mode-badge" class="text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-medium">Skill mode: Both (A/B)</span>
+      </div>
+      <div class="text-xs text-slate-500 mt-1">
+        Started 15 min ago &middot; Dataset <code class="bg-slate-100 px-1.5 py-0.5 rounded">my-org/skill-bench-v1</code> &middot; Provider Daytona &middot; Concurrency 10
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+      <div class="lg:col-span-2 space-y-4">
+
+        <!-- Progress card -->
+        <div class="bg-white border border-slate-200 rounded-lg p-5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="font-medium">Progress</div>
+            <div class="ml-auto text-sm"><b id="completed">187</b> / 282 trials</div>
+          </div>
+          <div class="progress-bar"><div id="progress-fill" style="width: 66%"></div></div>
+          <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+            <div class="border border-slate-200 rounded-md px-3 py-2">
+              <div class="text-xs text-slate-500">Active sandboxes</div>
+              <div class="font-semibold">10 / 10</div>
+            </div>
+            <div class="border border-slate-200 rounded-md px-3 py-2">
+              <div class="text-xs text-slate-500">Completed</div>
+              <div class="font-semibold"><span id="kpi-completed">187</span></div>
+            </div>
+            <div class="border border-slate-200 rounded-md px-3 py-2">
+              <div class="text-xs text-slate-500">Errors</div>
+              <div class="font-semibold text-red-600">2</div>
+            </div>
+            <div class="border border-slate-200 rounded-md px-3 py-2">
+              <div class="text-xs text-slate-500">ETA</div>
+              <div class="font-semibold">~9 min</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+            <div class="font-medium">Leaderboard <span class="text-xs text-slate-500 ml-1">(live)</span></div>
+            <span class="text-xs text-slate-500"><span class="live-dot"></span> Auto-refreshing every 2s</span>
+          </div>
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase tracking-wider">
+              <tr>
+                <th class="text-left px-4 py-2">Agent</th>
+                <th class="text-left px-4 py-2">Pass rate</th>
+                <th class="text-left px-4 py-2">Avg reward</th>
+                <th class="text-left px-4 py-2">Avg time</th>
+                <th class="text-left px-4 py-2">Cost</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+
+        <!-- Recent trials feed -->
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <div class="px-5 py-3 border-b border-slate-200 font-medium">Recent trials</div>
+          <div id="feed" class="divide-y divide-slate-100"></div>
+        </div>
+      </div>
+
+      <aside class="space-y-4">
+        <div class="bg-white border border-slate-200 rounded-lg p-5">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Configuration</div>
+          <dl class="text-sm space-y-2">
+            <div class="flex justify-between"><dt class="text-slate-500">Dataset</dt><dd class="font-mono text-right truncate">my-org/skill-bench-v1</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Tasks</dt><dd>47</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Agents</dt><dd>claude-code, cursor-cli</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Attempts</dt><dd>3</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Provider</dt><dd>Daytona</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Concurrency</dt><dd>10</dd></div>
+          </dl>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg p-5">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Sandboxes</div>
+          <div id="sandbox-grid" class="grid grid-cols-5 gap-1.5"></div>
+          <div class="mt-2 text-xs text-slate-500">Each cell is a live Daytona sandbox. Hover for the task name.</div>
+        </div>
+      </aside>
+
+    </div>
+
+  </main>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('evaluator');
+    SB.renderNav();
+
+    /* Initial state */
+    let progress = 0.66;
+    let trials = { 'claude-code': { trials: 141, passed: 110, time: 134, cost: 16.40 }, 'cursor-cli': { trials: 92, passed: 56, time: 108, cost: 12.00 } };
+    const total = 282;
+
+    function renderLeaderboard() {
+      const tbody = document.getElementById('leaderboard');
+      tbody.innerHTML = '';
+      const rows = Object.entries(trials).map(([k, v]) => ({
+        agent: k,
+        trials: v.trials,
+        passed: v.passed,
+        passRate: v.passed / Math.max(1, v.trials),
+        avgReward: 0.5 + (v.passed / Math.max(1, v.trials)) * 0.4,
+        avgTime: v.time,
+        cost: v.cost.toFixed(2),
+      }));
+      rows.sort((a, b) => b.passRate - a.passRate);
+      rows.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="px-4 py-2">
+            <div class="flex items-center gap-2">
+              <span class="font-medium ${i === 0 ? 'text-emerald-700' : 'text-slate-900'}">${r.agent}</span>
+              ${i === 0 ? '<span class="text-xs bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5">leading</span>' : ''}
+            </div>
+          </td>
+          <td class="px-4 py-2"><b>${(r.passRate*100).toFixed(0)}%</b> <span class="text-xs text-slate-500">(${r.passed}/${r.trials})</span></td>
+          <td class="px-4 py-2">${r.avgReward.toFixed(2)}</td>
+          <td class="px-4 py-2">${Math.floor(r.avgTime/60)}m ${r.avgTime%60}s</td>
+          <td class="px-4 py-2">$${r.cost}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderProgress() {
+      const completed = Math.floor(progress * total);
+      document.getElementById('progress-fill').style.width = (progress * 100).toFixed(0) + '%';
+      document.getElementById('completed').textContent = completed;
+      document.getElementById('kpi-completed').textContent = completed;
+    }
+
+    function renderSandboxes() {
+      const root = document.getElementById('sandbox-grid');
+      root.innerHTML = '';
+      for (let i = 0; i < 10; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'h-8 rounded bg-emerald-500 flex items-center justify-center';
+        cell.style.opacity = 0.6 + Math.random() * 0.4;
+        cell.title = 'sb-' + (1000 + i).toString(16);
+        cell.innerHTML = '<span class="live-dot" style="margin: 0"></span>';
+        root.appendChild(cell);
+      }
+    }
+
+    function pushFeed(item) {
+      const feed = document.getElementById('feed');
+      const row = document.createElement('div');
+      row.className = 'px-5 py-2.5 flex items-center gap-3 text-sm';
+      const isPass = item.reward >= 0.5;
+      row.innerHTML = `
+        <div class="w-7 h-7 rounded-full ${isPass ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'} flex items-center justify-center shrink-0">
+          ${isPass ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-4 h-4"><path d="M20 6 9 17l-5-5"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>'}
+        </div>
+        <div class="font-mono text-xs text-slate-600">${item.agent}</div>
+        <div class="flex-1">
+          <a href="trial-detail.html" class="font-medium hover:text-indigo-700">${item.task}</a>
+          <div class="text-xs text-slate-500">${item.runtime} &middot; ${item.note || (isPass ? 'reward ' + item.reward : 'failed checks')}</div>
+        </div>
+        <div class="font-mono text-sm font-semibold ${isPass ? 'text-emerald-700' : 'text-red-700'}">${item.reward.toFixed(2)}</div>`;
+      feed.insertBefore(row, feed.firstChild);
+      while (feed.childElementCount > 12) feed.removeChild(feed.lastChild);
+    }
+
+    /* Skill mode badge */
+    const mode = new URLSearchParams(location.search).get('mode') || 'both';
+    const modeLabel = { with: 'With skills', without: 'Without skills', both: 'Both (A/B)' }[mode] || 'Both (A/B)';
+    document.getElementById('skill-mode-badge').textContent = 'Skill mode: ' + modeLabel;
+
+    /* Push items now include the skill mode used for that trial. */
+    const originalPushFeed = pushFeed;
+    function pushFeedWithSkill(item) {
+      const skillTag = item.skill === 'without'
+        ? '<span class="text-[10px] uppercase tracking-wider bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded ml-1">no skills</span>'
+        : item.skill === 'with'
+          ? '<span class="text-[10px] uppercase tracking-wider bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded ml-1">with skills</span>'
+          : '';
+      const original = item.note;
+      item.note = (original || (item.reward >= 0.5 ? 'reward ' + item.reward : 'failed checks')) + (skillTag ? ' ' : '');
+      originalPushFeed(item);
+      const feed = document.getElementById('feed');
+      const first = feed.firstChild;
+      if (first && skillTag) {
+        const sub = first.querySelector('.text-xs.text-slate-500');
+        if (sub) sub.innerHTML += skillTag;
+      }
+    }
+
+    function nextSkill() {
+      if (mode === 'with' || mode === 'without') return mode;
+      return Math.random() > 0.5 ? 'with' : 'without';
+    }
+
+    /* Initial feed */
+    const tasks = ['regex-builder', 'csv-validator', 'text-stats-pipeline', 'fastapi-book-library', 'json-formatter', 'ssh-key-pair', 'sort-implementations'];
+    [
+      { agent: 'claude-code', task: 'regex-builder',       reward: 1.0, runtime: '2m 04s', skill: nextSkill() },
+      { agent: 'cursor-cli',  task: 'csv-validator',       reward: 0.5, runtime: '1m 30s', skill: nextSkill(), note: 'partial credit on Correctness' },
+      { agent: 'claude-code', task: 'text-stats-pipeline', reward: 1.0, runtime: '2m 11s', skill: nextSkill() },
+    ].forEach(pushFeedWithSkill);
+
+    renderLeaderboard();
+    renderProgress();
+    renderSandboxes();
+
+    /* Tick simulator */
+    setInterval(() => {
+      if (progress < 0.999) {
+        progress = Math.min(1.0, progress + 0.01);
+        for (const k of Object.keys(trials)) {
+          trials[k].trials += 1;
+          trials[k].passed += Math.random() > 0.3 ? 1 : 0;
+        }
+        renderProgress();
+        renderLeaderboard();
+        renderSandboxes();
+
+        /* Push a synthetic trial */
+        const agent = Math.random() > 0.5 ? 'claude-code' : 'cursor-cli';
+        const task = tasks[Math.floor(Math.random() * tasks.length)];
+        const skill = nextSkill();
+        /* Without-skills runs are penalized slightly to simulate a skill lift. */
+        const passProb = skill === 'with' ? 0.8 : 0.55;
+        const reward = Math.random() < passProb ? 1.0 : (Math.random() > 0.5 ? 0.5 : 0.33);
+        pushFeedWithSkill({ agent, task, reward, runtime: (1 + Math.random()).toFixed(0) + 'm ' + Math.floor(Math.random()*60) + 's', skill });
+      }
+    }, 2000);
+  </script>
+</body>
+</html>

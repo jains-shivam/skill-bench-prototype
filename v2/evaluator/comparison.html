@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Results comparison - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-7xl px-6 py-8">
+
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="home.html" class="hover:text-slate-900">Evaluations</a>
+        <span>/</span>
+        <span class="text-slate-900 font-medium">Job j2024 results</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-md hover:bg-slate-50">Export CSV</button>
+        <button class="px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-md hover:bg-slate-50">Share link</button>
+      </div>
+    </div>
+
+    <header class="mb-6">
+      <div class="flex items-center gap-3 flex-wrap">
+        <h1 class="text-2xl font-bold tracking-tight">Comparison</h1>
+        <span class="pill pill-published">Completed</span>
+        <span class="text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-medium">Skill mode: Both (A/B)</span>
+      </div>
+      <div class="text-xs text-slate-500 mt-1">
+        Dataset <code class="bg-slate-100 px-1.5 py-0.5 rounded">my-org/skill-bench-v1</code> &middot; 47 tasks &middot; 2 agents &middot; 3 attempts &middot; 564 trials
+      </div>
+    </header>
+
+    <!-- Summary -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-5">
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs uppercase tracking-wider text-slate-500">Winning agent (with skills)</div>
+        <div class="mt-1 text-xl font-bold text-emerald-700">claude-code</div>
+        <div class="text-xs text-slate-500">avg reward 0.82</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs uppercase tracking-wider text-slate-500">Best without skills</div>
+        <div class="mt-1 text-xl font-bold text-slate-900">claude-code</div>
+        <div class="text-xs text-slate-500">avg reward 0.66</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs uppercase tracking-wider text-slate-500">Avg skill lift</div>
+        <div class="mt-1 text-xl font-bold text-indigo-600">+0.18</div>
+        <div class="text-xs text-slate-500">across all skill-bearing tasks</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs uppercase tracking-wider text-slate-500">Tasks with skills</div>
+        <div class="mt-1 text-xl font-bold text-slate-900">5 / 8</div>
+        <div class="text-xs text-slate-500">in this view</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="bg-white border border-slate-200 rounded-lg p-3 flex flex-wrap items-center gap-2 mb-4">
+      <span class="text-xs text-slate-500">View</span>
+      <select id="view-select" class="text-sm border border-slate-200 rounded-md px-3 py-1.5 bg-white">
+        <option value="side">Side-by-side (with / without)</option>
+        <option value="with">With skills only</option>
+        <option value="without">Without skills only</option>
+        <option value="lift">Skill lift (Δ)</option>
+      </select>
+      <input type="text" placeholder="Filter tasks..." class="ml-auto px-3 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200 min-w-[14rem]">
+    </div>
+
+    <!-- Comparison table -->
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase tracking-wider">
+          <tr id="head-row">
+            <th class="text-left px-4 py-3">Task</th>
+            <th class="text-left px-4 py-3">Skills</th>
+            <th class="text-left px-4 py-3" colspan="2">claude-code</th>
+            <th class="text-left px-4 py-3" colspan="2">cursor-cli</th>
+            <th class="text-left px-4 py-3">Lift (avg)</th>
+          </tr>
+          <tr id="subhead-row" class="text-[10px]">
+            <th></th>
+            <th></th>
+            <th class="text-left px-4 py-1 text-emerald-700">with</th>
+            <th class="text-left px-4 py-1 text-slate-500">without</th>
+            <th class="text-left px-4 py-1 text-emerald-700">with</th>
+            <th class="text-left px-4 py-1 text-slate-500">without</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="rows" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+
+    <p class="text-xs text-slate-500 mt-3">Click any cell to drill into the trial trajectory.</p>
+
+  </main>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('evaluator');
+    SB.renderNav();
+
+    function cellClass(v) {
+      if (v >= 0.9) return 'bg-emerald-50 text-emerald-700';
+      if (v >= 0.7) return 'bg-emerald-50/60 text-emerald-700';
+      if (v >= 0.5) return 'bg-amber-50 text-amber-700';
+      return 'bg-red-50 text-red-700';
+    }
+    function liftClass(v) {
+      if (v >= 0.2) return 'text-emerald-700 font-semibold';
+      if (v >= 0.05) return 'text-emerald-700';
+      if (v <= -0.05) return 'text-red-700';
+      return 'text-slate-500';
+    }
+    function pill(v) {
+      return `<a href="trial-detail.html?agent=${encodeURIComponent('claude-code')}" class="inline-block px-2.5 py-1 rounded-md font-semibold ${cellClass(v)}">${v.toFixed(2)}</a>`;
+    }
+
+    const tbody = document.getElementById('rows');
+    const headRow = document.getElementById('head-row');
+    const subRow = document.getElementById('subhead-row');
+
+    function render(view) {
+      tbody.innerHTML = '';
+      headRow.innerHTML = '';
+      subRow.innerHTML = '';
+      if (view === 'side') {
+        headRow.innerHTML = `<th class="text-left px-4 py-3">Task</th>
+          <th class="text-left px-4 py-3">Skills</th>
+          <th class="text-left px-4 py-3" colspan="2">claude-code</th>
+          <th class="text-left px-4 py-3" colspan="2">cursor-cli</th>
+          <th class="text-left px-4 py-3">Lift (avg)</th>`;
+        subRow.innerHTML = `<th></th><th></th>
+          <th class="text-left px-4 py-1 text-emerald-700">with</th>
+          <th class="text-left px-4 py-1 text-slate-500">without</th>
+          <th class="text-left px-4 py-1 text-emerald-700">with</th>
+          <th class="text-left px-4 py-1 text-slate-500">without</th>
+          <th></th>`;
+      } else if (view === 'lift') {
+        headRow.innerHTML = `<th class="text-left px-4 py-3">Task</th>
+          <th class="text-left px-4 py-3">Skills</th>
+          <th class="text-left px-4 py-3">claude-code lift</th>
+          <th class="text-left px-4 py-3">cursor-cli lift</th>
+          <th class="text-left px-4 py-3">Avg lift</th>`;
+      } else {
+        const tag = view === 'with' ? 'with' : 'without';
+        headRow.innerHTML = `<th class="text-left px-4 py-3">Task</th>
+          <th class="text-left px-4 py-3">Skills</th>
+          <th class="text-left px-4 py-3">claude-code (${tag})</th>
+          <th class="text-left px-4 py-3">cursor-cli (${tag})</th>
+          <th class="text-left px-4 py-3">Δ</th>`;
+      }
+
+      SBData.compareRows.forEach(r => {
+        const a = r.agents['claude-code'];
+        const b = r.agents['cursor-cli'];
+        const skillBadge = r.hasSkills
+          ? '<span class="text-xs px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700">yes</span>'
+          : '<span class="text-xs text-slate-400">no</span>';
+
+        let cells = '';
+        if (view === 'side') {
+          const liftA = a.with - a.without;
+          const liftB = b.with - b.without;
+          const avgLift = (liftA + liftB) / 2;
+          cells = `
+            <td class="px-4 py-3">${pill(a.with)}</td>
+            <td class="px-4 py-3">${pill(a.without)}</td>
+            <td class="px-4 py-3">${pill(b.with)}</td>
+            <td class="px-4 py-3">${pill(b.without)}</td>
+            <td class="px-4 py-3 ${liftClass(avgLift)}">${avgLift >= 0 ? '+' : ''}${avgLift.toFixed(2)}</td>`;
+        } else if (view === 'lift') {
+          const liftA = a.with - a.without;
+          const liftB = b.with - b.without;
+          const avgLift = (liftA + liftB) / 2;
+          cells = `
+            <td class="px-4 py-3 ${liftClass(liftA)}">${liftA >= 0 ? '+' : ''}${liftA.toFixed(2)}</td>
+            <td class="px-4 py-3 ${liftClass(liftB)}">${liftB >= 0 ? '+' : ''}${liftB.toFixed(2)}</td>
+            <td class="px-4 py-3 ${liftClass(avgLift)}">${avgLift >= 0 ? '+' : ''}${avgLift.toFixed(2)}</td>`;
+        } else {
+          const key = view;
+          const delta = a[key] - b[key];
+          cells = `
+            <td class="px-4 py-3">${pill(a[key])}</td>
+            <td class="px-4 py-3">${pill(b[key])}</td>
+            <td class="px-4 py-3 ${delta > 0 ? 'text-emerald-700' : delta < 0 ? 'text-red-700' : 'text-slate-500'}">${delta >= 0 ? '+' : ''}${delta.toFixed(2)}</td>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        tr.innerHTML = `<td class="px-4 py-3 font-mono">${r.task}</td><td class="px-4 py-3">${skillBadge}</td>${cells}`;
+        tbody.appendChild(tr);
+      });
+    }
+    render('side');
+    document.getElementById('view-select').addEventListener('change', e => render(e.target.value));
+  </script>
+</body>
+</html>

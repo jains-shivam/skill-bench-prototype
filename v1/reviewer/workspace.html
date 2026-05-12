@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review - text-stats-pipeline - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-7xl px-6 py-6">
+
+    <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+      <a href="queue.html" class="hover:text-slate-900">Review queue</a>
+      <span>/</span>
+      <span class="text-slate-900 font-medium font-mono">my-org/text-stats-pipeline</span>
+    </div>
+
+    <header class="bg-white border border-slate-200 rounded-lg p-5 mb-4 flex flex-wrap items-start gap-4 justify-between">
+      <div>
+        <div class="flex items-center gap-3">
+          <h1 class="text-xl font-semibold">my-org/text-stats-pipeline</h1>
+          <span class="pill pill-review">In Review</span>
+        </div>
+        <p class="text-sm text-slate-500 mt-1">Build a Python pipeline that analyzes text and emits JSON.</p>
+        <div class="text-xs text-slate-500 mt-2 flex items-center gap-3">
+          <span>By <b>Jane Doe</b></span>
+          <span>&middot;</span>
+          <span>Submitted 1 hour ago</span>
+          <span>&middot;</span>
+          <span>Oracle: <b class="text-emerald-700">PASS (1.0)</b></span>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button class="px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-md hover:bg-slate-50">Run with claude-code</button>
+        <span class="inline-flex items-center text-xs text-slate-500 ml-1">- optional sanity check</span>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+      <div class="lg:col-span-2 bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="tab-bar px-5 pt-3">
+          <button data-tab="instruction" class="active">Instruction</button>
+          <button data-tab="environment">Environment</button>
+          <button data-tab="criteria">Criteria</button>
+          <button data-tab="solution">Solution</button>
+          <button data-tab="oracle">Oracle log</button>
+        </div>
+
+        <div id="tab-instruction" class="p-5 prose prose-sm max-w-none">
+          <h2 class="text-base font-semibold mt-0">Text Statistics Pipeline</h2>
+          <p>Create two files in <code>/app</code>:</p>
+          <ol class="list-decimal pl-5 space-y-1 text-sm">
+            <li><code>textstats.py</code> with <code>word_count(text)</code> and <code>most_common(text)</code>.</li>
+            <li><code>analyze.py</code> that reads <code>sample.txt</code> and writes <code>results.json</code> in the form <code>{"word_count": 42, "most_common": "the"}</code>.</li>
+          </ol>
+        </div>
+
+        <div id="tab-environment" class="p-5 text-sm text-slate-700 hidden grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div><b>OS</b>: Ubuntu 24.04</div>
+          <div><b>Language</b>: Python 3.12</div>
+          <div><b>Packages</b>: pandas 2.2, numpy 1.26, pytest 8.4</div>
+          <div><b>Files</b>: sample.txt (12 KB)</div>
+          <div><b>Resources</b>: 1 CPU / 2 GB RAM</div>
+          <div><b>Internet</b>: Allowed</div>
+        </div>
+
+        <div id="tab-criteria" class="p-5 text-sm text-slate-700 hidden space-y-3">
+          <div class="border border-slate-200 rounded-md p-3">
+            <div class="font-medium text-slate-900">Structure <span class="text-xs text-slate-500 ml-1">weight 1.0</span></div>
+            <ul class="mt-1 space-y-0.5 text-xs text-slate-600 list-disc pl-4">
+              <li>File exists - /app/textstats.py</li>
+              <li>File exists - /app/analyze.py</li>
+              <li>File contains text - "def word_count" in /app/textstats.py</li>
+            </ul>
+          </div>
+          <div class="border border-slate-200 rounded-md p-3">
+            <div class="font-medium text-slate-900">Correctness <span class="text-xs text-slate-500 ml-1">weight 2.0</span></div>
+            <ul class="mt-1 space-y-0.5 text-xs text-slate-600 list-disc pl-4">
+              <li>Command succeeds - python /app/analyze.py</li>
+              <li>JSON key equals - results.json: word_count = 42</li>
+              <li>JSON key equals - results.json: most_common = "the"</li>
+            </ul>
+          </div>
+          <div class="border border-slate-200 rounded-md p-3">
+            <div class="font-medium text-slate-900">Quality <span class="text-xs text-slate-500 ml-1">weight 1.0 - LLM judge</span></div>
+            <div class="mt-1 text-xs text-slate-600">claude-sonnet-4-5 - Likert 1-5 - "Is the code readable, well-named, idiomatic Python?"</div>
+          </div>
+        </div>
+
+        <div id="tab-solution" class="p-5 hidden text-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <select class="text-xs border border-slate-200 rounded-md px-2 py-1 bg-white font-mono">
+              <option>textstats.py</option>
+              <option>analyze.py</option>
+            </select>
+            <span class="text-xs text-slate-500">Click filename to switch (read-only)</span>
+          </div>
+          <pre class="code-block">"""Text statistics utilities."""
+from collections import Counter
+
+def word_count(text: str) -> int:
+    return len(text.split())
+
+def most_common(text: str) -> str:
+    words = text.lower().split()
+    if not words:
+        return ""
+    return Counter(words).most_common(1)[0][0]
+</pre>
+        </div>
+
+        <div id="tab-oracle" class="p-5 hidden">
+          <pre class="code-block">[10:24:11] Building image from Dockerfile ... done (8.1s)
+[10:24:19] Starting Daytona sandbox sb-3d2a1f ... ready
+[10:24:20] Running /solution/solve.sh ... exit 0
+[10:24:23] Uploading /tests to sandbox ... done
+[10:24:24] Running /tests/test.sh ... done
+[10:24:29] Wrote /logs/verifier/reward.json
+[10:24:29] {"Structure": 1.0, "Correctness": 1.0, "Quality": 1.0}
+[10:24:29] Trial reward 1.0  PASS
+[10:24:30] Stopping sandbox ... done</pre>
+        </div>
+      </div>
+
+      <aside class="space-y-4">
+
+        <!-- Comments -->
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col" style="max-height: 30rem">
+          <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+            <div class="font-medium text-slate-900">Comments</div>
+            <span class="text-xs text-slate-500" id="comment-count">2</span>
+          </div>
+          <div id="comment-list" class="flex-1 overflow-y-auto scroll-y p-4 space-y-3 text-sm"></div>
+          <div class="border-t border-slate-200 p-3">
+            <textarea id="comment-input" rows="2" placeholder="Leave a comment..."
+                      class="w-full text-sm border border-slate-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"></textarea>
+            <div class="flex items-center justify-between mt-2">
+              <span class="text-xs text-slate-500">Markdown supported</span>
+              <button id="send-comment" class="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">Send</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Decision -->
+        <div class="bg-white border border-slate-200 rounded-lg p-4">
+          <div class="font-medium text-slate-900 mb-3">Decision</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-changes" class="px-3 py-2 text-sm bg-white border border-slate-200 hover:bg-slate-50 rounded-md text-slate-700 font-medium">
+              Request changes
+            </button>
+            <button id="btn-approve" class="px-3 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-medium">
+              Approve & publish
+            </button>
+          </div>
+          <div class="mt-3 text-xs text-slate-500">Approving will run <code>harbor publish</code> and notify the trainer.</div>
+        </div>
+
+      </aside>
+
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('reviewer');
+    SB.renderNav();
+
+    /* Tabs */
+    const tabs = document.querySelectorAll('.tab-bar button');
+    const panels = ['instruction','environment','criteria','solution','oracle'].reduce((a,k)=>{a[k]=document.getElementById('tab-'+k);return a;}, {});
+    tabs.forEach(b => b.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      b.classList.add('active');
+      Object.keys(panels).forEach(k => panels[k].classList.add('hidden'));
+      panels[b.dataset.tab].classList.remove('hidden');
+    }));
+
+    /* Comments */
+    const list = document.getElementById('comment-list');
+    const count = document.getElementById('comment-count');
+    const comments = SBData.reviewComments.slice();
+    function render() {
+      list.innerHTML = '';
+      comments.forEach(c => {
+        const node = document.createElement('div');
+        node.className = 'flex items-start gap-2';
+        node.innerHTML = `
+          <div class="avatar shrink-0" style="background: ${c.author.role === 'Reviewer' ? '#f59e0b' : '#4f46e5'}; width: 1.75rem; height: 1.75rem; font-size: 0.7rem">${c.author.initials}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-baseline gap-2"><div class="font-medium text-slate-900">${c.author.name}</div><div class="text-xs text-slate-500">${c.when}</div></div>
+            <div class="text-slate-700 mt-0.5 whitespace-pre-wrap">${c.body}</div>
+          </div>`;
+        list.appendChild(node);
+      });
+      count.textContent = comments.length;
+      list.scrollTop = list.scrollHeight;
+    }
+    render();
+
+    document.getElementById('send-comment').addEventListener('click', () => {
+      const v = document.getElementById('comment-input').value.trim();
+      if (!v) return;
+      comments.push({ author: SBData.users.reviewer, when: 'just now', body: v });
+      document.getElementById('comment-input').value = '';
+      render();
+      SB.toast('Comment posted.', 'success');
+    });
+
+    document.getElementById('btn-changes').addEventListener('click', () => {
+      SB.toast('Changes requested. Jane will be notified.', 'warning');
+      setTimeout(() => location.href = 'queue.html', 1400);
+    });
+    document.getElementById('btn-approve').addEventListener('click', () => {
+      SB.toast('Approved and published to the Harbor registry as <b>v1.0</b>.', 'success');
+      setTimeout(() => location.href = 'queue.html', 1700);
+    });
+  </script>
+</body>
+</html>

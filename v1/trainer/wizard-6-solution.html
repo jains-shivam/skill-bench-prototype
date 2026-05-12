@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create Task - Solution - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-6xl px-6 py-6">
+
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="dashboard.html" class="hover:text-slate-900">My Tasks</a>
+        <span>/</span>
+        <span class="text-slate-900 font-medium">Create Task</span>
+      </div>
+      <a href="dashboard.html" class="text-sm text-slate-500 hover:text-slate-900">Save & Exit</a>
+    </div>
+
+    <div id="wizard-stepper" class="mb-8"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6">
+
+      <aside class="bg-white border border-slate-200 rounded-lg p-4 h-fit">
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Tips</div>
+        <ul class="text-sm text-slate-600 space-y-2 list-disc pl-4">
+          <li>We run the Oracle agent with this solution to confirm your task is solvable.</li>
+          <li>This should be a working, correct solution - not just stubs.</li>
+          <li>If unsure, ask the AI to draft a solution you can review.</li>
+        </ul>
+      </aside>
+
+      <section class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200">
+          <h2 class="text-lg font-semibold text-slate-900">Reference solution</h2>
+          <p class="text-sm text-slate-500 mt-1">Provide a correct solution to your task.</p>
+        </div>
+
+        <div class="tab-bar px-6 pt-3">
+          <button data-tab="upload" class="active">Upload files</button>
+          <button data-tab="editor">In-browser editor</button>
+          <button data-tab="ai">Generate with AI</button>
+        </div>
+
+        <!-- Tab: Upload -->
+        <div id="tab-upload" class="p-6 space-y-4">
+          <div class="border-2 border-dashed border-slate-200 rounded-lg p-8 text-center hover:border-indigo-300 hover:bg-indigo-50/40 cursor-pointer">
+            <div class="flex flex-col items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-8 h-8 text-slate-400"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              <div class="text-sm text-slate-600"><span class="text-indigo-600 font-medium">Click to upload</span> or drag files here</div>
+              <div class="text-xs text-slate-400">Files will be placed inside the task's <code>solution/</code> directory.</div>
+            </div>
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="text-sm font-medium text-slate-700 mb-1">Uploaded files</div>
+            <div class="flex items-center gap-3 text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-emerald-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              <span class="font-mono flex-1">textstats.py</span>
+              <span class="text-xs text-slate-400">0.4 KB</span>
+              <button class="text-slate-400 hover:text-indigo-600 mr-2 text-xs">View</button>
+              <button class="text-slate-400 hover:text-red-500" title="Remove">&times;</button>
+            </div>
+            <div class="flex items-center gap-3 text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-emerald-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              <span class="font-mono flex-1">analyze.py</span>
+              <span class="text-xs text-slate-400">0.3 KB</span>
+              <button class="text-slate-400 hover:text-indigo-600 mr-2 text-xs">View</button>
+              <button class="text-slate-400 hover:text-red-500" title="Remove">&times;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Editor -->
+        <div id="tab-editor" class="p-6 space-y-3 hidden">
+          <div class="flex items-center gap-2 text-sm">
+            <select class="text-sm border border-slate-200 rounded-md px-2 py-1 bg-white font-mono">
+              <option>textstats.py</option>
+              <option>analyze.py</option>
+            </select>
+            <button class="text-xs px-2 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50">+ New file</button>
+            <span class="ml-auto text-xs text-slate-500">Language: Python 3.12</span>
+          </div>
+          <pre class="code-block scroll-y" style="max-height: 24rem">"""Text statistics utilities."""
+from collections import Counter
+
+def word_count(text: str) -> int:
+    """Return the number of words in text."""
+    return len(text.split())
+
+def most_common(text: str) -> str:
+    """Return the most common word (lowercase)."""
+    words = text.lower().split()
+    if not words:
+        return ""
+    return Counter(words).most_common(1)[0][0]
+</pre>
+          <div class="text-xs text-slate-500">In the real product this would be a syntax-highlighted Monaco editor with a "Run in sandbox" button.</div>
+        </div>
+
+        <!-- Tab: AI -->
+        <div id="tab-ai" class="p-6 space-y-4 hidden">
+          <div class="text-sm text-slate-700">Describe what the solution should do. We'll draft code you can review and accept.</div>
+          <textarea rows="4" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200">Two files: textstats.py exports word_count(text) and most_common(text). analyze.py reads sample.txt and writes results.json.</textarea>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-500">Generate using</span>
+            <select class="text-xs border border-slate-200 rounded-md px-2 py-1 bg-white">
+              <option>anthropic/claude-sonnet-4-5</option>
+              <option>openai/gpt-5</option>
+            </select>
+            <button class="ml-auto inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+              Generate
+            </button>
+          </div>
+          <div class="text-xs text-slate-500">Once generated, the proposed files appear in the Upload tab where you can edit, accept, or replace them.</div>
+        </div>
+
+      </section>
+    </div>
+
+    <div class="mt-8 flex items-center justify-between">
+      <a href="wizard-5-criteria.html" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Back</a>
+      <div class="flex items-center gap-3">
+        <button class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50">Save draft</button>
+        <a href="wizard-7-test.html"
+           class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md inline-flex items-center gap-2">
+          Next: Test
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('trainer');
+    SB.renderNav();
+    SB.renderWizardStepper(6);
+
+    const tabs = document.querySelectorAll('.tab-bar button');
+    const panels = { upload: document.getElementById('tab-upload'), editor: document.getElementById('tab-editor'), ai: document.getElementById('tab-ai') };
+    tabs.forEach(b => b.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      b.classList.add('active');
+      for (const k of Object.keys(panels)) panels[k].classList.add('hidden');
+      panels[b.dataset.tab].classList.remove('hidden');
+    }));
+  </script>
+</body>
+</html>

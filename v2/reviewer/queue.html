@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review queue - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-7xl px-6 py-8">
+
+    <header class="mb-6">
+      <h1 class="text-2xl font-bold tracking-tight">Review queue</h1>
+      <p class="text-sm text-slate-500 mt-1">Tasks waiting on your approval before they go live.</p>
+    </header>
+
+    <div class="tab-bar mb-4">
+      <button class="active">Pending <span class="text-xs bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 ml-1">3</span></button>
+      <button>Approved this week <span class="text-xs bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5 ml-1">12</span></button>
+      <button>All <span class="text-xs bg-slate-100 text-slate-700 rounded-full px-1.5 py-0.5 ml-1">87</span></button>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase tracking-wider">
+          <tr>
+            <th class="text-left px-4 py-3">Task</th>
+            <th class="text-left px-4 py-3">Prompter</th>
+            <th class="text-left px-4 py-3">Tester</th>
+            <th class="text-left px-4 py-3">Skills</th>
+            <th class="text-left px-4 py-3">Oracle</th>
+            <th class="text-left px-4 py-3">Difficulty</th>
+            <th class="text-left px-4 py-3">Waiting</th>
+            <th class="px-2 py-3"></th>
+          </tr>
+        </thead>
+        <tbody id="queue-rows" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('reviewer');
+    SB.renderNav();
+
+    const rows = document.getElementById('queue-rows');
+    const queue = [
+      { name: 'my-org/text-stats-pipeline', prompter: 'Jane Doe',  pInit: 'JD', tester: 'Tara Wu',   tInit: 'TW', oracle: 'pass', oracleLabel: 'Pass 1.0', diff: 'Medium', waiting: '1 hour ago',  skills: 2 },
+      { name: 'my-org/csv-validator',       prompter: 'Bob Lin',   pInit: 'BL', tester: 'Tara Wu',   tInit: 'TW', oracle: 'pass', oracleLabel: 'Pass 1.0', diff: 'Medium', waiting: '3 hours ago', skills: 1 },
+      { name: 'my-org/regex-builder',       prompter: 'Alice Park',pInit: 'AP', tester: 'Mark Roe',  tInit: 'MR', oracle: 'pass', oracleLabel: 'Pass 1.0', diff: 'Easy',   waiting: '1 day ago',   skills: 0 },
+    ];
+
+    queue.forEach((q, idx) => {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-50 cursor-pointer';
+      const pillCls = q.oracle === 'pass' ? 'pill-published' : 'pill-failed';
+      const skillCell = q.skills
+        ? `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+             ${q.skills}
+           </span>`
+        : '<span class="text-xs text-slate-400">-</span>';
+      tr.innerHTML = `
+        <td class="px-4 py-3">
+          <div class="font-medium text-slate-900">${q.name}</div>
+          <div class="text-xs text-slate-500 mt-0.5">v1.0 &middot; submitted ${q.waiting}</div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="flex items-center gap-2">
+            <div class="avatar" style="background: #4f46e5; width: 1.5rem; height: 1.5rem; font-size: 0.65rem">${q.pInit}</div>
+            <span>${q.prompter}</span>
+          </div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="flex items-center gap-2">
+            <div class="avatar" style="background: #10b981; width: 1.5rem; height: 1.5rem; font-size: 0.65rem">${q.tInit}</div>
+            <span>${q.tester}</span>
+          </div>
+        </td>
+        <td class="px-4 py-3">${skillCell}</td>
+        <td class="px-4 py-3"><span class="pill ${pillCls}">${q.oracleLabel}</span></td>
+        <td class="px-4 py-3">${q.diff}</td>
+        <td class="px-4 py-3 text-slate-500">${q.waiting}</td>
+        <td class="px-2 py-3 text-right text-slate-400">&rarr;</td>`;
+      tr.addEventListener('click', () => location.href = 'workspace.html?id=' + idx);
+      rows.appendChild(tr);
+    });
+  </script>
+</body>
+</html>

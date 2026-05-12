@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Tasks - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-7xl px-6 py-8">
+
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">My Tasks</h1>
+        <p class="text-sm text-slate-500 mt-1">Create, edit, and track tasks you have authored.</p>
+      </div>
+      <a href="wizard-1-template.html"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-sm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+        Create Task
+      </a>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="bg-white border border-slate-200 rounded-lg p-3 flex flex-wrap items-center gap-2 mb-4">
+      <div class="relative flex-1 min-w-[16rem]">
+        <span class="absolute inset-y-0 left-2 flex items-center text-slate-400">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </span>
+        <input type="text" placeholder="Search tasks..."
+               class="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400">
+      </div>
+      <select class="text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
+        <option>All statuses</option>
+        <option>Draft</option>
+        <option>In Review</option>
+        <option>Changes Requested</option>
+        <option>Approved</option>
+        <option>Published</option>
+      </select>
+      <select class="text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
+        <option>All categories</option>
+        <option>Programming</option>
+        <option>Data analysis</option>
+        <option>Web</option>
+      </select>
+      <select class="text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
+        <option>All difficulties</option>
+        <option>Easy</option>
+        <option>Medium</option>
+        <option>Hard</option>
+      </select>
+    </div>
+
+    <!-- Task table -->
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase tracking-wider">
+          <tr>
+            <th class="text-left px-4 py-3">Name</th>
+            <th class="text-left px-4 py-3">Status</th>
+            <th class="text-left px-4 py-3">Difficulty</th>
+            <th class="text-left px-4 py-3">Keywords</th>
+            <th class="text-left px-4 py-3">Edited</th>
+            <th class="px-2 py-3"></th>
+          </tr>
+        </thead>
+        <tbody id="task-rows" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+
+    <div class="mt-3 text-xs text-slate-500">Showing 5 of 5 tasks</div>
+
+    <!-- Tip card -->
+    <div class="mt-10 border border-indigo-100 bg-indigo-50/50 rounded-lg p-4 flex items-start gap-3">
+      <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      </div>
+      <div>
+        <div class="font-medium text-slate-900">Tip - Write tasks in your own words.</div>
+        <div class="text-sm text-slate-600 mt-1">
+          Describe what the AI agent should produce, not how you will check it. The wizard will guide you through the rest.
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('trainer');
+    SB.renderNav();
+
+    const STATUS_META = {
+      draft:     { label: 'Draft',             cls: 'pill-draft' },
+      review:    { label: 'In Review',         cls: 'pill-review' },
+      changes:   { label: 'Changes requested', cls: 'pill-changes' },
+      approved:  { label: 'Approved',          cls: 'pill-approved' },
+      published: { label: 'Published',         cls: 'pill-published' },
+      archived:  { label: 'Archived',          cls: 'pill-archived' },
+    };
+
+    const rows = document.getElementById('task-rows');
+    SBData.tasks.forEach(t => {
+      const status = STATUS_META[t.status] || STATUS_META.draft;
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-50 cursor-pointer';
+      tr.innerHTML = `
+        <td class="px-4 py-3">
+          <div class="font-medium text-slate-900">${t.name}</div>
+          <div class="text-xs text-slate-500 mt-0.5">${t.description}</div>
+        </td>
+        <td class="px-4 py-3"><span class="pill ${status.cls}">${status.label}</span></td>
+        <td class="px-4 py-3 text-slate-700 capitalize">${t.difficulty}</td>
+        <td class="px-4 py-3">
+          <div class="flex flex-wrap gap-1">
+            ${t.keywords.map(k => `<span class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${k}</span>`).join('')}
+          </div>
+        </td>
+        <td class="px-4 py-3 text-slate-500">${t.updatedAt}</td>
+        <td class="px-2 py-3 text-right">
+          <span class="text-slate-400">&rarr;</span>
+        </td>`;
+      tr.addEventListener('click', () => {
+        if (t.status === 'draft') {
+          location.href = 'wizard-1-template.html';
+        } else {
+          location.href = 'task-detail.html?id=' + t.id;
+        }
+      });
+      rows.appendChild(tr);
+    });
+  </script>
+</body>
+</html>

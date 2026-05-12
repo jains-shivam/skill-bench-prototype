@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New evaluation job - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-5xl px-6 py-8">
+
+    <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+      <a href="home.html" class="hover:text-slate-900">Evaluations</a>
+      <span>/</span>
+      <span class="text-slate-900 font-medium">New job</span>
+    </div>
+
+    <header class="mb-6">
+      <h1 class="text-2xl font-bold tracking-tight">Configure a new evaluation</h1>
+      <p class="text-sm text-slate-500 mt-1">Pick what to evaluate, choose agents, and set run parameters. We'll spin up Daytona sandboxes for each trial.</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_20rem] gap-6">
+
+      <section class="bg-white border border-slate-200 rounded-lg p-6 space-y-6">
+
+        <!-- What to evaluate -->
+        <div>
+          <div class="text-sm font-medium text-slate-700 mb-2">What to evaluate</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="border border-slate-200 rounded-md p-3 flex items-start gap-3 cursor-pointer hover:bg-slate-50">
+              <input type="radio" name="target" class="mt-0.5 accent-indigo-600">
+              <div>
+                <div class="font-medium text-slate-900">Single task</div>
+                <div class="text-xs text-slate-500">Run agents on one task you pick.</div>
+              </div>
+            </label>
+            <label class="border border-indigo-500 ring-2 ring-indigo-200 bg-indigo-50/40 rounded-md p-3 flex items-start gap-3 cursor-pointer">
+              <input type="radio" name="target" class="mt-0.5 accent-indigo-600" checked>
+              <div>
+                <div class="font-medium text-slate-900">Dataset</div>
+                <div class="text-xs text-slate-500">Run agents on a whole collection of tasks.</div>
+              </div>
+            </label>
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Dataset</label>
+            <select id="dataset" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white">
+              <option data-count="47">my-org/skill-bench-v1 (47 tasks)</option>
+              <option data-count="20">my-org/python-basics (20 tasks)</option>
+              <option data-count="120">my-org/comprehensive-suite (120 tasks)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Agents -->
+        <div>
+          <div class="text-sm font-medium text-slate-700 mb-2">Agents to compare</div>
+          <div id="agent-rows" class="space-y-2"></div>
+          <button id="add-agent" class="mt-3 inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+            Add agent
+          </button>
+        </div>
+
+        <!-- Skill mode -->
+        <div>
+          <div class="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+            <span>Skill mode</span>
+            <span class="text-xs px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 font-normal">Required - pick one</span>
+          </div>
+          <p class="text-xs text-slate-500 mb-3">Tasks in this dataset may include agent skills. Decide whether to inject them, skip them, or A/B test both.</p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="skill-mode-radios">
+            <label data-mode="with" class="border border-slate-200 rounded-md p-3 flex items-start gap-3 cursor-pointer hover:bg-slate-50">
+              <input type="radio" name="skill-mode" value="with" class="mt-0.5 accent-indigo-600">
+              <div>
+                <div class="font-medium text-slate-900 text-sm flex items-center gap-1.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-indigo-600"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+                  With skills
+                </div>
+                <div class="text-xs text-slate-500 mt-1">Mount <code>/skills</code> in the sandbox. Measures agent + skills.</div>
+              </div>
+            </label>
+            <label data-mode="without" class="border border-slate-200 rounded-md p-3 flex items-start gap-3 cursor-pointer hover:bg-slate-50">
+              <input type="radio" name="skill-mode" value="without" class="mt-0.5 accent-indigo-600">
+              <div>
+                <div class="font-medium text-slate-900 text-sm">Without skills</div>
+                <div class="text-xs text-slate-500 mt-1">Disable <code>skills_dir</code>. Measures the bare agent.</div>
+              </div>
+            </label>
+            <label data-mode="both" class="border border-slate-200 rounded-md p-3 flex items-start gap-3 cursor-pointer hover:bg-slate-50">
+              <input type="radio" name="skill-mode" value="both" class="mt-0.5 accent-indigo-600">
+              <div>
+                <div class="font-medium text-slate-900 text-sm">Both (A/B)</div>
+                <div class="text-xs text-slate-500 mt-1">Run each trial twice and compare. <b>Doubles cost.</b></div>
+              </div>
+            </label>
+          </div>
+          <div id="skill-mode-warning" class="hidden mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-3 py-2">
+            Please pick a skill mode before starting the job.
+          </div>
+        </div>
+
+        <!-- Run settings -->
+        <div>
+          <div class="text-sm font-medium text-slate-700 mb-2">Run settings</div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="border border-slate-200 rounded-md px-3 py-2">
+              <div class="text-xs text-slate-500">Attempts per task</div>
+              <select id="attempts" class="w-full mt-1 text-sm border-0 p-0 focus:outline-none focus:ring-0 bg-transparent">
+                <option>1</option><option>2</option><option selected>3</option><option>5</option>
+              </select>
+            </div>
+            <div class="border border-slate-200 rounded-md px-3 py-2">
+              <div class="text-xs text-slate-500">Concurrency</div>
+              <select id="concurrency" class="w-full mt-1 text-sm border-0 p-0 focus:outline-none focus:ring-0 bg-transparent">
+                <option>4</option><option selected>10</option><option>20</option><option>50</option>
+              </select>
+            </div>
+            <div class="border border-slate-200 rounded-md px-3 py-2">
+              <div class="text-xs text-slate-500">Provider</div>
+              <select id="provider" class="w-full mt-1 text-sm border-0 p-0 focus:outline-none focus:ring-0 bg-transparent">
+                <option selected>Daytona</option><option>Modal</option><option>Local Docker</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <aside class="space-y-4">
+        <div class="bg-white border border-slate-200 rounded-lg p-5 sticky top-20">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Estimate</div>
+          <dl class="text-sm space-y-2">
+            <div class="flex justify-between"><dt class="text-slate-500">Trials</dt><dd class="font-mono"><span id="est-trials">282</span></dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Time</dt><dd><span id="est-time">~25 min</span></dd></div>
+            <div class="flex justify-between text-base"><dt class="text-slate-700 font-medium">Cost</dt><dd class="font-semibold text-slate-900"><span id="est-cost">$42.30</span></dd></div>
+          </dl>
+          <div class="mt-4 text-xs text-slate-500">Estimates based on past runs of similar agents and dataset sizes.</div>
+
+          <div class="mt-5 space-y-2">
+            <button id="start-job" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md">
+              <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M8 5v14l11-7z"/></svg>
+              Start job
+            </button>
+            <a href="home.html" class="block text-center w-full px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50">Cancel</a>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('evaluator');
+    SB.renderNav();
+
+    const agents = [
+      { id: 'claude-code', model: 'anthropic/claude-sonnet-4-5' },
+      { id: 'cursor-cli',  model: 'cursor/claude-opus-4-7-high' },
+    ];
+
+    function renderAgents() {
+      const root = document.getElementById('agent-rows');
+      root.innerHTML = '';
+      agents.forEach((a, i) => {
+        const agent = SBData.agents.find(x => x.id === a.id) || SBData.agents[0];
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 border border-slate-200 rounded-md px-3 py-2 bg-white';
+        row.innerHTML = `
+          <select data-agent="${i}" class="text-sm border border-slate-200 rounded-md px-2 py-1 bg-white font-mono min-w-[10rem]">
+            ${SBData.agents.map(x => `<option value="${x.id}" ${x.id === a.id ? 'selected' : ''}>${x.name}</option>`).join('')}
+          </select>
+          <span class="text-xs text-slate-500">model</span>
+          <select data-model="${i}" class="text-sm border border-slate-200 rounded-md px-2 py-1 bg-white font-mono flex-1 min-w-[12rem]">
+            ${agent.models.map(m => `<option ${m === a.model ? 'selected' : ''}>${m}</option>`).join('')}
+          </select>
+          <button data-rm="${i}" class="text-slate-400 hover:text-red-500 ml-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>`;
+        root.appendChild(row);
+      });
+      root.querySelectorAll('[data-agent]').forEach(s => s.addEventListener('change', () => {
+        const i = Number(s.dataset.agent);
+        agents[i].id = s.value;
+        const m = (SBData.agents.find(x => x.id === s.value) || {}).models || [];
+        agents[i].model = m[0];
+        renderAgents(); updateEstimate();
+      }));
+      root.querySelectorAll('[data-model]').forEach(s => s.addEventListener('change', () => {
+        agents[Number(s.dataset.model)].model = s.value;
+      }));
+      root.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', () => {
+        agents.splice(Number(b.dataset.rm), 1);
+        renderAgents(); updateEstimate();
+      }));
+    }
+
+    document.getElementById('add-agent').addEventListener('click', () => {
+      const next = SBData.agents.find(a => !agents.some(x => x.id === a.id)) || SBData.agents[0];
+      agents.push({ id: next.id, model: next.models[0] });
+      renderAgents(); updateEstimate();
+    });
+
+    /* Skill mode handling */
+    function selectedSkillMode() {
+      const r = document.querySelector('input[name="skill-mode"]:checked');
+      return r ? r.value : null;
+    }
+    document.querySelectorAll('#skill-mode-radios label').forEach(label => {
+      label.addEventListener('click', () => {
+        document.querySelectorAll('#skill-mode-radios label').forEach(l => {
+          l.classList.remove('border-indigo-500', 'ring-2', 'ring-indigo-200', 'bg-indigo-50');
+        });
+        label.classList.add('border-indigo-500', 'ring-2', 'ring-indigo-200', 'bg-indigo-50');
+        document.getElementById('skill-mode-warning').classList.add('hidden');
+        setTimeout(updateEstimate, 0);
+      });
+    });
+
+    function updateEstimate() {
+      const ds = document.getElementById('dataset');
+      const taskCount = Number(ds.options[ds.selectedIndex].dataset.count) || 47;
+      const attempts = Number(document.getElementById('attempts').value);
+      const skillMode = selectedSkillMode();
+      const factor = skillMode === 'both' ? 2 : 1;
+      const trials = taskCount * Math.max(1, agents.length) * attempts * factor;
+      const concurrency = Number(document.getElementById('concurrency').value);
+      const minutes = Math.max(5, Math.round(trials * 2 / concurrency / 6) * 6);
+      const cost = trials * 0.15;
+      document.getElementById('est-trials').textContent = trials;
+      document.getElementById('est-time').textContent = '~' + minutes + ' min';
+      document.getElementById('est-cost').textContent = '$' + cost.toFixed(2);
+    }
+
+    document.getElementById('dataset').addEventListener('change', updateEstimate);
+    document.getElementById('attempts').addEventListener('change', updateEstimate);
+    document.getElementById('concurrency').addEventListener('change', updateEstimate);
+
+    renderAgents(); updateEstimate();
+
+    document.getElementById('start-job').addEventListener('click', () => {
+      const mode = selectedSkillMode();
+      if (!mode) {
+        document.getElementById('skill-mode-warning').classList.remove('hidden');
+        document.getElementById('skill-mode-radios').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        SB.toast('Pick a skill mode before starting.', 'error');
+        return;
+      }
+      SB.toast('Job started (skill mode: <b>' + mode + '</b>). Provisioning Daytona sandboxes...', 'success');
+      setTimeout(() => location.href = 'live-job.html?mode=' + mode, 1100);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create Task - Criteria - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-6xl px-6 py-6">
+
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="dashboard.html" class="hover:text-slate-900">My Tasks</a>
+        <span>/</span>
+        <span class="text-slate-900 font-medium">Create Task</span>
+      </div>
+      <a href="dashboard.html" class="text-sm text-slate-500 hover:text-slate-900">Save & Exit</a>
+    </div>
+
+    <div id="wizard-stepper" class="mb-8"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6">
+
+      <aside class="bg-white border border-slate-200 rounded-lg p-4 h-fit">
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Tips</div>
+        <ul class="text-sm text-slate-600 space-y-2 list-disc pl-4">
+          <li>Group related checks into <b>categories</b>. Each category becomes a separate score.</li>
+          <li>Pick from the criterion library - file checks, command checks, JSON checks, or an AI judge.</li>
+          <li><b>LLM judge</b> is great for subjective things like readability.</li>
+          <li>Use <b>weights</b> to express what matters most.</li>
+        </ul>
+      </aside>
+
+      <section class="space-y-4">
+
+        <div class="bg-white border border-slate-200 rounded-lg p-6 flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold text-slate-900">Grading criteria</h2>
+            <p class="text-sm text-slate-500 mt-1">How should the AI agent's work be graded?</p>
+          </div>
+          <button id="add-category"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-md hover:bg-slate-50">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+            Add category
+          </button>
+        </div>
+
+        <div id="categories" class="space-y-4"></div>
+
+        <!-- Summary -->
+        <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4 text-sm text-indigo-900 flex items-start gap-3">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 mt-0.5 shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <div>
+            <b>Total: <span id="total-criteria">0</span> criteria across <span id="total-cats">0</span> categories.</b>
+            Each category produces its own score; the trial reward is the per-category mean.
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <div class="mt-8 flex items-center justify-between">
+      <a href="wizard-4-environment.html" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Back</a>
+      <div class="flex items-center gap-3">
+        <button class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50">Save draft</button>
+        <a href="wizard-6-solution.html"
+           class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md inline-flex items-center gap-2">
+          Next: Solution
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Add criterion modal -->
+  <div id="criterion-modal" class="modal-overlay" hidden>
+    <div class="bg-white rounded-lg max-w-xl w-full max-h-[80vh] flex flex-col shadow-xl">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h3 class="font-semibold text-slate-900">Add a criterion</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Choose from the Reward Kit library.</p>
+        </div>
+        <button onclick="SB.closeModal('criterion-modal')" class="text-slate-400 hover:text-slate-700">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="px-5 py-3 border-b border-slate-200">
+        <div class="relative">
+          <span class="absolute inset-y-0 left-2 flex items-center text-slate-400">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </span>
+          <input id="crit-search" type="text" placeholder="Search criteria..."
+                 class="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        </div>
+      </div>
+      <div id="crit-list" class="flex-1 overflow-y-auto scroll-y px-5 py-3 space-y-3"></div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('trainer');
+    SB.renderNav();
+    SB.renderWizardStepper(5);
+
+    /* clone to allow mutation */
+    const categories = JSON.parse(JSON.stringify(SBData.wizardTask.criteria));
+    let modalTargetCategory = null;
+
+    const KIND_BADGE = {
+      file_exists: { label: 'Files', cls: 'bg-blue-100 text-blue-700' },
+      file_contains: { label: 'Files', cls: 'bg-blue-100 text-blue-700' },
+      file_contains_regex: { label: 'Files', cls: 'bg-blue-100 text-blue-700' },
+      files_equal: { label: 'Files', cls: 'bg-blue-100 text-blue-700' },
+      command_succeeds: { label: 'Commands', cls: 'bg-emerald-100 text-emerald-700' },
+      command_output: { label: 'Commands', cls: 'bg-emerald-100 text-emerald-700' },
+      json_key_equals: { label: 'Data', cls: 'bg-amber-100 text-amber-700' },
+      csv_cell_equals: { label: 'Data', cls: 'bg-amber-100 text-amber-700' },
+      llm_judge: { label: 'AI Judge', cls: 'bg-purple-100 text-purple-700' },
+      agent_judge: { label: 'AI Judge', cls: 'bg-purple-100 text-purple-700' },
+    };
+
+    function render() {
+      const root = document.getElementById('categories');
+      root.innerHTML = '';
+      let totalItems = 0;
+      categories.forEach((c, ci) => {
+        totalItems += c.items.length;
+        const card = document.createElement('div');
+        card.className = 'bg-white border border-slate-200 rounded-lg overflow-hidden';
+        card.innerHTML = `
+          <div class="px-5 py-3 border-b border-slate-200 flex items-center gap-3 bg-slate-50">
+            <div class="flex-1">
+              <div class="font-semibold text-slate-900">${c.name}</div>
+              <div class="text-xs text-slate-500">${c.items.length} criteri${c.items.length === 1 ? 'on' : 'a'}</div>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+              <label class="text-slate-500">Weight</label>
+              <input type="number" step="0.1" value="${c.weight}" class="w-16 px-2 py-1 text-sm border border-slate-200 rounded-md text-center">
+            </div>
+            <button data-rm-cat="${ci}" class="text-slate-400 hover:text-red-500" title="Remove category">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="divide-y divide-slate-100">
+            ${c.items.map((it, ii) => {
+              const b = KIND_BADGE[it.kind] || { label: '', cls: 'bg-slate-100 text-slate-700' };
+              return `
+                <div class="px-5 py-3 flex items-start gap-3">
+                  <div class="w-7 h-7 rounded-md bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M20 6 9 17l-5-5"/></svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="font-medium text-slate-900">${it.label}</span>
+                      <span class="text-xs px-1.5 py-0.5 rounded ${b.cls}">${b.label}</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-0.5 font-mono whitespace-pre-wrap">${it.config}</div>
+                  </div>
+                  <div class="text-xs text-slate-500 mr-2">weight ${it.weight}</div>
+                  <button data-rm-item="${ci}:${ii}" class="text-slate-400 hover:text-red-500" title="Remove">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>`;
+            }).join('')}
+          </div>
+          <div class="px-5 py-3 bg-slate-50 border-t border-slate-200">
+            <button data-add-item="${ci}" class="inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+              Add criterion
+            </button>
+          </div>`;
+        root.appendChild(card);
+      });
+
+      document.getElementById('total-criteria').textContent = totalItems;
+      document.getElementById('total-cats').textContent = categories.length;
+
+      root.querySelectorAll('[data-add-item]').forEach(b => {
+        b.addEventListener('click', () => {
+          modalTargetCategory = Number(b.dataset.addItem);
+          openCriterionPicker();
+        });
+      });
+      root.querySelectorAll('[data-rm-cat]').forEach(b => {
+        b.addEventListener('click', () => { categories.splice(Number(b.dataset.rmCat), 1); render(); });
+      });
+      root.querySelectorAll('[data-rm-item]').forEach(b => {
+        b.addEventListener('click', () => {
+          const [ci, ii] = b.dataset.rmItem.split(':').map(Number);
+          categories[ci].items.splice(ii, 1);
+          render();
+        });
+      });
+    }
+
+    function openCriterionPicker() {
+      const list = document.getElementById('crit-list');
+      const groups = {};
+      SBData.criteriaLibrary.forEach(c => {
+        (groups[c.group] = groups[c.group] || []).push(c);
+      });
+      list.innerHTML = '';
+      for (const [g, items] of Object.entries(groups)) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `<div class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">${g}</div>`;
+        items.forEach(c => {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'w-full text-left border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 rounded-md p-3 transition-colors flex items-start gap-3 mb-2';
+          row.innerHTML = `
+            <div class="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-600">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-slate-900">${c.name}</div>
+              <div class="text-xs text-slate-500">${c.desc}</div>
+            </div>
+          `;
+          row.addEventListener('click', () => {
+            categories[modalTargetCategory].items.push({
+              kind: c.id,
+              label: c.name,
+              config: 'Configure this criterion...',
+              weight: c.weight,
+            });
+            SB.closeModal('criterion-modal');
+            render();
+            SB.toast('Criterion added to <b>' + categories[modalTargetCategory].name + '</b>', 'success');
+          });
+          wrap.appendChild(row);
+        });
+        list.appendChild(wrap);
+      }
+      SB.openModal('criterion-modal');
+      document.getElementById('crit-search').focus();
+    }
+
+    document.getElementById('add-category').addEventListener('click', () => {
+      categories.push({ name: 'New category', weight: 1.0, items: [] });
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
