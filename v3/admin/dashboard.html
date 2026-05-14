@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-7xl px-6 py-8">
+
+    <header class="mb-6">
+      <h1 class="text-2xl font-bold tracking-tight">Admin</h1>
+      <p class="text-sm text-slate-500 mt-1">Manage users, templates, models, and usage.</p>
+    </header>
+
+    <!-- KPI row -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs text-slate-500 uppercase tracking-wider">Active users</div>
+        <div class="mt-1 text-2xl font-bold">24</div>
+        <div class="text-xs text-emerald-600">+4 this week</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs text-slate-500 uppercase tracking-wider">Tasks total</div>
+        <div class="mt-1 text-2xl font-bold">187</div>
+        <div class="text-xs text-slate-500">147 published</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs text-slate-500 uppercase tracking-wider">Daytona spend (mo)</div>
+        <div class="mt-1 text-2xl font-bold">$612</div>
+        <div class="text-xs text-slate-500">budget $1,500</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs text-slate-500 uppercase tracking-wider">LLM judge spend (mo)</div>
+        <div class="mt-1 text-2xl font-bold">$148</div>
+        <div class="text-xs text-slate-500">budget $400</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+      <!-- Users -->
+      <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+          <div class="font-medium">Users and roles</div>
+          <button class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">+ Invite</button>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase tracking-wider">
+            <tr>
+              <th class="text-left px-4 py-2">User</th>
+              <th class="text-left px-4 py-2">Role</th>
+              <th class="text-left px-4 py-2">Tasks</th>
+              <th class="px-2 py-2"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr><td class="px-4 py-2"><div class="flex items-center gap-2"><div class="avatar" style="background:#4f46e5;width:1.5rem;height:1.5rem;font-size:0.65rem">JD</div>Jane Doe</div></td><td>Trainer</td><td>14</td><td class="text-right text-slate-400">...</td></tr>
+            <tr><td class="px-4 py-2"><div class="flex items-center gap-2"><div class="avatar" style="background:#f59e0b;width:1.5rem;height:1.5rem;font-size:0.65rem">BS</div>Bob Smith</div></td><td>Reviewer</td><td>0</td><td class="text-right text-slate-400">...</td></tr>
+            <tr><td class="px-4 py-2"><div class="flex items-center gap-2"><div class="avatar" style="background:#10b981;width:1.5rem;height:1.5rem;font-size:0.65rem">CL</div>Carol Lee</div></td><td>Evaluator</td><td>0</td><td class="text-right text-slate-400">...</td></tr>
+            <tr><td class="px-4 py-2"><div class="flex items-center gap-2"><div class="avatar" style="background:#64748b;width:1.5rem;height:1.5rem;font-size:0.65rem">DP</div>Dave Patel</div></td><td>Admin</td><td>0</td><td class="text-right text-slate-400">...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Templates -->
+      <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+          <div class="font-medium">Template library</div>
+          <button class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">+ New template</button>
+        </div>
+        <ul class="divide-y divide-slate-100">
+          <li class="px-5 py-3 flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg></div>
+            <div class="flex-1">
+              <div class="font-medium">Python Script</div>
+              <div class="text-xs text-slate-500">v1.2 - 84 tasks created</div>
+            </div>
+            <span class="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Active</span>
+          </li>
+          <li class="px-5 py-3 flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg></div>
+            <div class="flex-1">
+              <div class="font-medium">Web App</div>
+              <div class="text-xs text-slate-500">v0.9 - 12 tasks created</div>
+            </div>
+            <span class="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded">Beta</span>
+          </li>
+          <li class="px-5 py-3 flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m4 17 6-6-6-6M12 19h8"/></svg></div>
+            <div class="flex-1">
+              <div class="font-medium">CLI Tool</div>
+              <div class="text-xs text-slate-500">v1.0 - 27 tasks created</div>
+            </div>
+            <span class="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Active</span>
+          </li>
+          <li class="px-5 py-3 flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M3 3v18h18M7 14l4-4 4 4 5-5"/></svg></div>
+            <div class="flex-1">
+              <div class="font-medium">Data Analysis</div>
+              <div class="text-xs text-slate-500">v1.1 - 41 tasks created</div>
+            </div>
+            <span class="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Active</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Model providers -->
+      <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+          <div class="font-medium">Model providers</div>
+          <button class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">+ Add</button>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase tracking-wider">
+            <tr>
+              <th class="text-left px-4 py-2">Provider</th>
+              <th class="text-left px-4 py-2">Key</th>
+              <th class="text-left px-4 py-2">Usage (mo)</th>
+              <th class="text-left px-4 py-2">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr><td class="px-4 py-2 font-mono">Anthropic</td><td>sk-ant-...4f9a</td><td>$284</td><td><span class="text-emerald-700">Active</span></td></tr>
+            <tr><td class="px-4 py-2 font-mono">OpenAI</td><td>sk-...7c2e</td><td>$148</td><td><span class="text-emerald-700">Active</span></td></tr>
+            <tr><td class="px-4 py-2 font-mono">Cursor</td><td>cur-...b9a1</td><td>$96</td><td><span class="text-emerald-700">Active</span></td></tr>
+            <tr><td class="px-4 py-2 font-mono">Google</td><td>(not configured)</td><td>$0</td><td><span class="text-slate-500">Inactive</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Usage / quotas -->
+      <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-200 font-medium">Usage and quotas</div>
+        <div class="p-5 space-y-4">
+          <div>
+            <div class="flex items-center justify-between text-sm mb-1"><span>Daytona sandbox-hours</span><span class="text-slate-500"><b>2,418</b> / 5,000</span></div>
+            <div class="progress-bar"><div style="width: 48%"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-sm mb-1"><span>LLM judge tokens</span><span class="text-slate-500"><b>3.2M</b> / 8M</span></div>
+            <div class="progress-bar"><div style="width: 40%; background: #10b981"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-sm mb-1"><span>Storage (task files + trajectories)</span><span class="text-slate-500"><b>184 GB</b> / 500 GB</span></div>
+            <div class="progress-bar"><div style="width: 37%; background: #f59e0b"></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="text-xs text-slate-500 mt-6">Admin screens shown here are a sketch. In v1 they connect to the platform DB and Daytona/LLM-provider APIs.</p>
+
+  </main>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('admin');
+    SB.renderNav();
+  </script>
+</body>
+</html>

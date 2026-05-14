@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tester - Environment - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-6xl px-6 py-6">
+
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="queue.html" class="hover:text-slate-900">Test queue</a>
+        <span>/</span>
+        <span class="text-slate-900 font-medium font-mono">my-org/text-stats-pipeline</span>
+      </div>
+      <a href="queue.html" class="text-sm text-slate-500 hover:text-slate-900">Save & Exit</a>
+    </div>
+
+    <div id="wizard-stepper" class="mb-6"></div>
+
+    <!-- Prompter context bar -->
+    <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4 mb-3 flex items-start gap-3">
+      <div class="avatar" style="background: #4f46e5; width: 1.75rem; height: 1.75rem; font-size: 0.7rem">JD</div>
+      <div class="flex-1 text-sm text-slate-700">
+        <b>Prompter (Jane Doe)</b> wrote the prompt + golden solution + attached <b>2 skills</b>.
+        <a href="#harbor-preview-section" class="text-indigo-700 underline ml-1">View Harbor preview</a>.
+        While you build the test infrastructure, the prompter can revise <code class="font-mono bg-white px-1 rounded border border-slate-200">instruction.md</code>, <code class="font-mono bg-white px-1 rounded border border-slate-200">environment/skills/</code>, or <code class="font-mono bg-white px-1 rounded border border-slate-200">solution/</code>.
+      </div>
+      <span class="pill pill-running">Status - Tester in progress</span>
+    </div>
+
+    <!-- Ownership banner -->
+    <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mb-3 flex items-start gap-3">
+      <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      </div>
+      <div class="flex-1 text-sm text-slate-700">
+        <div class="font-semibold text-emerald-900">Files you author in this step</div>
+        <div class="mt-1 flex flex-wrap gap-1.5">
+          <span class="inline-flex items-center gap-1 font-mono text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+            environment/Dockerfile
+          </span>
+          <span class="inline-flex items-center gap-1 font-mono text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700" title="Shared: prompter starts it in their Brief step, you can edit it here">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+            task.toml <span class="ml-0.5 text-[10px] uppercase tracking-wider">shared</span>
+          </span>
+        </div>
+        <div class="mt-1 text-xs text-slate-600">The Prompter has already filled the identity fields in <code class="font-mono bg-white px-1 rounded">task.toml</code>; you fill the execution fields below.</div>
+      </div>
+    </div>
+
+    <!-- Daytona safety banner -->
+    <div class="bg-violet-50 border border-violet-100 rounded-lg p-3 mb-4 flex items-start gap-3 text-sm">
+      <div class="w-8 h-8 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6z"/></svg>
+      </div>
+      <div class="flex-1 text-slate-700">
+        <b class="text-violet-900">Sandboxed in Daytona.</b> Anything you install in the Dockerfile (heavy ML libs, build toolchains, browsers) runs inside an isolated Daytona container. Our platform infra never sees the agent code.
+      </div>
+      <span class="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-violet-600 text-white">Daytona</span>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6">
+
+      <aside class="bg-white border border-slate-200 rounded-lg p-4 h-fit">
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Tips</div>
+        <ul class="text-sm text-slate-600 space-y-2 list-disc pl-4">
+          <li>Match what the agent will need to <b>do</b> the task - not what it needs to solve it.</li>
+          <li>Skill Bench will generate the Dockerfile for you - no manual editing required.</li>
+          <li>Click the prompter's view of the instruction/skills/solution in the right panel any time.</li>
+        </ul>
+      </aside>
+
+      <section class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+
+        <div class="px-6 pt-6">
+          <h2 class="text-lg font-semibold text-slate-900">Environment</h2>
+          <p class="text-sm text-slate-500 mt-1">Set up the sandbox where the agent will work.</p>
+        </div>
+
+        <div class="tab-bar px-6 pt-3">
+          <button data-tab="visual" class="active">Visual builder</button>
+          <button data-tab="upload">Upload Dockerfile</button>
+          <button data-tab="raw">Edit raw text</button>
+        </div>
+
+        <div id="tab-visual" class="p-6 space-y-6">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Base OS</label>
+            <select class="w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white">
+              <option>Ubuntu 24.04</option>
+              <option>Ubuntu 22.04</option>
+              <option>Debian 12</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Languages</label>
+            <div class="space-y-2">
+              <label class="flex items-center gap-3 px-3 py-2 text-sm border border-indigo-500 ring-2 ring-indigo-200 rounded-md bg-indigo-50">
+                <input type="checkbox" class="accent-indigo-600" checked>
+                <span class="flex-1">Python</span>
+                <select class="text-xs border border-slate-200 rounded px-2 py-1 bg-white">
+                  <option>3.12</option><option>3.11</option><option>3.10</option>
+                </select>
+              </label>
+              <label class="flex items-center gap-3 px-3 py-2 text-sm border border-slate-200 rounded-md bg-white">
+                <input type="checkbox" class="accent-indigo-600">
+                <span class="flex-1">Node.js</span>
+                <select class="text-xs border border-slate-200 rounded px-2 py-1 bg-white">
+                  <option>20</option><option>22</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Python packages</label>
+          <div id="pkg-chips" class="flex flex-wrap gap-2 mb-2"></div>
+          <div class="flex items-center gap-2 max-w-md">
+            <div class="relative flex-1">
+              <span class="absolute inset-y-0 left-2 flex items-center text-slate-400">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              </span>
+              <input id="pkg-input" type="text" placeholder="Search packages..."
+                     class="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400">
+            </div>
+            <button id="pkg-add" class="px-3 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">Add</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Files to include in the sandbox</label>
+          <div class="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center text-sm text-slate-500 hover:border-indigo-300 hover:bg-indigo-50/40 cursor-pointer">
+            <div class="flex flex-col items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6 text-slate-400"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              <div><span class="text-indigo-600 font-medium">Click to upload</span> or drag files here</div>
+            </div>
+          </div>
+          <div class="mt-3 space-y-1.5">
+            <div class="flex items-center gap-3 text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              <span class="font-mono">sample.txt</span>
+              <span class="text-xs text-slate-400">12 KB</span>
+              <button class="ml-auto text-slate-400 hover:text-red-500" title="Remove">&times;</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">Resources</label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="border border-slate-200 rounded-md px-3 py-2">
+              <div class="text-xs text-slate-500">CPU cores</div>
+              <select class="w-full mt-1 text-sm border-0 p-0 focus:outline-none focus:ring-0 bg-transparent">
+                <option>1</option><option>2</option><option>4</option><option>8</option>
+              </select>
+            </div>
+            <div class="border border-slate-200 rounded-md px-3 py-2">
+              <div class="text-xs text-slate-500">Memory</div>
+              <select class="w-full mt-1 text-sm border-0 p-0 focus:outline-none focus:ring-0 bg-transparent">
+                <option>1 GB</option><option selected>2 GB</option><option>4 GB</option><option>8 GB</option>
+              </select>
+            </div>
+            <div class="border border-slate-200 rounded-md px-3 py-2">
+              <div class="text-xs text-slate-500">Storage</div>
+              <select class="w-full mt-1 text-sm border-0 p-0 focus:outline-none focus:ring-0 bg-transparent">
+                <option selected>10 GB</option><option>20 GB</option><option>50 GB</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="flex items-center gap-3 text-sm">
+            <input type="checkbox" class="accent-indigo-600" checked>
+            <span>Allow internet access</span>
+          </label>
+          <label class="flex items-center gap-3 text-sm">
+            <input type="checkbox" class="accent-indigo-600">
+            <span>Needs GPU <span class="text-xs text-slate-400">(advanced)</span></span>
+          </label>
+        </div>
+
+        <details class="border-t border-slate-200 pt-4">
+          <summary class="cursor-pointer text-sm font-medium text-slate-700 hover:text-slate-900">Inspect generated Dockerfile</summary>
+          <pre id="generated-dockerfile" class="code-block mt-3">FROM ubuntu:24.04
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.12 python3-pip && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir pandas==2.2 numpy==1.26 pytest==8.4
+COPY sample.txt /app/
+</pre>
+        </details>
+        </div>
+
+        <!-- Tab: upload -->
+        <div id="tab-upload" class="p-6 space-y-4 hidden">
+          <div class="border-2 border-dashed border-slate-200 rounded-lg p-8 text-center hover:border-indigo-300 hover:bg-indigo-50/40 cursor-pointer">
+            <div class="flex flex-col items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-8 h-8 text-slate-400"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              <div class="text-sm text-slate-600"><span class="text-indigo-600 font-medium">Click to upload</span> or drag <code class="font-mono bg-slate-100 px-1 rounded">Dockerfile</code> here</div>
+              <div class="text-xs text-slate-400">Skips the visual builder. Your file lands at <code class="font-mono bg-slate-100 px-1 rounded">environment/Dockerfile</code> as-is.</div>
+            </div>
+          </div>
+          <div class="space-y-1.5">
+            <div class="text-sm font-medium text-slate-700 mb-1">Uploaded</div>
+            <div class="flex items-center gap-3 text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-emerald-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              <span class="font-mono flex-1">Dockerfile</span>
+              <span class="text-xs text-slate-400">312 B</span>
+              <button class="text-slate-400 hover:text-indigo-600 mr-2 text-xs">Preview</button>
+              <button class="text-slate-400 hover:text-red-500" title="Remove">&times;</button>
+            </div>
+          </div>
+          <div class="bg-amber-50 border border-amber-100 rounded-md px-3 py-2 text-xs text-amber-900 flex items-start gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 mt-0.5 shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            <div>
+              <b>Heads up</b> - when you upload, the visual builder fields above are disabled.
+              You are responsible for installing every package the agent needs.
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: raw editor -->
+        <div id="tab-raw" class="p-6 space-y-4 hidden">
+          <div class="flex items-center gap-2 text-sm">
+            <span class="font-medium text-slate-700">environment/Dockerfile</span>
+            <span class="text-xs text-slate-500">Edit directly. Saved to the Harbor folder verbatim.</span>
+            <button class="ml-auto text-xs px-2 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50" id="raw-load-generated">Load from visual builder</button>
+          </div>
+          <textarea id="raw-dockerfile" rows="14"
+                    class="w-full px-3 py-3 text-sm border border-slate-200 rounded-md font-mono focus:outline-none focus:ring-2 focus:ring-indigo-200">FROM ubuntu:24.04
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.12 python3-pip && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir pandas==2.2 numpy==1.26 pytest==8.4
+COPY sample.txt /app/
+</textarea>
+          <div class="text-xs text-slate-500">In the real product this is a syntax-highlighted Monaco editor with a "Validate Dockerfile" button.</div>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- task.toml co-author -->
+    <div class="mt-6 bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <div class="px-5 pt-5 flex items-start justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg font-semibold text-slate-900">task.toml</h2>
+            <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">shared</span>
+          </div>
+          <p class="text-sm text-slate-500 mt-1">
+            The Prompter filled the <b>identity</b> fields. You fill the <b>execution</b> fields - resources, timeouts, network, env vars. The same file goes to the Harbor folder.
+          </p>
+        </div>
+        <button id="toml-reset" class="text-xs text-slate-500 hover:text-slate-900">Reset to default</button>
+      </div>
+
+      <div class="tab-bar px-5 pt-3">
+        <button data-toml-tab="fields" class="active">Structured fields</button>
+        <button data-toml-tab="raw">Raw TOML</button>
+      </div>
+
+      <!-- Tab: structured fields -->
+      <div id="toml-tab-fields" class="p-5 space-y-5">
+        <!-- Prompter (read-only) -->
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider text-indigo-700 mb-2">Prompter section <span class="ml-1 text-[10px] px-1 py-0.5 rounded bg-slate-100 text-slate-500 normal-case">read-only</span></div>
+          <div class="bg-slate-50 border border-slate-100 rounded-md p-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div><span class="text-xs text-slate-500">name</span><div class="font-mono text-slate-900">my-org/text-stats-pipeline</div></div>
+            <div><span class="text-xs text-slate-500">description</span><div class="text-slate-900">Compute simple text statistics on a corpus and emit results.json.</div></div>
+            <div><span class="text-xs text-slate-500">category</span><div class="text-slate-900">data-analysis</div></div>
+            <div><span class="text-xs text-slate-500">difficulty</span><div class="text-slate-900">medium</div></div>
+            <div class="md:col-span-2"><span class="text-xs text-slate-500">tags</span><div class="text-slate-900">python, pandas, io, data-cleaning</div></div>
+          </div>
+        </div>
+
+        <!-- Tester (editable) -->
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider text-emerald-700 mb-2">Tester section <span class="ml-1 text-[10px] px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 normal-case">editable</span></div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-500">image (base)</label>
+              <select id="toml-image" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white">
+                <option>ubuntu:24.04</option>
+                <option>ubuntu:22.04</option>
+                <option>debian:12-slim</option>
+                <option>python:3.12-slim</option>
+                <option>node:20-bookworm</option>
+                <option>nvidia/cuda:12.4.0-runtime-ubuntu22.04</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500">language preset</label>
+              <select id="toml-lang" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white">
+                <option value="">None (Dockerfile decides)</option>
+                <option selected>Python 3.12 + pip</option>
+                <option>Python 3.11 + uv</option>
+                <option>Node 20 + npm</option>
+                <option>Go 1.22</option>
+                <option>Java 21 + Maven</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500">cpu</label>
+              <select id="toml-cpu" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white">
+                <option>1</option><option selected>2</option><option>4</option><option>8</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500">memory</label>
+              <select id="toml-mem" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white">
+                <option>1 GB</option><option selected>2 GB</option><option>4 GB</option><option>8 GB</option><option>16 GB</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500">disk</label>
+              <select id="toml-disk" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white">
+                <option selected>10 GB</option><option>20 GB</option><option>50 GB</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500">gpu</label>
+              <select id="toml-gpu" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white">
+                <option selected value="false">false</option>
+                <option value="true">true</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500">run timeout (sec)</label>
+              <input id="toml-run-to" type="number" value="900" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500">test timeout (sec)</label>
+              <input id="toml-test-to" type="number" value="120" class="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs text-slate-500">network</label>
+              <div class="flex items-center gap-3 mt-1 text-sm">
+                <label class="inline-flex items-center gap-2"><input type="radio" name="net" value="open" checked class="accent-indigo-600"> open</label>
+                <label class="inline-flex items-center gap-2"><input type="radio" name="net" value="allowlist" class="accent-indigo-600"> allowlist</label>
+                <label class="inline-flex items-center gap-2"><input type="radio" name="net" value="off" class="accent-indigo-600"> no internet</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Env vars -->
+          <div class="mt-5">
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-xs text-slate-500">env vars</label>
+              <button id="env-add" class="text-xs text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3"><path d="M12 5v14M5 12h14"/></svg>
+                Add env var
+              </button>
+            </div>
+            <div id="env-rows" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: raw TOML -->
+      <div id="toml-tab-raw" hidden class="p-5 space-y-3">
+        <div class="text-xs text-slate-500">Escape hatch: edit the raw <code class="font-mono bg-slate-100 px-1 rounded">task.toml</code> directly. The structured fields above will go out of sync until you re-save.</div>
+        <textarea id="toml-raw" rows="18"
+                  class="w-full px-3 py-3 text-sm border border-slate-200 rounded-md font-mono focus:outline-none focus:ring-2 focus:ring-indigo-200"></textarea>
+      </div>
+    </div>
+
+    <!-- Harbor preview at end of every tester step -->
+    <div id="harbor-preview-section" class="mt-6 bg-white border border-slate-200 rounded-lg p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="font-semibold text-slate-900">Full Harbor preview</div>
+          <div class="text-xs text-slate-500">Updates as you fill in the form.</div>
+        </div>
+      </div>
+      <div id="harbor-preview"></div>
+    </div>
+
+    <div class="mt-8 flex items-center justify-between">
+      <a href="queue.html" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Back to queue</a>
+      <div class="flex items-center gap-3">
+        <button class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50">Save draft</button>
+        <a href="wizard-2-solution.html"
+           class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md inline-flex items-center gap-2">
+          Next: Solution review
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('tester');
+    SB.renderNav();
+    SB.renderWizardStepper(1, 'tester');
+
+    const pkgs = SBData.wizardTask.environment.packages.map(p => `${p.name} ${p.version}`);
+    const chipsRoot = document.getElementById('pkg-chips');
+    function renderChips() {
+      chipsRoot.innerHTML = '';
+      pkgs.forEach((p, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-sm px-2 py-1 rounded-md font-mono';
+        chip.innerHTML = `${p} <button data-i="${i}" class="text-slate-400 hover:text-red-500">&times;</button>`;
+        chipsRoot.appendChild(chip);
+      });
+      chipsRoot.querySelectorAll('button').forEach(b => {
+        b.addEventListener('click', () => { pkgs.splice(Number(b.dataset.i), 1); renderChips(); });
+      });
+    }
+    renderChips();
+
+    const input = document.getElementById('pkg-input');
+    function addPkg() {
+      const v = input.value.trim();
+      if (v) { pkgs.push(v.includes(' ') ? v : v + ' latest'); renderChips(); }
+      input.value = '';
+    }
+    document.getElementById('pkg-add').addEventListener('click', addPkg);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addPkg(); } });
+
+    /* Harbor preview - criteria empty because not yet defined; oracle pending. */
+    const task = JSON.parse(JSON.stringify(SBData.wizardTask));
+    task.criteria = [];
+    task.oraclePassed = false;
+    SB.renderHarborPreview('harbor-preview', task, { initial: 'environment/Dockerfile', role: 'tester' });
+
+    /* Tab switcher: Visual builder / Upload Dockerfile / Edit raw */
+    const envTabs = document.querySelectorAll('.tab-bar button[data-tab]');
+    const envPanels = { visual: document.getElementById('tab-visual'), upload: document.getElementById('tab-upload'), raw: document.getElementById('tab-raw') };
+    envTabs.forEach(b => b.addEventListener('click', () => {
+      envTabs.forEach(t => t.classList.remove('active'));
+      b.classList.add('active');
+      for (const k of Object.keys(envPanels)) envPanels[k].classList.add('hidden');
+      envPanels[b.dataset.tab].classList.remove('hidden');
+    }));
+    document.getElementById('raw-load-generated').addEventListener('click', () => {
+      document.getElementById('raw-dockerfile').value = document.getElementById('generated-dockerfile').textContent;
+      SB.toast('Loaded Dockerfile from visual builder.', 'success');
+    });
+
+    /* --------------------- task.toml co-author wiring --------------------- */
+    const envVars = [
+      { key: 'PYTHONUNBUFFERED', value: '1', secret: false },
+    ];
+    const envRowsEl = document.getElementById('env-rows');
+
+    function renderEnvRows() {
+      envRowsEl.innerHTML = '';
+      envVars.forEach((e, i) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2';
+        row.innerHTML = `
+          <input value="${e.key}" placeholder="KEY"
+                 class="flex-1 px-2 py-1.5 text-sm font-mono border border-slate-200 rounded-md" data-i="${i}" data-f="key">
+          <input value="${e.value}" placeholder="value" type="${e.secret ? 'password' : 'text'}"
+                 class="flex-1 px-2 py-1.5 text-sm font-mono border border-slate-200 rounded-md" data-i="${i}" data-f="value">
+          <label class="text-xs text-slate-500 inline-flex items-center gap-1">
+            <input type="checkbox" ${e.secret ? 'checked' : ''} class="accent-indigo-600" data-i="${i}" data-f="secret">
+            secret
+          </label>
+          <button data-i="${i}" data-del class="text-slate-400 hover:text-red-500 px-1">&times;</button>`;
+        envRowsEl.appendChild(row);
+      });
+      syncRawToml();
+    }
+    envRowsEl.addEventListener('input', (e) => {
+      const i = e.target.dataset.i;
+      const f = e.target.dataset.f;
+      if (i == null) return;
+      if (f === 'secret') envVars[i][f] = e.target.checked;
+      else envVars[i][f] = e.target.value;
+      syncRawToml();
+    });
+    envRowsEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-del]');
+      if (b) { envVars.splice(+b.dataset.i, 1); renderEnvRows(); }
+    });
+    document.getElementById('env-add').addEventListener('click', () => {
+      envVars.push({ key: '', value: '', secret: false });
+      renderEnvRows();
+    });
+
+    function buildTomlText() {
+      const image  = document.getElementById('toml-image').value;
+      const lang   = document.getElementById('toml-lang').value;
+      const cpu    = document.getElementById('toml-cpu').value;
+      const mem    = document.getElementById('toml-mem').value.split(' ')[0];
+      const disk   = document.getElementById('toml-disk').value.split(' ')[0];
+      const gpu    = document.getElementById('toml-gpu').value;
+      const runTo  = document.getElementById('toml-run-to').value;
+      const testTo = document.getElementById('toml-test-to').value;
+      const net    = (document.querySelector('input[name=net]:checked') || {}).value || 'open';
+      const envBlock = envVars.length
+        ? '\n[env_vars]\n' + envVars.filter(e => e.key).map(e => `${e.key} = "${e.secret ? '${SECRET}' : e.value}"`).join('\n') + '\n'
+        : '';
+      return `# Prompter section (identity)
+name        = "my-org/text-stats-pipeline"
+description = "Compute simple text statistics on a corpus and emit results.json."
+category    = "data-analysis"
+difficulty  = "medium"
+tags        = ["python", "pandas", "io", "data-cleaning"]
+
+# Tester section (execution)
+[environment]
+image     = "${image}"
+language  = "${lang || 'none'}"
+
+[resources]
+cpu     = ${cpu}
+memory  = "${mem} GB"
+disk    = "${disk} GB"
+gpu     = ${gpu}
+
+[timeouts]
+run_sec  = ${runTo}
+test_sec = ${testTo}
+
+[network]
+mode = "${net}"
+${envBlock}`;
+    }
+
+    function syncRawToml() {
+      const ta = document.getElementById('toml-raw');
+      if (ta) ta.value = buildTomlText();
+    }
+
+    /* Live update raw TOML as fields change */
+    ['toml-image','toml-lang','toml-cpu','toml-mem','toml-disk','toml-gpu','toml-run-to','toml-test-to'].forEach(id => {
+      document.getElementById(id).addEventListener('change', syncRawToml);
+      document.getElementById(id).addEventListener('input', syncRawToml);
+    });
+    document.querySelectorAll('input[name=net]').forEach(el => el.addEventListener('change', syncRawToml));
+
+    /* Tab switcher: structured / raw */
+    const tomlTabs = document.querySelectorAll('button[data-toml-tab]');
+    const tomlPanels = { fields: document.getElementById('toml-tab-fields'), raw: document.getElementById('toml-tab-raw') };
+    tomlTabs.forEach(b => b.addEventListener('click', () => {
+      tomlTabs.forEach(t => t.classList.remove('active'));
+      b.classList.add('active');
+      for (const k of Object.keys(tomlPanels)) {
+        if (b.dataset.tomlTab === k) tomlPanels[k].removeAttribute('hidden');
+        else tomlPanels[k].setAttribute('hidden','');
+      }
+    }));
+
+    document.getElementById('toml-reset').addEventListener('click', () => {
+      SB.toast('Reset to defaults.', 'info');
+    });
+
+    renderEnvRows();
+    syncRawToml();
+  </script>
+</body>
+</html>

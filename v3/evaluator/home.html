@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Evaluations - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-7xl px-6 py-8">
+
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Evaluations</h1>
+        <p class="text-sm text-slate-500 mt-1">Run agents on Skill Bench tasks via Daytona sandboxes.</p>
+      </div>
+      <a href="new-job.html"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-sm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+        New evaluation job
+      </a>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs text-slate-500 uppercase tracking-wider">Jobs run</div>
+        <div class="mt-1 text-2xl font-bold">28</div>
+        <div class="text-xs text-emerald-600">+4 this week</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs text-slate-500 uppercase tracking-wider">Trials</div>
+        <div class="mt-1 text-2xl font-bold">12,408</div>
+        <div class="text-xs text-slate-500">across 4 agents</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs text-slate-500 uppercase tracking-wider">Avg pass rate</div>
+        <div class="mt-1 text-2xl font-bold">71%</div>
+        <div class="text-xs text-emerald-600">+3% vs last month</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs text-slate-500 uppercase tracking-wider">Spend this month</div>
+        <div class="mt-1 text-2xl font-bold">$612</div>
+        <div class="text-xs text-slate-500">budget $1,500</div>
+      </div>
+    </div>
+
+    <!-- Jobs table -->
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+        <div class="font-medium">Recent jobs</div>
+        <div class="flex items-center gap-2">
+          <input type="text" placeholder="Search jobs..." class="px-3 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200">
+          <select class="px-3 py-1.5 text-sm border border-slate-200 rounded-md bg-white">
+            <option>All statuses</option><option>Running</option><option>Completed</option>
+          </select>
+        </div>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase tracking-wider">
+          <tr>
+            <th class="text-left px-4 py-3">Name</th>
+            <th class="text-left px-4 py-3">Dataset</th>
+            <th class="text-left px-4 py-3">Agents</th>
+            <th class="text-left px-4 py-3">Skills</th>
+            <th class="text-left px-4 py-3">Pass rate</th>
+            <th class="text-left px-4 py-3">Status</th>
+            <th class="text-left px-4 py-3">Started</th>
+            <th class="text-left px-4 py-3">Cost</th>
+            <th class="px-2 py-3"></th>
+          </tr>
+        </thead>
+        <tbody id="jobs" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('evaluator');
+    SB.renderNav();
+
+    const tbody = document.getElementById('jobs');
+    SBData.evalJobs.forEach(j => {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-50 cursor-pointer';
+      const passRates = Object.entries(j.passRates).map(([k, v]) => `<span class="text-xs text-slate-700"><b>${k}</b> ${(v*100).toFixed(0)}%</span>`).join('  ');
+      const statusPill = j.status === 'running'
+        ? `<span class="pill pill-running"><span class="live-dot mr-1"></span>Running ${(j.progress*100).toFixed(0)}%</span>`
+        : `<span class="pill pill-published">Completed</span>`;
+      const skillBadgeMap = {
+        with:    '<span class="text-xs px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">with</span>',
+        without: '<span class="text-xs px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">without</span>',
+        both:    '<span class="text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">A/B</span>',
+      };
+      tr.innerHTML = `
+        <td class="px-4 py-3">
+          <div class="font-medium text-slate-900">${j.name}</div>
+          <div class="text-xs text-slate-500">Job ${j.id}</div>
+        </td>
+        <td class="px-4 py-3 font-mono text-xs">${j.dataset}</td>
+        <td class="px-4 py-3">
+          <div class="flex flex-wrap gap-1">
+            ${j.agents.map(a => `<span class="text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono">${a}</span>`).join('')}
+          </div>
+        </td>
+        <td class="px-4 py-3">${skillBadgeMap[j.skillMode] || ''}</td>
+        <td class="px-4 py-3 space-x-2">${passRates}</td>
+        <td class="px-4 py-3">${statusPill}</td>
+        <td class="px-4 py-3 text-slate-500">${j.startedAt}</td>
+        <td class="px-4 py-3">${j.cost}</td>
+        <td class="px-2 py-3 text-right text-slate-400">&rarr;</td>`;
+      tr.addEventListener('click', () => {
+        location.href = j.status === 'running' ? 'live-job.html' : 'comparison.html';
+      });
+      tbody.appendChild(tr);
+    });
+  </script>
+</body>
+</html>

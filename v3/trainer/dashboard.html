@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Prompts - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-7xl px-6 py-8">
+
+    <div class="flex items-center gap-2 text-sm text-slate-500 mb-3">
+      <a href="../projects/list.html" class="hover:text-slate-900">Projects</a>
+      <span>/</span>
+      <a href="../projects/detail.html?project=acme-coding" class="hover:text-slate-900">Acme Coding</a>
+      <span>/</span>
+      <a href="../batches/detail.html?project=acme-coding&batch=sprint-3" class="hover:text-slate-900">Sprint 3</a>
+      <span>/</span>
+      <span class="text-slate-900 font-medium">My Prompts</span>
+    </div>
+
+    <div class="flex items-end justify-between mb-2">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">My Prompts in this batch</h1>
+        <p class="text-sm text-slate-500 mt-1">Scoped to <b class="text-slate-700">Acme Coding / Sprint 3</b>. Switch batch via the workspace switcher in the top nav.</p>
+      </div>
+      <a href="wizard-1-template.html"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-sm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+        New prompt
+      </a>
+    </div>
+
+    <!-- Workflow strip -->
+    <div class="flex flex-wrap items-center gap-1 mt-3 mb-5 text-xs text-slate-500">
+      <span class="px-2 py-1 rounded bg-indigo-100 text-indigo-700 font-medium">You: Prompter</span>
+      <span>&rarr;</span>
+      <span class="px-2 py-1 rounded bg-slate-100 text-slate-600">Tester adds env + criteria</span>
+      <span>&rarr;</span>
+      <span class="px-2 py-1 rounded bg-slate-100 text-slate-600">Reviewer approves</span>
+      <span>&rarr;</span>
+      <span class="px-2 py-1 rounded bg-slate-100 text-slate-600">Published to Harbor registry</span>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="bg-white border border-slate-200 rounded-lg p-3 flex flex-wrap items-center gap-2 mb-4">
+      <div class="relative flex-1 min-w-[16rem]">
+        <span class="absolute inset-y-0 left-2 flex items-center text-slate-400">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </span>
+        <input type="text" placeholder="Search prompts..."
+               class="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400">
+      </div>
+      <select class="text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
+        <option>All statuses</option>
+        <option>Prompter draft</option>
+        <option>Ready for tester</option>
+        <option>Tester in progress</option>
+        <option>In review</option>
+        <option>Changes requested</option>
+        <option>Approved</option>
+        <option>Published</option>
+      </select>
+      <select class="text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
+        <option>All difficulties</option>
+        <option>Easy</option>
+        <option>Medium</option>
+        <option>Hard</option>
+      </select>
+      <select class="text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
+        <option>All skills</option>
+        <option>With skills</option>
+        <option>Without skills</option>
+      </select>
+    </div>
+
+    <!-- Task table -->
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase tracking-wider">
+          <tr>
+            <th class="text-left px-4 py-3">Name</th>
+            <th class="text-left px-4 py-3">Status</th>
+            <th class="text-left px-4 py-3">Skills</th>
+            <th class="text-left px-4 py-3">Owner</th>
+            <th class="text-left px-4 py-3">Edited</th>
+            <th class="px-2 py-3"></th>
+          </tr>
+        </thead>
+        <tbody id="task-rows" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+
+    <div class="mt-3 text-xs text-slate-500">Showing <span id="visible-count">0</span> prompts</div>
+
+    <!-- Tip card -->
+    <div class="mt-10 border border-indigo-100 bg-indigo-50/50 rounded-lg p-4 flex items-start gap-3">
+      <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      </div>
+      <div>
+        <div class="font-medium text-slate-900">Tip - You can submit as soon as you have a prompt + golden solution.</div>
+        <div class="text-sm text-slate-600 mt-1">
+          You do not need to write the environment, tests, or Oracle log - a tester picks that up from your draft. Skills are optional.
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('prompter');
+    SB.renderNav();
+
+    const rows = document.getElementById('task-rows');
+    const visible = SBData.tasks;
+
+    const ACTIONS = {
+      'prompter-draft':     { label: 'Continue draft',  href: 'wizard-1-template.html', kind: 'primary' },
+      'ready-for-test':     { label: 'Revise my parts', href: 'revise.html',            kind: 'subtle'  },
+      'tester-in-progress': { label: 'Revise my parts', href: 'revise.html',            kind: 'primary' },
+      'in-review':          { label: 'View',            href: 'task-detail.html',       kind: 'subtle'  },
+      'changes-requested':  { label: 'Address changes', href: 'revise.html',            kind: 'primary' },
+      'approved':           { label: 'View',            href: 'task-detail.html',       kind: 'subtle'  },
+      'published':          { label: 'View',            href: 'task-detail.html',       kind: 'subtle'  },
+      'archived':           { label: 'View',            href: 'task-detail.html',       kind: 'subtle'  },
+    };
+
+    visible.forEach(t => {
+      const status = SBData.STATUS[t.status] || SBData.STATUS['prompter-draft'];
+      const ownerLabel = status.owner ? (status.owner === 'prompter' ? 'You' : (status.owner === 'tester' && t.tester ? t.tester.name : status.owner)) : '-';
+      const skillsCell = t.hasSkills
+        ? `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+             ${t.skillsCount} skill${t.skillsCount === 1 ? '' : 's'}
+           </span>`
+        : '<span class="text-xs text-slate-400">-</span>';
+      const action = ACTIONS[t.status] || ACTIONS['prompter-draft'];
+      const actionCls = action.kind === 'primary'
+        ? 'text-xs font-medium px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white'
+        : 'text-xs text-slate-500 hover:text-slate-900';
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-50';
+      tr.innerHTML = `
+        <td class="px-4 py-3">
+          <div class="font-medium text-slate-900 cursor-pointer hover:text-indigo-700" data-go="${action.href}?id=${t.id}">${t.name}</div>
+          <div class="text-xs text-slate-500 mt-0.5">${t.description}</div>
+        </td>
+        <td class="px-4 py-3"><span class="pill ${status.cls}">${status.label}</span></td>
+        <td class="px-4 py-3">${skillsCell}</td>
+        <td class="px-4 py-3 text-slate-700">${ownerLabel}</td>
+        <td class="px-4 py-3 text-slate-500">${t.updatedAt}</td>
+        <td class="px-2 py-3 text-right">
+          <a class="${actionCls}" href="${action.href}?id=${t.id}">${action.label} &rarr;</a>
+        </td>`;
+      const goEl = tr.querySelector('[data-go]');
+      if (goEl) goEl.addEventListener('click', () => { location.href = goEl.dataset.go; });
+      rows.appendChild(tr);
+    });
+    document.getElementById('visible-count').textContent = visible.length;
+  </script>
+</body>
+</html>

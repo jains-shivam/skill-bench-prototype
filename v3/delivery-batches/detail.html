@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Delivery Batch - Skill Bench V3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-6xl px-6 py-6">
+
+    <div class="flex items-center gap-2 text-sm text-slate-500 mb-3">
+      <a href="../projects/list.html" class="hover:text-slate-900">Projects</a>
+      <span>/</span>
+      <a id="proj-crumb" href="#" class="hover:text-slate-900">...</a>
+      <span>/</span>
+      <a id="batch-crumb" href="#" class="hover:text-slate-900">...</a>
+      <span>/</span>
+      <span class="text-slate-900 font-medium">Delivery</span>
+    </div>
+
+    <!-- Header -->
+    <div class="bg-white border border-slate-200 rounded-lg p-5 mb-4 flex flex-wrap items-start gap-4 justify-between">
+      <div class="min-w-0 flex-1">
+        <div class="text-xs text-slate-500 mb-1" id="d-recipient"></div>
+        <h1 id="d-name" class="text-2xl font-semibold text-slate-900"></h1>
+        <div class="text-sm text-slate-500 mt-1">
+          A frozen, packaged subset of approved tasks. Once delivered, the bundle is immutable - any further changes go into a new delivery batch.
+        </div>
+      </div>
+      <div class="flex flex-col items-end gap-2">
+        <span id="d-status-pill" class="pill pill-running"></span>
+        <div class="flex items-center gap-2">
+          <button class="text-xs px-3 py-1.5 rounded bg-white border border-slate-200 hover:bg-slate-50">Download bundle</button>
+          <button id="deliver-btn" class="text-xs px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium">Mark as delivered</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs text-slate-500">Tasks in delivery</div>
+        <div class="text-2xl font-semibold text-slate-900" id="d-count">0</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs text-slate-500">Bundle size</div>
+        <div class="text-2xl font-semibold text-slate-900">14.2 MB</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs text-slate-500">Created</div>
+        <div class="text-base font-medium text-slate-900">2026-05-12</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-xs text-slate-500">Delivered at</div>
+        <div class="text-base font-medium text-slate-900" id="d-deliveredAt">-</div>
+      </div>
+    </div>
+
+    <!-- Manifest -->
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <div class="font-medium text-slate-900">Manifest</div>
+          <div class="text-xs text-slate-500">Each row is one approved task pinned to a specific Harbor task package hash.</div>
+        </div>
+        <div class="text-xs text-slate-500" id="manifest-count"></div>
+      </div>
+      <table class="min-w-full text-sm">
+        <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+          <tr>
+            <th class="text-left px-4 py-2">Task</th>
+            <th class="text-left px-4 py-2">Skills</th>
+            <th class="text-left px-4 py-2">Reviewer</th>
+            <th class="text-left px-4 py-2">Approved</th>
+            <th class="text-left px-4 py-2">Package hash</th>
+          </tr>
+        </thead>
+        <tbody id="manifest-rows" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+
+    <!-- Note -->
+    <div class="mt-4 bg-emerald-50 border border-emerald-100 rounded-lg p-4 text-sm text-emerald-900 flex items-start gap-3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 mt-0.5 shrink-0"><path d="M20 6 9 17l-5-5"/></svg>
+      <div>
+        <b>Reproducible.</b> Each entry pins a sha256 of the task folder + each skill version, so the recipient can verify they got exactly what we approved.
+      </div>
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole((new URLSearchParams(location.search).get('as')) || 'pm');
+    SB.renderNav();
+
+    const id = new URLSearchParams(location.search).get('id') || 'db1';
+    const d = SBData.deliveryBatches.find(x => x.id === id) || SBData.deliveryBatches[0];
+    const b = SBData.batches.find(x => x.id === d.batchId) || SBData.batches[0];
+    const p = SBData.projects.find(x => x.slug === b.projectSlug) || SBData.projects[0];
+
+    document.getElementById('proj-crumb').textContent = p.name;
+    document.getElementById('proj-crumb').href = '../projects/detail.html?project=' + encodeURIComponent(p.slug);
+    document.getElementById('batch-crumb').textContent = b.name;
+    document.getElementById('batch-crumb').href = '../batches/detail.html?project=' + encodeURIComponent(p.slug) + '&batch=' + encodeURIComponent(b.slug);
+    document.getElementById('d-name').textContent = d.name;
+    document.getElementById('d-recipient').textContent = 'Recipient: ' + d.recipient;
+    document.getElementById('d-count').textContent = d.tasksCount;
+    document.getElementById('d-deliveredAt').textContent = d.deliveredAt || 'not yet';
+
+    const pill = document.getElementById('d-status-pill');
+    pill.textContent = d.status;
+    pill.className = 'pill ' + (d.status === 'delivered' ? 'pill-passed' : 'pill-pending');
+    if (d.status === 'delivered') document.getElementById('deliver-btn').setAttribute('disabled','');
+
+    /* Manifest: take first N tasks for the mock */
+    const rows = document.getElementById('manifest-rows');
+    const sample = SBData.tasks.slice(0, d.tasksCount);
+    document.getElementById('manifest-count').textContent = sample.length + ' tasks';
+    sample.forEach(t => {
+      const sha = 'a3' + Math.random().toString(16).slice(2,14);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="px-4 py-2">
+          <div class="font-medium text-slate-900">${t.name}</div>
+          <div class="text-xs text-slate-500">${t.description || ''}</div>
+        </td>
+        <td class="px-4 py-2">${t.hasSkills ? `<span class="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">${t.skillsCount}</span>` : '<span class="text-xs text-slate-400">-</span>'}</td>
+        <td class="px-4 py-2 text-slate-700">Bob Smith</td>
+        <td class="px-4 py-2 text-slate-500">2026-05-10</td>
+        <td class="px-4 py-2 font-mono text-[11px] text-slate-500">${sha}</td>`;
+      rows.appendChild(tr);
+    });
+
+    const dbtn = document.getElementById('deliver-btn');
+    if (dbtn && !dbtn.hasAttribute('disabled')) {
+      dbtn.addEventListener('click', () => {
+        SB.toast('Delivery bundle marked as delivered to ' + d.recipient + '.', 'success');
+        pill.textContent = 'delivered';
+        pill.className = 'pill pill-passed';
+        dbtn.setAttribute('disabled','');
+        dbtn.textContent = 'Delivered';
+      });
+    }
+  </script>
+</body>
+</html>

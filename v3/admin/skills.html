@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skills Lifecycle - Admin - Skill Bench V3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-7xl px-6 py-6">
+
+    <div class="flex items-center gap-2 text-sm text-slate-500 mb-3">
+      <a href="dashboard.html" class="hover:text-slate-900">Admin</a>
+      <span>/</span>
+      <span class="text-slate-900 font-medium">Skills lifecycle</span>
+    </div>
+
+    <div class="flex items-start justify-between mb-5">
+      <div>
+        <h1 class="text-2xl font-semibold text-slate-900">Skills lifecycle</h1>
+        <p class="text-sm text-slate-500 mt-1">Manage org-wide skills: review drafts, publish new versions, deprecate or archive legacy entries. Skill versions are immutable so downstream tasks stay reproducible.</p>
+      </div>
+      <button id="new-skill" class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+        New skill
+      </button>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+      <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-xs text-slate-500">Total skills</div><div class="text-2xl font-semibold text-slate-900" id="k-total">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-xs text-slate-500">Drafts</div><div class="text-2xl font-semibold text-amber-600" id="k-draft">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-xs text-slate-500">Published</div><div class="text-2xl font-semibold text-emerald-600" id="k-pub">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-xs text-slate-500">Deprecated</div><div class="text-2xl font-semibold text-orange-600" id="k-dep">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-xs text-slate-500">Archived</div><div class="text-2xl font-semibold text-slate-600" id="k-arch">0</div></div>
+    </div>
+
+    <!-- State tabs -->
+    <div class="tab-bar mb-4">
+      <button data-state="all"        class="active">All</button>
+      <button data-state="draft">Draft</button>
+      <button data-state="published">Published</button>
+      <button data-state="deprecated">Deprecated</button>
+      <button data-state="archived">Archived</button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_22rem] gap-4">
+
+      <!-- Skills table -->
+      <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+            <tr>
+              <th class="text-left px-4 py-3">Skill</th>
+              <th class="text-left px-4 py-3">State</th>
+              <th class="text-left px-4 py-3">Version</th>
+              <th class="text-left px-4 py-3">Used by</th>
+              <th class="px-2 py-3"></th>
+            </tr>
+          </thead>
+          <tbody id="rows" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+
+      <!-- Detail panel -->
+      <aside class="bg-white border border-slate-200 rounded-lg p-5">
+        <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2">Skill detail</div>
+        <div id="detail">
+          <p class="text-sm text-slate-500 italic">Click a skill on the left to see its version history, usage, and lifecycle actions.</p>
+        </div>
+      </aside>
+
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('admin');
+    SB.renderNav();
+
+    const STATE_PILL = {
+      draft:      { cls: 'pill pill-pending',  label: 'Draft' },
+      published:  { cls: 'pill pill-passed',   label: 'Published' },
+      deprecated: { cls: 'pill pill-running',  label: 'Deprecated' },
+      archived:   { cls: 'pill pill-failed',   label: 'Archived' },
+    };
+
+    let activeState = 'all';
+    let selectedId = null;
+
+    function renderKpi() {
+      const all = SBData.skillLifecycle;
+      document.getElementById('k-total').textContent = all.length;
+      document.getElementById('k-draft').textContent = all.filter(s => s.state === 'draft').length;
+      document.getElementById('k-pub').textContent   = all.filter(s => s.state === 'published').length;
+      document.getElementById('k-dep').textContent   = all.filter(s => s.state === 'deprecated').length;
+      document.getElementById('k-arch').textContent  = all.filter(s => s.state === 'archived').length;
+    }
+
+    function renderRows() {
+      const root = document.getElementById('rows');
+      root.innerHTML = '';
+      const filtered = activeState === 'all'
+        ? SBData.skillLifecycle
+        : SBData.skillLifecycle.filter(s => s.state === activeState);
+      filtered.forEach(s => {
+        const sp = STATE_PILL[s.state];
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 cursor-pointer ' + (s.id === selectedId ? 'bg-indigo-50/40' : '');
+        tr.innerHTML = `
+          <td class="px-4 py-3">
+            <div class="font-medium text-slate-900 flex items-center gap-2">
+              <span>${s.name}</span>
+              ${s.pendingChanges ? `<span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">${s.pendingChanges} pending</span>` : ''}
+            </div>
+            <div class="text-xs text-slate-500 font-mono">${s.id}</div>
+          </td>
+          <td class="px-4 py-3"><span class="${sp.cls}">${sp.label}</span></td>
+          <td class="px-4 py-3 font-mono text-xs text-slate-700">${s.currentVersion}</td>
+          <td class="px-4 py-3 text-slate-700">
+            <div class="text-xs">${s.usageTasks} tasks - ${s.usageJobs} jobs</div>
+          </td>
+          <td class="px-2 py-3 text-right text-slate-400">&rarr;</td>`;
+        tr.addEventListener('click', () => { selectedId = s.id; renderRows(); renderDetail(); });
+        root.appendChild(tr);
+      });
+    }
+
+    function renderDetail() {
+      const root = document.getElementById('detail');
+      if (!selectedId) { root.innerHTML = '<p class="text-sm text-slate-500 italic">Click a skill on the left to see its version history.</p>'; return; }
+      const s = SBData.skillLifecycle.find(x => x.id === selectedId);
+      const sp = STATE_PILL[s.state];
+
+      const actions = (() => {
+        switch (s.state) {
+          case 'draft':      return [['publish','Publish 1.0', 'bg-emerald-600 hover:bg-emerald-700'], ['discard','Discard draft', 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50']];
+          case 'published':  return [['new-ver','Publish new version', 'bg-emerald-600 hover:bg-emerald-700'], ['deprecate','Deprecate', 'bg-white border border-slate-200 text-orange-600 hover:bg-orange-50']];
+          case 'deprecated': return [['archive','Archive', 'bg-slate-700 hover:bg-slate-800 text-white'], ['undeprecate','Un-deprecate', 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50']];
+          case 'archived':   return [['restore','Restore as deprecated', 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50']];
+          default:           return [];
+        }
+      })();
+
+      root.innerHTML = `
+        <div class="flex items-start justify-between gap-2 mb-3">
+          <div>
+            <div class="font-semibold text-slate-900">${s.name}</div>
+            <div class="text-xs font-mono text-slate-500">${s.id}</div>
+          </div>
+          <span class="${sp.cls}">${sp.label}</span>
+        </div>
+
+        <div class="text-xs text-slate-500 mb-2">Author: <span class="text-slate-700">${s.author}</span></div>
+        <div class="text-xs text-slate-500 mb-4">Used by <b class="text-slate-700">${s.usageTasks}</b> tasks and <b class="text-slate-700">${s.usageJobs}</b> eval jobs.</div>
+
+        ${s.replacedBy ? `<div class="text-xs bg-orange-50 border border-orange-100 rounded p-2 mb-3">Replaced by <code class="font-mono">${s.replacedBy}</code></div>` : ''}
+
+        <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Version history</div>
+        <ol class="border-l-2 border-slate-200 pl-3 space-y-3 mb-4">
+          ${s.history.map(h => `
+            <li class="relative">
+              <span class="absolute -left-[7px] top-1 w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+              <div class="text-sm font-medium text-slate-900">v${h.version} <span class="text-xs text-slate-400 font-normal">${h.publishedAt || 'unpublished'}</span></div>
+              <div class="text-xs text-slate-500">${h.author} - ${h.changes}</div>
+            </li>
+          `).join('')}
+        </ol>
+
+        <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Lifecycle actions</div>
+        <div class="flex flex-wrap gap-2">
+          ${actions.map(([k, label, cls]) => `<button data-act="${k}" class="${cls} px-3 py-1.5 text-xs font-medium rounded-md">${label}</button>`).join('')}
+        </div>`;
+
+      root.querySelectorAll('button[data-act]').forEach(b => {
+        b.addEventListener('click', () => {
+          const map = {
+            publish: { from: 'draft', to: 'published', msg: 'Skill published as 1.0.0.' },
+            'new-ver': { from: 'published', to: 'published', msg: 'New version queued for draft.' },
+            deprecate: { from: 'published', to: 'deprecated', msg: 'Skill marked as deprecated.' },
+            archive: { from: 'deprecated', to: 'archived', msg: 'Skill archived. It cannot be attached to new tasks.' },
+            undeprecate: { from: 'deprecated', to: 'published', msg: 'Skill returned to published state.' },
+            restore: { from: 'archived', to: 'deprecated', msg: 'Skill restored from archive (still deprecated).' },
+            discard: { from: 'draft', to: 'archived', msg: 'Draft discarded.' },
+          };
+          const m = map[b.dataset.act];
+          if (!m) return;
+          s.state = m.to;
+          SB.toast(m.msg, 'success');
+          renderKpi(); renderRows(); renderDetail();
+        });
+      });
+    }
+
+    document.querySelectorAll('.tab-bar button[data-state]').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('.tab-bar button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        activeState = b.dataset.state;
+        renderRows();
+      });
+    });
+
+    document.getElementById('new-skill').addEventListener('click', () => {
+      SBData.skillLifecycle.unshift({
+        id: 'new-skill-' + (SBData.skillLifecycle.length + 1),
+        name: 'Untitled skill',
+        author: SBData.users.admin.email,
+        state: 'draft',
+        currentVersion: '0.1.0',
+        usageTasks: 0, usageJobs: 0, pendingChanges: 0,
+        history: [{ version: '0.1.0', publishedAt: null, author: SBData.users.admin.name, changes: 'New draft.' }],
+      });
+      renderKpi(); renderRows();
+      SB.toast('Created a new draft skill.', 'success');
+    });
+
+    renderKpi();
+    renderRows();
+  </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project Manager - Skill Bench V3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-7xl px-6 py-6">
+
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h1 class="text-2xl font-semibold text-slate-900">Project Manager</h1>
+        <p class="text-sm text-slate-500 mt-1">Owns projects + batches, assigns prompters/testers, and ships delivery batches.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="../projects/list.html" class="text-sm px-3 py-1.5 rounded bg-white border border-slate-200 hover:bg-slate-50">All projects</a>
+        <button class="text-sm px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-medium inline-flex items-center gap-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+          New project
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      <div class="bg-white border border-slate-200 rounded-lg p-4"><div class="text-xs text-slate-500">Active projects</div><div class="text-2xl font-semibold text-slate-900">2</div></div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4"><div class="text-xs text-slate-500">Open batches</div><div class="text-2xl font-semibold text-slate-900">4</div></div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4"><div class="text-xs text-slate-500">Approved (this week)</div><div class="text-2xl font-semibold text-emerald-600">18</div></div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4"><div class="text-xs text-slate-500">Staged for delivery</div><div class="text-2xl font-semibold text-violet-700">6</div></div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+      <!-- Batches column -->
+      <div class="lg:col-span-2">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-wider">Active batches</h2>
+          <a href="../projects/list.html" class="text-xs text-indigo-600 hover:underline">View all</a>
+        </div>
+        <div id="batches" class="space-y-2"></div>
+      </div>
+
+      <!-- Delivery column -->
+      <div class="space-y-5">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-wider">Delivery batches</h2>
+          </div>
+          <div id="deliveries" class="space-y-2"></div>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-2">Recent activity</h2>
+          <ul class="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100 text-sm">
+            <li class="px-4 py-3"><b>Tara Wu</b> submitted <span class="font-mono text-xs">text-stats-pipeline</span> for review. <span class="text-xs text-slate-400 block">12 min ago</span></li>
+            <li class="px-4 py-3"><b>Jane Doe</b> revised <span class="font-mono text-xs">instruction.md</span> mid-test. <span class="text-xs text-slate-400 block">42 min ago</span></li>
+            <li class="px-4 py-3"><b>Bob Smith</b> approved 4 tasks in Sprint 2. <span class="text-xs text-slate-400 block">2 hr ago</span></li>
+            <li class="px-4 py-3">Delivery batch <b>Acme · Sprint 1</b> shipped to Acme Corp. <span class="text-xs text-slate-400 block">Yesterday</span></li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('pm');
+    SB.renderNav();
+
+    /* Batches */
+    const bRoot = document.getElementById('batches');
+    SBData.batches.filter(b => b.status !== 'closed').forEach(b => {
+      const proj = SBData.projects.find(p => p.slug === b.projectSlug);
+      const pct = Math.min(100, Math.round((b.tasks / b.target) * 100));
+      const a = document.createElement('a');
+      a.href = '../batches/detail.html?project=' + encodeURIComponent(b.projectSlug) + '&batch=' + encodeURIComponent(b.slug);
+      a.className = 'block bg-white border border-slate-200 rounded-lg p-4 hover:border-indigo-300';
+      a.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="text-xs text-slate-500">${proj ? proj.name : ''}</div>
+            <div class="font-medium text-slate-900">${b.name}</div>
+            <div class="text-xs text-slate-500 mt-1">Deadline ${b.deadline}</div>
+          </div>
+          <span class="pill ${b.status === 'in-progress' ? 'pill-running' : 'pill-pending'}">${b.status}</span>
+        </div>
+        <div class="mt-3">
+          <div class="flex items-center justify-between text-xs text-slate-500 mb-1"><span>${b.tasks} / ${b.target}</span><span>${pct}%</span></div>
+          <div class="w-full h-1.5 rounded bg-slate-100 overflow-hidden"><div class="h-full bg-indigo-500" style="width: ${pct}%"></div></div>
+        </div>`;
+      bRoot.appendChild(a);
+    });
+
+    /* Deliveries */
+    const dRoot = document.getElementById('deliveries');
+    SBData.deliveryBatches.forEach(d => {
+      const a = document.createElement('a');
+      a.href = '../delivery-batches/detail.html?id=' + encodeURIComponent(d.id);
+      a.className = 'block bg-white border border-slate-200 rounded-lg p-3 hover:border-indigo-300';
+      const pill = d.status === 'delivered' ? 'pill pill-passed' : 'pill pill-pending';
+      a.innerHTML = `
+        <div class="flex items-center justify-between gap-2">
+          <div class="text-sm font-medium text-slate-900 truncate">${d.name}</div>
+          <span class="${pill}">${d.status}</span>
+        </div>
+        <div class="text-xs text-slate-500 mt-0.5">${d.tasksCount} tasks - ${d.recipient}</div>`;
+      dRoot.appendChild(a);
+    });
+  </script>
+</body>
+</html>

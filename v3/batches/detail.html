@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Batch - Skill Bench V3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-7xl px-6 py-6">
+
+    <div class="flex items-center gap-2 text-sm text-slate-500 mb-3">
+      <a href="../projects/list.html" class="hover:text-slate-900">Projects</a>
+      <span>/</span>
+      <a id="proj-crumb" href="#" class="hover:text-slate-900">...</a>
+      <span>/</span>
+      <span id="batch-crumb" class="text-slate-900 font-medium">...</span>
+    </div>
+
+    <!-- Header -->
+    <div class="bg-white border border-slate-200 rounded-lg p-5 mb-4 flex flex-wrap items-start gap-4 justify-between">
+      <div class="min-w-0 flex-1">
+        <div class="text-xs text-slate-500 mb-1" id="batch-project"></div>
+        <h1 id="batch-name" class="text-2xl font-semibold text-slate-900"></h1>
+        <div class="mt-2 flex items-center gap-3 text-xs text-slate-500">
+          <span>Deadline: <b id="batch-deadline" class="text-slate-700"></b></span>
+          <span>&middot;</span>
+          <span>Target: <b id="batch-target" class="text-slate-700"></b> tasks</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="batch-status-pill" class="pill pill-running"></span>
+        <button id="new-task" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-md bg-indigo-600 text-white hover:bg-indigo-700">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+          New task in this batch
+        </button>
+      </div>
+    </div>
+
+    <!-- Progress strip -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+      <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-xs text-slate-500">Drafts</div><div class="text-xl font-semibold text-slate-900" id="stat-draft">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-xs text-slate-500">In testing</div><div class="text-xl font-semibold text-slate-900" id="stat-test">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-xs text-slate-500">In review</div><div class="text-xl font-semibold text-slate-900" id="stat-review">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-xs text-slate-500">Approved</div><div class="text-xl font-semibold text-emerald-600" id="stat-approved">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-lg p-3"><div class="text-xs text-slate-500">Published</div><div class="text-xl font-semibold text-emerald-700" id="stat-published">0</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex items-center gap-2 mb-3 text-sm flex-wrap">
+      <select class="text-sm border border-slate-200 rounded-md bg-white px-3 py-2" id="filter-status">
+        <option value="">All status</option>
+        <option>prompter-draft</option>
+        <option>ready-for-test</option>
+        <option>tester-in-progress</option>
+        <option>in-review</option>
+        <option>changes-requested</option>
+        <option>approved</option>
+        <option>published</option>
+      </select>
+      <select class="text-sm border border-slate-200 rounded-md bg-white px-3 py-2">
+        <option>All assignees</option><option>Jane Doe</option><option>Sam Allen</option><option>Tara Wu</option>
+      </select>
+      <div class="ml-auto text-sm text-slate-500"><span id="visible-count">0</span> tasks</div>
+    </div>
+
+    <!-- Task table -->
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <table class="min-w-full text-sm">
+        <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+          <tr>
+            <th class="text-left px-4 py-3">Task</th>
+            <th class="text-left px-4 py-3">Status</th>
+            <th class="text-left px-4 py-3">Prompter</th>
+            <th class="text-left px-4 py-3">Tester</th>
+            <th class="text-left px-4 py-3">Skills</th>
+            <th class="text-left px-4 py-3">Updated</th>
+            <th class="px-2 py-3"></th>
+          </tr>
+        </thead>
+        <tbody id="task-rows" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole((new URLSearchParams(location.search).get('as')) || 'pm');
+    SB.renderNav();
+
+    const projSlug  = new URLSearchParams(location.search).get('project') || 'acme-coding';
+    const batchSlug = new URLSearchParams(location.search).get('batch')   || 'sprint-3';
+    const proj  = SBData.projects.find(p => p.slug === projSlug) || SBData.projects[0];
+    const batch = SBData.batches.find(b => b.projectSlug === proj.slug && b.slug === batchSlug) || SBData.batches[0];
+
+    document.getElementById('proj-crumb').textContent = proj.name;
+    document.getElementById('proj-crumb').href = '../projects/detail.html?project=' + encodeURIComponent(proj.slug);
+    document.getElementById('batch-crumb').textContent = batch.name;
+    document.getElementById('batch-project').textContent = proj.customer + ' - ' + proj.name;
+    document.getElementById('batch-name').textContent = batch.name;
+    document.getElementById('batch-deadline').textContent = batch.deadline;
+    document.getElementById('batch-target').textContent = batch.target;
+    const sp = document.getElementById('batch-status-pill');
+    sp.textContent = batch.status;
+    sp.className = 'pill ' + (batch.status === 'closed' ? 'pill-passed' : batch.status === 'in-progress' ? 'pill-running' : 'pill-pending');
+
+    /* For prototype, surface all SBData.tasks under whatever batch the user picked. */
+    const batchTasks = SBData.tasks.map(t => Object.assign({}, t));
+    document.getElementById('visible-count').textContent = batchTasks.length;
+
+    /* Stats roll-up */
+    const counts = { 'prompter-draft':0, 'ready-for-test':0, 'tester-in-progress':0, 'in-review':0, 'approved':0, 'published':0, 'changes-requested':0, 'archived':0 };
+    batchTasks.forEach(t => { counts[t.status] = (counts[t.status]||0)+1; });
+    document.getElementById('stat-draft').textContent     = counts['prompter-draft'] + counts['changes-requested'];
+    document.getElementById('stat-test').textContent      = counts['ready-for-test'] + counts['tester-in-progress'];
+    document.getElementById('stat-review').textContent    = counts['in-review'];
+    document.getElementById('stat-approved').textContent  = counts['approved'];
+    document.getElementById('stat-published').textContent = counts['published'];
+
+    /* Table */
+    const rows = document.getElementById('task-rows');
+    batchTasks.forEach(t => {
+      const status = SBData.STATUS[t.status] || SBData.STATUS['prompter-draft'];
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-50 cursor-pointer';
+      tr.innerHTML = `
+        <td class="px-4 py-3">
+          <div class="font-medium text-slate-900">${t.name}</div>
+          <div class="text-xs text-slate-500 mt-0.5 truncate max-w-md">${t.description || ''}</div>
+        </td>
+        <td class="px-4 py-3"><span class="pill ${status.cls}">${status.label}</span></td>
+        <td class="px-4 py-3 text-slate-700">${(t.prompter && t.prompter.name) || 'Jane Doe'}</td>
+        <td class="px-4 py-3 text-slate-700">${(t.tester && t.tester.name) || (t.status === 'prompter-draft' ? '-' : 'Tara Wu')}</td>
+        <td class="px-4 py-3">${t.hasSkills ? `<span class="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">${t.skillsCount} skill${t.skillsCount===1?'':'s'}</span>` : '<span class="text-xs text-slate-400">-</span>'}</td>
+        <td class="px-4 py-3 text-slate-500">${t.updatedAt}</td>
+        <td class="px-2 py-3 text-right text-slate-400">&rarr;</td>`;
+      tr.addEventListener('click', () => { location.href = '../trainer/task-detail.html?id=' + t.id; });
+      rows.appendChild(tr);
+    });
+
+    document.getElementById('new-task').addEventListener('click', () => { location.href = '../trainer/wizard-1-template.html'; });
+  </script>
+</body>
+</html>

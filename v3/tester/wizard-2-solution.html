@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tester - Solution review - Skill Bench V3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .file-tree-btn       { width: 100%; text-align: left; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.8rem; color: #475569; }
+    .file-tree-btn:hover { background: #f1f5f9; color: #0f172a; }
+    .file-tree-btn.active { background: #eef2ff; color: #4338ca; font-weight: 600; }
+    .file-tree-btn .meta { float: right; color: #94a3b8; font-size: 0.7rem; font-weight: 400; }
+    .editor-area         { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace; }
+    .diff-add            { background: #ecfdf5; }
+    .diff-del            { background: #fef2f2; text-decoration: line-through; opacity: 0.7; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-7xl px-6 py-6">
+
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="queue.html" class="hover:text-slate-900">Test queue</a>
+        <span>/</span>
+        <span class="text-slate-900 font-medium font-mono">my-org/text-stats-pipeline</span>
+      </div>
+      <a href="queue.html" class="text-sm text-slate-500 hover:text-slate-900">Save & Exit</a>
+    </div>
+
+    <div id="wizard-stepper" class="mb-6"></div>
+
+    <!-- Prompter context -->
+    <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4 mb-3 flex items-start gap-3">
+      <div class="avatar" style="background: #4f46e5; width: 1.75rem; height: 1.75rem; font-size: 0.7rem">JD</div>
+      <div class="flex-1 text-sm text-slate-700">
+        The Prompter uploaded a reference solution that proves the task is solvable. Your job here is to make it <b>coding-friendly</b> so the Oracle runs cleanly and the reviewer can read it.
+      </div>
+      <span class="pill pill-running">Step 2 of 5</span>
+    </div>
+
+    <!-- Ownership banner -->
+    <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mb-4 flex items-start gap-3">
+      <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      </div>
+      <div class="flex-1 text-sm text-slate-700">
+        <div class="font-semibold text-emerald-900">Files you may edit in this step</div>
+        <div class="mt-1 flex flex-wrap gap-1.5">
+          <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">solution/*</span>
+        </div>
+        <div class="mt-1 text-xs text-slate-600">
+          The Prompter's untouched upload is preserved at <code class="font-mono bg-white px-1 rounded border border-slate-200">solution/_original/</code> for audit. Your tidied version replaces <code class="font-mono bg-white px-1 rounded border border-slate-200">solution/</code> at the root.
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-4">
+
+      <!-- File tree -->
+      <aside class="bg-white border border-slate-200 rounded-lg p-3 h-fit">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">solution/</div>
+          <button id="add-file" class="text-xs text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3"><path d="M12 5v14M5 12h14"/></svg>
+            New
+          </button>
+        </div>
+        <ul id="ft-list" class="space-y-0.5"></ul>
+
+        <div class="mt-3 pt-3 border-t border-slate-100">
+          <details>
+            <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-900">_original/ (read-only)</summary>
+            <ul class="mt-1 space-y-0.5 pl-2 text-[11px] text-slate-500">
+              <li class="font-mono">prompter_solve.py</li>
+              <li class="font-mono">notes.txt</li>
+            </ul>
+          </details>
+        </div>
+      </aside>
+
+      <!-- Editor + toolbar -->
+      <section class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-4 py-2 border-b border-slate-100 flex items-center gap-2">
+          <span id="ed-path" class="font-mono text-xs text-slate-500">solution/</span>
+          <span class="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">editable</span>
+        </div>
+
+        <div class="flex items-center gap-2 px-4 py-2 bg-slate-50 border-b border-slate-100 text-xs">
+          <button class="px-2 py-1 rounded bg-white border border-slate-200 hover:bg-slate-100">Format</button>
+          <button id="ai-tidy" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3"><path d="m12 3-1.9 5.8L4 10.5l5 3.7L7.2 20 12 16.6 16.8 20l-1.8-5.8 5-3.7-6.1-1.7z"/></svg>
+            AI tidy
+          </button>
+          <button id="diff-toggle" class="px-2 py-1 rounded bg-white border border-slate-200 hover:bg-slate-100">Show diff vs. original</button>
+          <span class="ml-auto text-[11px] text-slate-500" id="ed-meta">utf-8 - LF - 0 lines</span>
+        </div>
+
+        <textarea id="ed" rows="22" class="editor-area w-full px-4 py-3 text-sm focus:outline-none" spellcheck="false"></textarea>
+      </section>
+
+    </div>
+
+    <!-- AI tidy panel (revealed after click) -->
+    <div id="ai-result" hidden class="mt-4 bg-amber-50 border border-amber-100 rounded-lg p-4 text-sm text-slate-800">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="font-semibold text-amber-900">AI tidy suggestion</div>
+          <ul class="mt-1 list-disc pl-5 text-xs space-y-0.5 text-slate-700">
+            <li>Add <code class="font-mono">if __name__ == "__main__":</code> guard.</li>
+            <li>Add <code class="font-mono">from __future__ import annotations</code> and type hints.</li>
+            <li>Replace <code class="font-mono">os.system</code> with <code class="font-mono">subprocess.run</code> for safety.</li>
+            <li>Add a top-of-file docstring describing inputs / outputs.</li>
+          </ul>
+        </div>
+        <div class="flex flex-col gap-2 shrink-0">
+          <button id="apply-tidy" class="px-3 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium">Apply all</button>
+          <button id="dismiss-tidy" class="px-3 py-1 rounded bg-white border border-slate-200 text-xs">Dismiss</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Harbor preview -->
+    <div id="harbor-preview-section" class="mt-6 bg-white border border-slate-200 rounded-lg p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h2 class="text-base font-semibold text-slate-900">Harbor folder preview</h2>
+          <p class="text-xs text-slate-500">Read-only files (instruction, skills, criteria) appear with their owner.</p>
+        </div>
+        <span class="pill pill-running">Editing solution/</span>
+      </div>
+      <div id="harbor-preview"></div>
+    </div>
+
+    <div class="mt-6 flex items-center justify-between">
+      <a href="wizard-1-environment.html" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Back</a>
+      <div class="flex items-center gap-3">
+        <button class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50">Save draft</button>
+        <a href="wizard-3-criteria.html"
+           class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md inline-flex items-center gap-2">
+          Next: Criteria
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('tester');
+    SB.renderNav();
+    SB.renderWizardStepper(2, 'tester');
+
+    /* Working tree: start with the prompter's solution files. */
+    const files = SBData.wizardTask.solution.files.map(f => Object.assign({}, f));
+    const originalByName = Object.fromEntries(files.map(f => [f.name, f.content]));
+    let currentName = files[0].name;
+
+    const ftList = document.getElementById('ft-list');
+    const ed = document.getElementById('ed');
+    const edPath = document.getElementById('ed-path');
+    const edMeta = document.getElementById('ed-meta');
+    let diffMode = false;
+
+    function renderTree() {
+      ftList.innerHTML = '';
+      files.forEach(f => {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.className = 'file-tree-btn' + (f.name === currentName ? ' active' : '');
+        btn.innerHTML = `<span class="font-mono">${f.name}</span><span class="meta">${f.size || ''}</span>`;
+        btn.addEventListener('click', () => { currentName = f.name; renderTree(); loadFile(); });
+        li.appendChild(btn);
+        ftList.appendChild(li);
+      });
+    }
+
+    function loadFile() {
+      const f = files.find(x => x.name === currentName);
+      if (!f) return;
+      edPath.textContent = 'solution/' + f.name;
+      ed.value = f.content;
+      updateMeta();
+    }
+    function updateMeta() {
+      const lines = (ed.value.match(/\n/g) || []).length + 1;
+      edMeta.textContent = 'utf-8 - LF - ' + lines + ' lines';
+    }
+
+    ed.addEventListener('input', () => {
+      const f = files.find(x => x.name === currentName);
+      if (f) f.content = ed.value;
+      updateMeta();
+    });
+
+    document.getElementById('add-file').addEventListener('click', () => {
+      const name = prompt('New file name (under solution/):');
+      if (!name) return;
+      files.push({ name: name.trim(), size: '0.0 KB', content: '' });
+      originalByName[name.trim()] = '';
+      currentName = name.trim();
+      renderTree(); loadFile();
+      SB.toast('Created ' + name, 'success');
+    });
+
+    /* AI tidy */
+    document.getElementById('ai-tidy').addEventListener('click', () => {
+      document.getElementById('ai-result').removeAttribute('hidden');
+    });
+    document.getElementById('dismiss-tidy').addEventListener('click', () => {
+      document.getElementById('ai-result').setAttribute('hidden','');
+    });
+    document.getElementById('apply-tidy').addEventListener('click', () => {
+      const f = files.find(x => x.name === currentName);
+      if (!f) return;
+      const cleaned = 'from __future__ import annotations\n"""Tidied by Skill Bench AI - safe, typed, idempotent."""\n\n' + f.content
+        .replace(/^os\.system\((.*)\)$/m, 'subprocess.run($1, check=True)');
+      const guardNeeded = !/__main__/.test(cleaned);
+      const out = guardNeeded
+        ? cleaned + '\n\nif __name__ == "__main__":\n    main()\n'
+        : cleaned;
+      f.content = out;
+      ed.value = out;
+      updateMeta();
+      document.getElementById('ai-result').setAttribute('hidden','');
+      SB.toast('AI tidy applied. Review the diff before saving.', 'success');
+    });
+
+    /* Diff view (simple: show added / removed lines vs. original) */
+    document.getElementById('diff-toggle').addEventListener('click', () => {
+      diffMode = !diffMode;
+      const f = files.find(x => x.name === currentName);
+      if (!f) return;
+      const origLines = (originalByName[f.name] || '').split('\n');
+      const curLines  = f.content.split('\n');
+      if (!diffMode) { loadFile(); return; }
+      const merged = [];
+      const max = Math.max(origLines.length, curLines.length);
+      for (let i = 0; i < max; i++) {
+        const a = origLines[i], b = curLines[i];
+        if (a === b) merged.push('  ' + (b || ''));
+        else {
+          if (a != null) merged.push('- ' + a);
+          if (b != null) merged.push('+ ' + b);
+        }
+      }
+      ed.value = merged.join('\n');
+      SB.toast('Showing diff vs. prompter\u2019s original. Click \u201CShow diff\u201D again to return.', 'info');
+    });
+
+    /* Harbor preview */
+    const task = JSON.parse(JSON.stringify(SBData.wizardTask));
+    task.solution = { files };
+    SB.renderHarborPreview('harbor-preview', task, { initial: 'solution/' + currentName, role: 'tester' });
+
+    renderTree();
+    loadFile();
+  </script>
+</body>
+</html>

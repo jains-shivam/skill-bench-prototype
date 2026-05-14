@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Task detail - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-6xl px-6 py-8">
+
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="dashboard.html" class="hover:text-slate-900">My Prompts</a>
+        <span>/</span>
+        <span id="task-name-crumb" class="text-slate-900 font-medium">my-org/text-stats-pipeline</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-md hover:bg-slate-50">Edit prompt</button>
+        <button class="px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-md hover:bg-slate-50">Run with real agent</button>
+      </div>
+    </div>
+
+    <header class="mb-6">
+      <div class="flex items-center gap-3 flex-wrap">
+        <h1 id="task-title" class="text-2xl font-bold">my-org/text-stats-pipeline</h1>
+        <span id="task-status" class="pill pill-published">Published</span>
+      </div>
+      <p id="task-desc" class="text-sm text-slate-500 mt-1">Build a Python pipeline that analyzes text and emits JSON.</p>
+      <div class="text-xs text-slate-500 mt-2 flex flex-wrap items-center gap-3">
+        <span>Prompted by <b>Jane Doe</b></span>
+        <span>&middot;</span>
+        <span>Tested by <b>Tara Wu</b></span>
+        <span>&middot;</span>
+        <span>updated 2 days ago</span>
+        <span>&middot;</span>
+        <span class="text-slate-700">v1.0</span>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden mb-4">
+      <div class="tab-bar px-5 pt-3">
+        <button data-tab="harbor" class="active">Harbor preview</button>
+        <button data-tab="summary">Summary</button>
+        <button data-tab="runs">Recent runs</button>
+      </div>
+
+      <!-- Harbor preview tab -->
+      <div id="tab-harbor" class="p-5">
+        <div id="harbor-preview"></div>
+      </div>
+
+      <!-- Summary tab -->
+      <div id="tab-summary" class="p-5 hidden space-y-3 text-sm text-slate-700">
+        <details open class="border border-slate-200 rounded-lg">
+          <summary class="px-5 py-3 font-medium text-slate-900 cursor-pointer">Instruction</summary>
+          <div class="px-5 pb-5 text-sm">
+            <pre class="whitespace-pre-wrap font-sans"># Text Statistics Pipeline
+
+Create two files in /app:
+
+1. textstats.py with word_count and most_common.
+2. analyze.py that reads sample.txt and writes results.json.</pre>
+          </div>
+        </details>
+        <details class="border border-slate-200 rounded-lg">
+          <summary class="px-5 py-3 font-medium text-slate-900 cursor-pointer">Environment</summary>
+          <div class="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><b>OS</b>: Ubuntu 24.04</div>
+            <div><b>Language</b>: Python 3.12</div>
+            <div><b>Packages</b>: pandas, numpy, pytest</div>
+            <div><b>Files</b>: sample.txt</div>
+            <div><b>Resources</b>: 1 CPU / 2 GB / 10 GB</div>
+            <div><b>Internet</b>: Allowed</div>
+          </div>
+        </details>
+        <details class="border border-slate-200 rounded-lg">
+          <summary class="px-5 py-3 font-medium text-slate-900 cursor-pointer">Skills attached</summary>
+          <div class="px-5 pb-5 text-sm space-y-1.5">
+            <div class="border border-slate-200 rounded-md px-3 py-2 bg-slate-50">
+              <span class="font-medium">Parse CSV safely</span>
+              <span class="text-xs text-slate-500 font-mono ml-2">parse-csv-safely</span>
+            </div>
+            <div class="border border-slate-200 rounded-md px-3 py-2 bg-slate-50">
+              <span class="font-medium">Format JSON output</span>
+              <span class="text-xs text-slate-500 font-mono ml-2">format-json-output</span>
+            </div>
+          </div>
+        </details>
+        <details class="border border-slate-200 rounded-lg">
+          <summary class="px-5 py-3 font-medium text-slate-900 cursor-pointer">Grading criteria</summary>
+          <div class="px-5 pb-5 space-y-3 text-sm">
+            <div><b>Structure</b> (weight 1.0) &middot; 3 checks</div>
+            <div><b>Correctness</b> (weight 2.0) &middot; 3 checks</div>
+            <div><b>Quality</b> (weight 1.0) &middot; 1 LLM judge</div>
+          </div>
+        </details>
+        <details class="border border-slate-200 rounded-lg">
+          <summary class="px-5 py-3 font-medium text-slate-900 cursor-pointer">Oracle test</summary>
+          <div class="px-5 pb-5">
+            <pre class="code-block">[10:24:11] Building image ... done (8.1s)
+[10:24:19] Starting Daytona sandbox sb-3d2a1f ... ready
+[10:24:20] Mounting environment/skills -> /skills (2 skills)
+[10:24:20] Running /solution/solve.sh ... exit 0
+[10:24:24] Running /tests/test.sh ... done
+[10:24:29] Trial reward 1.0  PASS</pre>
+          </div>
+        </details>
+      </div>
+
+      <!-- Recent runs tab -->
+      <div id="tab-runs" class="p-5 hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase tracking-wider">
+            <tr>
+              <th class="text-left px-4 py-2">Agent</th>
+              <th class="text-left px-4 py-2">Skill mode</th>
+              <th class="text-left px-4 py-2">Model</th>
+              <th class="text-left px-4 py-2">Reward</th>
+              <th class="text-left px-4 py-2">When</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr><td class="px-4 py-2 font-mono">claude-code</td><td class="px-4 py-2"><span class="text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">with skills</span></td><td class="px-4 py-2 text-xs text-slate-500">claude-sonnet-4-5</td><td class="px-4 py-2 text-emerald-600 font-semibold">1.0</td><td class="px-4 py-2 text-slate-500">2d ago</td></tr>
+            <tr><td class="px-4 py-2 font-mono">claude-code</td><td class="px-4 py-2"><span class="text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">no skills</span></td><td class="px-4 py-2 text-xs text-slate-500">claude-sonnet-4-5</td><td class="px-4 py-2 text-amber-600 font-semibold">0.67</td><td class="px-4 py-2 text-slate-500">2d ago</td></tr>
+            <tr><td class="px-4 py-2 font-mono">cursor-cli</td><td class="px-4 py-2"><span class="text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">with skills</span></td><td class="px-4 py-2 text-xs text-slate-500">opus-4-7-high</td><td class="px-4 py-2 text-amber-600 font-semibold">0.67</td><td class="px-4 py-2 text-slate-500">2d ago</td></tr>
+            <tr><td class="px-4 py-2 font-mono">cursor-cli</td><td class="px-4 py-2"><span class="text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">no skills</span></td><td class="px-4 py-2 text-xs text-slate-500">opus-4-7-high</td><td class="px-4 py-2 text-red-600 font-semibold">0.33</td><td class="px-4 py-2 text-slate-500">2d ago</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Metadata sidebar removed; tabs cover it more cleanly. -->
+
+  </main>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.renderNav();
+
+    /* Populate title from ?id=tN if given */
+    const id = new URLSearchParams(location.search).get('id');
+    const taskRecord = id ? SBData.tasks.find(x => x.id === id) : null;
+    if (taskRecord) {
+      const status = SBData.STATUS[taskRecord.status];
+      document.getElementById('task-title').textContent = taskRecord.name;
+      document.getElementById('task-desc').textContent = taskRecord.description;
+      document.getElementById('task-name-crumb').textContent = taskRecord.name;
+      const pill = document.getElementById('task-status');
+      pill.className = 'pill ' + status.cls;
+      pill.textContent = status.label;
+    }
+
+    /* Tabs */
+    const tabs = document.querySelectorAll('.tab-bar button');
+    const panels = { harbor: document.getElementById('tab-harbor'), summary: document.getElementById('tab-summary'), runs: document.getElementById('tab-runs') };
+    tabs.forEach(b => b.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      b.classList.add('active');
+      for (const k of Object.keys(panels)) panels[k].classList.add('hidden');
+      panels[b.dataset.tab].classList.remove('hidden');
+    }));
+
+    /* Harbor preview based on the demo wizard task (or selected task name) */
+    const task = JSON.parse(JSON.stringify(SBData.wizardTask));
+    task.oraclePassed = true;
+    task.oracleReward = 1.0;
+    task.prompter = SBData.users.prompter;
+    task.tester   = SBData.users.tester;
+    if (taskRecord) task.name = taskRecord.name;
+    SB.renderHarborPreview('harbor-preview', task, { initial: 'task.toml' });
+  </script>
+</body>
+</html>

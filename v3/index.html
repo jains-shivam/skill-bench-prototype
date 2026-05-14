@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skill Bench V3 - Sign in</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-900">
+  <div class="min-h-screen flex flex-col">
+
+    <header class="px-6 py-5">
+      <div class="mx-auto max-w-7xl flex items-center justify-between">
+        <div class="flex items-center gap-2 font-semibold">
+          <span class="inline-flex items-center justify-center w-9 h-9 rounded-md bg-indigo-600 text-white">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </span>
+          <span class="text-lg">Skill Bench</span>
+          <span class="ml-1 text-xs font-medium text-fuchsia-700 bg-fuchsia-100 px-1.5 py-0.5 rounded">V3 - projects + lifecycle + co-authored config</span>
+        </div>
+        <div class="flex items-center gap-4 text-sm">
+          <a href="../index.html" class="text-xs px-2 py-1 rounded bg-fuchsia-50 text-fuchsia-700 hover:bg-fuchsia-100 font-medium">&larr; Compare versions</a>
+          <span class="text-slate-500">Built on <span class="font-medium text-slate-700">Harbor</span> + <span class="font-medium text-slate-700">Daytona</span></span>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 flex items-center justify-center px-6 py-10">
+      <div class="w-full max-w-4xl">
+
+        <div class="text-center mb-10">
+          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium mb-4">
+            <span class="live-dot"></span>
+            Click any role below to explore the prototype
+          </span>
+          <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
+            Build skill-benchmarked Harbor tasks for AI agents
+          </h1>
+          <p class="mt-3 text-slate-600 max-w-2xl mx-auto">
+            A relay platform where prompters write the prompt, testers add the environment and grading, reviewers QA, and evaluators run agents on Daytona. Output is a proper Harbor task package.
+          </p>
+          <div class="mt-4 inline-flex flex-wrap items-center justify-center gap-2 text-[11px]">
+            <span class="px-2 py-0.5 rounded bg-fuchsia-100 text-fuchsia-700 font-medium">NEW in V3</span>
+            <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600">Projects / Batches / Delivery Batches</span>
+            <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600">Project Manager role</span>
+            <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600">Tester-editable task.toml</span>
+            <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600">Solution editor</span>
+            <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600">Expanded env config + Daytona banner</span>
+            <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600">Skills Lifecycle Manager</span>
+          </div>
+        </div>
+
+        <!-- Workflow strip -->
+        <div class="flex items-center justify-center text-xs text-slate-500 mb-8 flex-wrap gap-1">
+          <span class="px-2 py-1 rounded bg-violet-100 text-violet-700 font-medium">Project Manager</span>
+          <span>&rarr;</span>
+          <span class="px-2 py-1 rounded bg-indigo-100 text-indigo-700 font-medium">Prompter</span>
+          <span>&rarr;</span>
+          <span class="px-2 py-1 rounded bg-emerald-100 text-emerald-700 font-medium">Tester</span>
+          <span>&rarr;</span>
+          <span class="px-2 py-1 rounded bg-amber-100 text-amber-700 font-medium">Reviewer</span>
+          <span>&rarr;</span>
+          <span class="px-2 py-1 rounded bg-slate-100 text-slate-700 font-medium">Delivered to customer</span>
+          <span>&rarr;</span>
+          <span class="px-2 py-1 rounded bg-fuchsia-100 text-fuchsia-700 font-medium">Evaluator runs agents</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <a href="pm/dashboard.html" data-role="pm"
+             class="role-card group card-hover bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              </div>
+              <div class="font-semibold text-slate-900 flex-1">Continue as Project Manager</div>
+              <span class="text-slate-400 group-hover:text-violet-600 transition-colors">&rarr;</span>
+            </div>
+            <div class="text-sm text-slate-500">Priya Kapoor</div>
+            <div class="text-xs text-slate-600">Sets up projects + batches, assigns prompters and testers, and ships delivery batches.</div>
+          </a>
+
+          <a href="projects/list.html" data-role="prompter"
+             class="role-card group card-hover bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+              </div>
+              <div class="font-semibold text-slate-900 flex-1">Continue as Prompter</div>
+              <span class="text-slate-400 group-hover:text-indigo-600 transition-colors">&rarr;</span>
+            </div>
+            <div class="text-sm text-slate-500">Jane Doe</div>
+            <div class="text-xs text-slate-600">Picks a batch, writes prompts + skills + solutions, hands off to a tester.</div>
+          </a>
+
+          <a href="tester/queue.html" data-role="tester"
+             class="role-card group card-hover bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M2 12h6l3-9 4 18 3-9h4"/></svg>
+              </div>
+              <div class="font-semibold text-slate-900 flex-1">Continue as Tester</div>
+              <span class="text-slate-400 group-hover:text-indigo-600 transition-colors">&rarr;</span>
+            </div>
+            <div class="text-sm text-slate-500">Tara Wu</div>
+            <div class="text-xs text-slate-600">Picks up a prompt, adds the environment + grading criteria, runs the Oracle.</div>
+          </a>
+
+          <a href="reviewer/queue.html" data-role="reviewer"
+             class="role-card group card-hover bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+              </div>
+              <div class="font-semibold text-slate-900 flex-1">Continue as Reviewer</div>
+              <span class="text-slate-400 group-hover:text-indigo-600 transition-colors">&rarr;</span>
+            </div>
+            <div class="text-sm text-slate-500">Bob Smith</div>
+            <div class="text-xs text-slate-600">Inspects the full Harbor task, leaves feedback, and approves or requests changes.</div>
+          </a>
+
+          <a href="evaluator/home.html" data-role="evaluator"
+             class="role-card group card-hover bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-lg bg-fuchsia-100 text-fuchsia-600 flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M3 3v18h18M7 14l4-4 4 4 5-5"/></svg>
+              </div>
+              <div class="font-semibold text-slate-900 flex-1">Continue as Evaluator</div>
+              <span class="text-slate-400 group-hover:text-indigo-600 transition-colors">&rarr;</span>
+            </div>
+            <div class="text-sm text-slate-500">Carol Lee</div>
+            <div class="text-xs text-slate-600">Runs agents with or without skills on Daytona and compares results.</div>
+          </a>
+
+          <a href="admin/dashboard.html" data-role="admin"
+             class="role-card group card-hover bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-3 text-left">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .67.4 1.27 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+              <div class="font-semibold text-slate-900 flex-1">Continue as Admin</div>
+              <span class="text-slate-400 group-hover:text-indigo-600 transition-colors">&rarr;</span>
+            </div>
+            <div class="text-sm text-slate-500">Dave Patel</div>
+            <div class="text-xs text-slate-600">Manages users, templates, the skills library, and provider quotas.</div>
+          </a>
+
+          <div class="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-5 flex flex-col gap-2 text-left">
+            <div class="flex items-center gap-2 text-xs uppercase tracking-wider text-slate-500 font-semibold">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              Tip
+            </div>
+            <div class="text-sm text-slate-700">
+              V3 adds Projects / Batches. Start in <a href="projects/list.html" class="text-indigo-600 hover:underline">Projects</a> to see the new top-level scope, or jump into any role above.
+            </div>
+          </div>
+
+        </div>
+
+        <div class="mt-10 text-center text-xs text-slate-500">
+          This is a click-through prototype. No real authentication, no real data.
+          See <a href="README.md" class="text-indigo-600 hover:underline">README</a> for the demo script.
+        </div>
+
+      </div>
+    </main>
+
+    <footer class="px-6 py-4 text-center text-xs text-slate-400">
+      &copy; Skill Bench &middot; built for the team review
+    </footer>
+  </div>
+
+  <script src="assets/data.js"></script>
+  <script src="assets/script.js"></script>
+  <script>
+    document.querySelectorAll('.role-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        SB.setRole(card.dataset.role);
+      });
+    });
+  </script>
+</body>
+</html>

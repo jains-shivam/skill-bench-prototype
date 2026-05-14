@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Projects - Skill Bench V3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-7xl px-6 py-6">
+
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <div class="text-xs text-slate-500 mb-1">Top-level workspace</div>
+        <h1 class="text-2xl font-semibold text-slate-900">Projects</h1>
+        <p class="text-sm text-slate-500 mt-1">Each project groups one or more <b>batches</b> of tasks. Approved tasks roll up into a <b>delivery batch</b> that gets shipped to the customer.</p>
+      </div>
+      <button id="new-project-btn"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-sm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+        New project
+      </button>
+    </div>
+
+    <!-- Filters strip -->
+    <div class="flex items-center gap-2 mb-4 text-sm flex-wrap">
+      <div class="relative">
+        <input class="pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-md bg-white w-64" placeholder="Search projects...">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </div>
+      <select class="text-sm border border-slate-200 rounded-md bg-white px-3 py-2">
+        <option>All status</option><option>Active</option><option>Paused</option><option>Closed</option>
+      </select>
+      <select class="text-sm border border-slate-200 rounded-md bg-white px-3 py-2">
+        <option>All customers</option><option>Acme Corp</option><option>Internal R&D</option><option>BetaScale Inc.</option>
+      </select>
+    </div>
+
+    <!-- Project grid -->
+    <div id="project-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole((new URLSearchParams(location.search).get('as')) || 'pm');
+    SB.renderNav();
+
+    const STATUS_PILL = {
+      active: 'pill pill-running',
+      paused: 'pill pill-pending',
+      closed: 'pill pill-passed',
+    };
+
+    const grid = document.getElementById('project-grid');
+    SBData.projects.forEach(p => {
+      const card = document.createElement('a');
+      card.href = 'detail.html?project=' + encodeURIComponent(p.slug);
+      card.className = 'group bg-white border border-slate-200 rounded-lg p-5 hover:border-indigo-300 hover:shadow-sm transition-shadow';
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="text-xs text-slate-500 mb-1">${p.customer}</div>
+            <div class="font-semibold text-slate-900 text-base group-hover:text-indigo-700 truncate">${p.name}</div>
+            <div class="text-xs text-slate-600 mt-2 leading-snug">${p.description}</div>
+          </div>
+          <span class="${STATUS_PILL[p.status] || 'pill'}">${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</span>
+        </div>
+        <div class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-3 gap-2 text-center">
+          <div>
+            <div class="text-lg font-semibold text-slate-900">${p.stats.batches}</div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">Batches</div>
+          </div>
+          <div>
+            <div class="text-lg font-semibold text-slate-900">${p.stats.tasks}</div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">Tasks</div>
+          </div>
+          <div>
+            <div class="text-lg font-semibold text-emerald-600">${p.stats.delivered}</div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">Delivered</div>
+          </div>
+        </div>
+        <div class="mt-3 text-[11px] text-slate-400">Created ${p.createdAt}</div>`;
+      grid.appendChild(card);
+    });
+
+    document.getElementById('new-project-btn').addEventListener('click', () => {
+      SB.toast('New project flow is mocked in v3.', 'info');
+    });
+  </script>
+</body>
+</html>

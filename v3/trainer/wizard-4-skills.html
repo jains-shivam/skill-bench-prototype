@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New prompt - Skills - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .md-preview h1 { font-size: 1.125rem; font-weight: 700; margin: 0.5rem 0; }
+    .md-preview h2 { font-size: 1rem; font-weight: 600; margin: 0.5rem 0; }
+    .md-preview p  { margin: 0.5rem 0; line-height: 1.6; }
+    .md-preview ul { padding-left: 1.5rem; list-style: disc; margin: 0.5rem 0; }
+    .md-preview code:not(pre code) { background: #f1f5f9; padding: 0 0.25rem; border-radius: 0.25rem; font-size: 0.85em; }
+    .md-preview pre { background: #0f172a; color: #e2e8f0; padding: 0.75rem 1rem; border-radius: 0.5rem; overflow-x: auto; font-size: 0.8125rem; margin: 0.75rem 0; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-6xl px-6 py-6">
+
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="dashboard.html" class="hover:text-slate-900">My Prompts</a>
+        <span>/</span>
+        <span class="text-slate-900 font-medium">New prompt</span>
+      </div>
+      <a href="dashboard.html" class="text-sm text-slate-500 hover:text-slate-900">Save & Exit</a>
+    </div>
+
+    <div id="wizard-stepper" class="mb-8"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6">
+
+      <aside class="bg-white border border-slate-200 rounded-lg p-4 h-fit">
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Tips</div>
+        <ul class="text-sm text-slate-600 space-y-2 list-disc pl-4">
+          <li><b>Skills are optional.</b> Skip this step if your task does not need any.</li>
+          <li>Attached skills land in <code class="bg-slate-100 px-1 rounded">environment/skills/&lt;id&gt;/SKILL.md</code>.</li>
+          <li>Skills are mounted into <code class="bg-slate-100 px-1 rounded">/skills</code> inside the sandbox - agents that support skills will discover them.</li>
+          <li>The evaluator can run trials <b>with</b> or <b>without</b> these skills to measure their impact.</li>
+        </ul>
+      </aside>
+
+      <section class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-slate-900">Attach agent skills</h2>
+            <p class="text-sm text-slate-500 mt-1">Pick reusable skills from the library or author a new one for this task.</p>
+          </div>
+          <button id="add-skill"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+            Add skill
+          </button>
+        </div>
+
+        <div id="attached-list" class="divide-y divide-slate-100"></div>
+
+        <div id="empty-state" class="p-8 text-center text-sm text-slate-500 hidden">
+          <div class="w-10 h-10 mx-auto rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mb-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+          </div>
+          No skills attached. Click <b>Add skill</b> above, or skip and move on.
+        </div>
+      </section>
+
+    </div>
+
+    <div class="mt-8 flex items-center justify-between">
+      <a href="wizard-3-instruction.html" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Back</a>
+      <div class="flex items-center gap-3">
+        <button class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50">Save draft</button>
+        <a href="wizard-5-solution.html"
+           class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md inline-flex items-center gap-2">
+          Next: Solution
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Add skill modal -->
+  <div id="skill-modal" class="modal-overlay" hidden>
+    <div class="bg-white rounded-lg max-w-3xl w-full max-h-[85vh] flex flex-col shadow-xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h3 class="font-semibold text-slate-900">Add a skill</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Pick one from the library or write a new one inline.</p>
+        </div>
+        <button onclick="SB.closeModal('skill-modal')" class="text-slate-400 hover:text-slate-700">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="tab-bar px-5 pt-2">
+        <button data-tab="library" class="active">From library</button>
+        <button data-tab="author">Author new</button>
+      </div>
+
+      <!-- Library tab -->
+      <div id="tab-library" class="flex-1 overflow-y-auto scroll-y p-5">
+        <div class="relative mb-3">
+          <span class="absolute inset-y-0 left-2 flex items-center text-slate-400">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </span>
+          <input id="skill-search" type="text" placeholder="Search skills..."
+                 class="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        </div>
+        <div id="skill-list" class="space-y-2"></div>
+      </div>
+
+      <!-- Author tab -->
+      <div id="tab-author" class="flex-1 overflow-y-auto scroll-y p-5 hidden">
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Skill ID</label>
+            <input id="auth-id" type="text" value="my-task-conventions"
+                   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-md font-mono focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <div class="text-xs text-slate-500 mt-1">Folder name. Lowercase + hyphens. Will be at <code class="bg-slate-100 px-1 rounded">environment/skills/&lt;id&gt;/SKILL.md</code>.</div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Skill name (human friendly)</label>
+            <input id="auth-name" type="text" value="My task conventions"
+                   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200">
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">SKILL.md content</label>
+              <textarea id="auth-md" rows="10"
+                        class="w-full px-3 py-2 text-sm border border-slate-200 rounded-md font-mono focus:outline-none focus:ring-2 focus:ring-indigo-200"># My task conventions
+
+When solving this task:
+
+- Use 4-space indents in Python.
+- Always log to stderr, not stdout.
+- Treat &#x60;/app&#x60; as the working directory.</textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Preview</label>
+              <div id="auth-preview" class="md-preview border border-slate-200 rounded-md p-3 text-sm text-slate-700 min-h-[14rem] bg-slate-50"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 py-3 border-t border-slate-200 flex items-center justify-end gap-2 bg-slate-50">
+        <button onclick="SB.closeModal('skill-modal')" class="px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-md hover:bg-slate-100">Cancel</button>
+        <button id="confirm-add" class="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">Add skill</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('prompter');
+    SB.renderNav();
+    SB.renderWizardStepper(4, 'prompter');
+
+    const attached = JSON.parse(JSON.stringify(SBData.wizardTask.skills));
+
+    function render() {
+      const list = document.getElementById('attached-list');
+      const empty = document.getElementById('empty-state');
+      list.innerHTML = '';
+      if (!attached.length) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+      attached.forEach((s, i) => {
+        const tag = s.origin === 'library'
+          ? '<span class="text-[10px] uppercase tracking-wider bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Library</span>'
+          : '<span class="text-[10px] uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Authored</span>';
+        const row = document.createElement('div');
+        row.className = 'px-5 py-3 flex items-start gap-3';
+        row.innerHTML = `
+          <div class="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="font-medium text-slate-900">${s.name}</span>
+              ${tag}
+            </div>
+            <div class="text-xs text-slate-500 mt-0.5 font-mono">environment/skills/${s.id}/SKILL.md</div>
+          </div>
+          <button data-i="${i}" class="text-slate-400 hover:text-red-500" title="Remove">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>`;
+        list.appendChild(row);
+      });
+      list.querySelectorAll('button[data-i]').forEach(b => {
+        b.addEventListener('click', () => { attached.splice(Number(b.dataset.i), 1); render(); });
+      });
+    }
+    render();
+
+    /* Modal logic */
+    const tabs = document.querySelectorAll('#skill-modal .tab-bar button');
+    const tabLibrary = document.getElementById('tab-library');
+    const tabAuthor  = document.getElementById('tab-author');
+    let activeTab = 'library';
+    tabs.forEach(b => b.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      b.classList.add('active');
+      activeTab = b.dataset.tab;
+      tabLibrary.classList.toggle('hidden', activeTab !== 'library');
+      tabAuthor.classList.toggle('hidden', activeTab !== 'author');
+    }));
+
+    function renderLibrary(filter) {
+      const root = document.getElementById('skill-list');
+      const q = (filter || '').toLowerCase();
+      root.innerHTML = '';
+      SBData.skillsLibrary.forEach(s => {
+        if (q && !(s.name + ' ' + s.desc + ' ' + s.tags.join(' ')).toLowerCase().includes(q)) return;
+        const already = attached.some(a => a.id === s.id);
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'w-full text-left border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 rounded-md p-3 transition-colors flex items-start gap-3';
+        row.innerHTML = `
+          <div class="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="font-medium text-slate-900">${s.name}</span>
+              <span class="text-xs text-slate-500 font-mono">${s.id}</span>
+              ${already ? '<span class="ml-auto text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">Attached</span>' : ''}
+            </div>
+            <div class="text-xs text-slate-500 mt-0.5">${s.desc}</div>
+            <div class="mt-1 flex flex-wrap gap-1">
+              ${s.tags.map(t => `<span class="text-[10px] bg-slate-100 text-slate-600 px-1 rounded">${t}</span>`).join('')}
+            </div>
+          </div>`;
+        row.addEventListener('click', () => {
+          if (already) {
+            SB.toast('That skill is already attached.', 'warning');
+            return;
+          }
+          attached.push({ id: s.id, name: s.name, origin: 'library', md: s.md });
+          render();
+          renderLibrary(document.getElementById('skill-search').value);
+          SB.toast('Skill added: <b>' + s.name + '</b>', 'success');
+        });
+        root.appendChild(row);
+      });
+    }
+    document.getElementById('skill-search').addEventListener('input', e => renderLibrary(e.target.value));
+    renderLibrary('');
+
+    /* Author tab live preview - simple MD renderer reused from instruction step. */
+    function renderMd(md) {
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const lines = md.split('\n');
+      let out = '', para = [], inCode = false, codeBuf = [], listType = null;
+      function flushPara() {
+        if (para.length) {
+          let t = para.join(' ').replace(/`([^`]+)`/g, (m, x) => '<code>' + esc(x) + '</code>')
+                                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+          out += '<p>' + t + '</p>'; para = [];
+        }
+      }
+      function flushList() { if (listType) { out += '</' + listType + '>'; listType = null; } }
+      for (const raw of lines) {
+        const line = raw;
+        if (inCode) {
+          if (line.startsWith('```')) { out += '<pre><code>' + esc(codeBuf.join('\n')) + '</code></pre>'; inCode = false; codeBuf = []; }
+          else codeBuf.push(line);
+          continue;
+        }
+        if (line.startsWith('```')) { flushPara(); flushList(); inCode = true; continue; }
+        if (/^#\s+/.test(line))  { flushPara(); flushList(); out += '<h1>' + esc(line.replace(/^#\s+/, '')) + '</h1>'; continue; }
+        if (/^##\s+/.test(line)) { flushPara(); flushList(); out += '<h2>' + esc(line.replace(/^##\s+/, '')) + '</h2>'; continue; }
+        if (/^[-*]\s+/.test(line)) {
+          flushPara();
+          if (listType !== 'ul') { flushList(); out += '<ul>'; listType = 'ul'; }
+          let t = esc(line.replace(/^[-*]\s+/, '')).replace(/`([^`]+)`/g, '<code>$1</code>');
+          out += '<li>' + t + '</li>'; continue;
+        }
+        if (line.trim() === '') { flushPara(); flushList(); continue; }
+        para.push(esc(line));
+      }
+      flushPara(); flushList();
+      return out;
+    }
+    const authMd = document.getElementById('auth-md');
+    const authPreview = document.getElementById('auth-preview');
+    function updateAuth() { authPreview.innerHTML = renderMd(authMd.value); }
+    authMd.addEventListener('input', updateAuth);
+    updateAuth();
+
+    document.getElementById('add-skill').addEventListener('click', () => SB.openModal('skill-modal'));
+    document.getElementById('confirm-add').addEventListener('click', () => {
+      if (activeTab === 'author') {
+        const id = document.getElementById('auth-id').value.trim();
+        const name = document.getElementById('auth-name').value.trim() || id;
+        if (!id) return SB.toast('Skill ID is required.', 'error');
+        if (attached.some(a => a.id === id)) return SB.toast('A skill with that ID already exists.', 'error');
+        attached.push({ id, name, origin: 'authored', md: authMd.value });
+        render();
+        SB.toast('Authored skill added: <b>' + name + '</b>', 'success');
+        SB.closeModal('skill-modal');
+      } else {
+        SB.closeModal('skill-modal');
+      }
+    });
+  </script>
+</body>
+</html>

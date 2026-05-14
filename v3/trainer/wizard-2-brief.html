@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create Task - Brief - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-5xl px-6 py-6">
+
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="dashboard.html" class="hover:text-slate-900">My Prompts</a>
+        <span>/</span>
+        <span class="text-slate-900 font-medium">New prompt</span>
+      </div>
+      <a href="dashboard.html" class="text-sm text-slate-500 hover:text-slate-900">Save & Exit</a>
+    </div>
+
+    <div id="wizard-stepper" class="mb-8"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6">
+
+      <aside class="bg-white border border-slate-200 rounded-lg p-4 h-fit">
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Tips</div>
+        <ul class="text-sm text-slate-600 space-y-2 list-disc pl-4">
+          <li><b>Name</b>: use <code class="bg-slate-100 px-1 rounded">org/name</code>, lowercase, hyphens.</li>
+          <li><b>Keywords</b> help reviewers find tasks - aim for 3 to 8.</li>
+          <li>Difficulty is your honest read - we'll adjust if real agents say otherwise.</li>
+        </ul>
+      </aside>
+
+      <section class="bg-white border border-slate-200 rounded-lg p-6">
+        <h2 class="text-lg font-semibold text-slate-900">Brief</h2>
+        <p class="text-sm text-slate-500 mt-1">A few details so reviewers and evaluators can find your task.</p>
+
+        <div class="mt-6 space-y-5">
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Task name</label>
+            <input type="text" value="my-org/text-stats-pipeline"
+                   class="w-full max-w-md px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 font-mono">
+            <div class="text-xs text-slate-500 mt-1">Format: <code class="bg-slate-100 px-1 rounded">organization/task-name</code></div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Description (1 line)</label>
+            <input type="text" value="Build a Python pipeline that analyzes text and emits JSON."
+                   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400">
+          </div>
+
+          <div>
+            <div class="block text-sm font-medium text-slate-700 mb-2">Difficulty</div>
+            <div class="flex items-center gap-2" role="radiogroup">
+              <label class="flex items-center gap-2 px-3 py-1.5 text-sm border border-slate-200 rounded-md cursor-pointer hover:bg-slate-50">
+                <input type="radio" name="diff" class="accent-indigo-600"> Easy
+              </label>
+              <label class="flex items-center gap-2 px-3 py-1.5 text-sm border border-indigo-500 ring-2 ring-indigo-200 rounded-md cursor-pointer bg-indigo-50">
+                <input type="radio" name="diff" class="accent-indigo-600" checked> Medium
+              </label>
+              <label class="flex items-center gap-2 px-3 py-1.5 text-sm border border-slate-200 rounded-md cursor-pointer hover:bg-slate-50">
+                <input type="radio" name="diff" class="accent-indigo-600"> Hard
+              </label>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
+              <select class="w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white">
+                <option>Programming</option>
+                <option>Data analysis</option>
+                <option>Web</option>
+                <option>Machine learning</option>
+                <option>DevOps</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Operating system</label>
+              <select class="w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white">
+                <option>Linux (Ubuntu 24.04)</option>
+                <option>Linux (Debian 12)</option>
+                <option>Windows</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Keywords</label>
+            <div id="keyword-chips" class="flex flex-wrap gap-2 mb-2">
+              <!-- chips injected -->
+            </div>
+            <div class="flex items-center gap-2 max-w-md">
+              <input id="keyword-input" type="text" placeholder="Add a keyword and press Enter"
+                     class="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400">
+              <button id="add-kw" class="px-3 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded-md">Add</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+    </div>
+
+    <div class="mt-8 flex items-center justify-between">
+      <a href="wizard-1-template.html" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Back</a>
+      <div class="flex items-center gap-3">
+        <button class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50">Save draft</button>
+        <a href="wizard-3-instruction.html"
+           class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md inline-flex items-center gap-2">
+          Next: Instruction
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('prompter');
+    SB.renderNav();
+    SB.renderWizardStepper(2, 'prompter');
+
+    const keywords = SBData.wizardTask.keywords.slice();
+    const chipsRoot = document.getElementById('keyword-chips');
+    function renderChips() {
+      chipsRoot.innerHTML = '';
+      keywords.forEach((k, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded-full';
+        chip.innerHTML = `${k} <button data-i="${i}" class="text-indigo-400 hover:text-indigo-700">&times;</button>`;
+        chipsRoot.appendChild(chip);
+      });
+      chipsRoot.querySelectorAll('button').forEach(b => {
+        b.addEventListener('click', () => {
+          keywords.splice(Number(b.dataset.i), 1);
+          renderChips();
+        });
+      });
+    }
+    renderChips();
+
+    const input = document.getElementById('keyword-input');
+    function addKw() {
+      const v = input.value.trim().toLowerCase();
+      if (v && !keywords.includes(v)) {
+        keywords.push(v);
+        renderChips();
+      }
+      input.value = '';
+    }
+    document.getElementById('add-kw').addEventListener('click', addKw);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addKw(); } });
+  </script>
+</body>
+</html>

@@ -15,6 +15,7 @@
     .diff-row td { vertical-align: top; }
     .stripe-v1 { background: linear-gradient(135deg, #fef3c7, #fde68a); }
     .stripe-v2 { background: linear-gradient(135deg, #c7d2fe, #a5b4fc); }
+    .stripe-v3 { background: linear-gradient(135deg, #fbcfe8, #f0abfc); }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-900">
@@ -39,15 +40,15 @@
 
       <!-- Intro -->
       <div class="text-center mb-10">
-        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Two click-through versions for the team review</h1>
-        <p class="mt-3 text-slate-600 max-w-2xl mx-auto">
-          Pick a version below. <b>V1</b> is the first prototype we shared. <b>V2</b> reworks it around the feedback we collected.
-          The intent is to look at the same flows in both, not to redo all the work.
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Three click-through versions for the team review</h1>
+        <p class="mt-3 text-slate-600 max-w-3xl mx-auto">
+          <b>V1</b> is the first prototype. <b>V2</b> reworks it as a relay (Prompter -> Tester -> Reviewer) with skills + Harbor preview.
+          <b>V3</b> layers on Projects / Batches / Delivery, a Project Manager role, a co-authored <code class="font-mono bg-slate-100 px-1 rounded text-[12px]">task.toml</code>, a Tester solution editor, expanded environment config, and a Skills Lifecycle Manager.
         </p>
       </div>
 
-      <!-- Two version tiles -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+      <!-- Three version tiles -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
 
         <a href="v1/index.html" class="v-card block bg-white border border-slate-200 rounded-2xl overflow-hidden">
           <div class="stripe-v1 px-6 py-4 flex items-center justify-between">
@@ -107,62 +108,126 @@
             </div>
           </div>
         </a>
+
+        <a href="v3/index.html" class="v-card block bg-white border border-slate-200 rounded-2xl overflow-hidden">
+          <div class="stripe-v3 px-6 py-4 flex items-center justify-between">
+            <div>
+              <div class="text-xs uppercase tracking-wider text-fuchsia-700 font-semibold">Iteration 3</div>
+              <div class="text-2xl font-bold text-slate-900">V3 - Projects + Lifecycle</div>
+            </div>
+            <span class="text-xs px-2 py-1 rounded-full bg-white text-fuchsia-700 font-medium border border-fuchsia-200">Latest</span>
+          </div>
+          <div class="p-6 space-y-4">
+            <p class="text-sm text-slate-600">
+              Adds the top-level structure the team flagged: <b>Project &rarr; Batch &rarr; Delivery Batch</b> with a <b>Project Manager</b> role, a co-authored <b>task.toml</b>, a Tester solution editor, expanded env config + Daytona safety banner, and an admin <b>Skills Lifecycle Manager</b>.
+            </p>
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Roles</div>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2 py-1 rounded bg-violet-100 text-violet-700 text-xs font-medium">Project Manager</span>
+              <span class="px-2 py-1 rounded bg-indigo-100 text-indigo-700 text-xs font-medium">Prompter</span>
+              <span class="px-2 py-1 rounded bg-emerald-100 text-emerald-700 text-xs font-medium">Tester</span>
+              <span class="px-2 py-1 rounded bg-amber-100 text-amber-700 text-xs font-medium">Reviewer</span>
+              <span class="px-2 py-1 rounded bg-fuchsia-100 text-fuchsia-700 text-xs font-medium">Evaluator</span>
+              <span class="px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs font-medium">Admin</span>
+            </div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 pt-2">Screens</div>
+            <div class="text-sm text-slate-600">31 screens, 6 personas, project/batch nav + lifecycle manager</div>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs text-slate-500">~10 min walkthrough</span>
+              <span class="text-sm font-semibold text-fuchsia-700 inline-flex items-center gap-1">Open V3 &rarr;</span>
+            </div>
+          </div>
+        </a>
       </div>
 
       <!-- Diff table -->
       <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden mb-10">
         <div class="px-6 py-4 border-b border-slate-200">
-          <h2 class="text-lg font-semibold">What changed in V2 (and why)</h2>
-          <p class="text-sm text-slate-500 mt-1">Each row maps to one feedback point from the V1 walkthrough.</p>
+          <h2 class="text-lg font-semibold">What changed across V1 -> V2 -> V3</h2>
+          <p class="text-sm text-slate-500 mt-1">Each row maps to one feedback point. V3 builds on V2, so most V2 rows still apply.</p>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
               <tr>
-                <th class="text-left px-6 py-3">Feedback</th>
-                <th class="text-left px-6 py-3 w-1/3">V1 today</th>
-                <th class="text-left px-6 py-3 w-1/3">V2 proposal</th>
+                <th class="text-left px-6 py-3">Topic</th>
+                <th class="text-left px-6 py-3 w-1/4">V1</th>
+                <th class="text-left px-6 py-3 w-1/4">V2</th>
+                <th class="text-left px-6 py-3 w-1/4">V3</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
               <tr class="diff-row">
-                <td class="px-6 py-4 font-medium text-slate-900">Allow submit after prompt + golden solution</td>
-                <td class="px-6 py-4 text-slate-600">Trainer has to also build environment, criteria, and pass Oracle before they can submit anything.</td>
-                <td class="px-6 py-4 text-slate-700"><b>Prompter wizard ends after Solution</b>; submission unblocks the next role. A Tester takes it from there.</td>
+                <td class="px-6 py-4 font-medium text-slate-900">Top-level scope</td>
+                <td class="px-6 py-4 text-slate-600">Flat list of tasks. No project / batch concept.</td>
+                <td class="px-6 py-4 text-slate-600">Flat list of tasks. No project / batch concept.</td>
+                <td class="px-6 py-4 text-slate-700"><b>Project &rarr; Batch &rarr; Delivery Batch</b> with a workspace switcher in the top nav. Dashboards are scoped to the current batch via breadcrumbs.</td>
               </tr>
               <tr class="diff-row">
-                <td class="px-6 py-4 font-medium text-slate-900">Full preview in draft and review mode</td>
-                <td class="px-6 py-4 text-slate-600">Each step shows only its own form; reviewer sees a tabbed summary, no folder view.</td>
-                <td class="px-6 py-4 text-slate-700"><b>"Harbor preview"</b> panel (folder tree + file viewer) on every submit step, in Task detail, and as the default reviewer tab.</td>
+                <td class="px-6 py-4 font-medium text-slate-900">Project Manager role</td>
+                <td class="px-6 py-4 text-slate-600">Trainer wears every hat.</td>
+                <td class="px-6 py-4 text-slate-600">Prompter / Tester / Reviewer / Evaluator / Admin.</td>
+                <td class="px-6 py-4 text-slate-700">New <b>Project Manager</b> persona who creates projects + batches, assigns prompters and testers, and ships delivery batches.</td>
+              </tr>
+              <tr class="diff-row">
+                <td class="px-6 py-4 font-medium text-slate-900">task.toml authoring</td>
+                <td class="px-6 py-4 text-slate-600">Generated from a single wizard, no explicit editor.</td>
+                <td class="px-6 py-4 text-slate-600">Generated from Prompter's Brief step; not directly edited.</td>
+                <td class="px-6 py-4 text-slate-700"><b>Co-authored</b>: Prompter writes the identity fields, Tester writes the execution fields (image, resources, timeouts, network, env vars). Structured editor + raw TOML tab. Marked <b>shared</b> in the Harbor preview.</td>
+              </tr>
+              <tr class="diff-row">
+                <td class="px-6 py-4 font-medium text-slate-900">Tester environment config</td>
+                <td class="px-6 py-4 text-slate-600">Limited to packages list.</td>
+                <td class="px-6 py-4 text-slate-600">Visual builder / upload / raw Dockerfile editor.</td>
+                <td class="px-6 py-4 text-slate-700">Same tabs <b>plus</b> base image, language preset, CPU / memory / disk / GPU, timeouts, network mode, env vars (secret-aware). <b>Daytona safety banner</b> spells out the sandbox model.</td>
+              </tr>
+              <tr class="diff-row">
+                <td class="px-6 py-4 font-medium text-slate-900">Solution editing by Tester</td>
+                <td class="px-6 py-4 text-slate-600">Trainer owns the solution; no separate cleanup phase.</td>
+                <td class="px-6 py-4 text-slate-600">Tester sees the solution as read-only.</td>
+                <td class="px-6 py-4 text-slate-700">New <b>Solution review</b> Tester step with a GitHub-style file tree + editor, <b>AI tidy</b> action, and a diff toggle vs. the Prompter's original (preserved at <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">solution/_original/</code>).</td>
+              </tr>
+              <tr class="diff-row">
+                <td class="px-6 py-4 font-medium text-slate-900">Skills lifecycle</td>
+                <td class="px-6 py-4 text-slate-600">No skills.</td>
+                <td class="px-6 py-4 text-slate-600">Library of skills, no state model.</td>
+                <td class="px-6 py-4 text-slate-700">Admin <b>Skills Lifecycle Manager</b> with Draft / Published / Deprecated / Archived states, version history, usage stats, and lifecycle actions.</td>
+              </tr>
+              <tr class="diff-row">
+                <td class="px-6 py-4 font-medium text-slate-900">Allow submit after prompt + golden solution</td>
+                <td class="px-6 py-4 text-slate-600">Trainer has to also build environment, criteria, and pass Oracle before they can submit anything.</td>
+                <td class="px-6 py-4 text-slate-700"><b>Prompter wizard ends after Solution</b>; submission unblocks the next role.</td>
+                <td class="px-6 py-4 text-slate-700">Same as V2.</td>
+              </tr>
+              <tr class="diff-row">
+                <td class="px-6 py-4 font-medium text-slate-900">Full preview in draft / review mode</td>
+                <td class="px-6 py-4 text-slate-600">Tabbed summary, no folder view.</td>
+                <td class="px-6 py-4 text-slate-700"><b>Harbor preview</b> panel (folder tree + file viewer) everywhere.</td>
+                <td class="px-6 py-4 text-slate-700">Same panel, with <b>shared-owner</b> handling and Tester-side Edit affordance for solution files.</td>
               </tr>
               <tr class="diff-row">
                 <td class="px-6 py-4 font-medium text-slate-900">Separate multi-step forms for Tester and Prompter</td>
-                <td class="px-6 py-4 text-slate-600">One Trainer role with a single 7-step form covering everything.</td>
-                <td class="px-6 py-4 text-slate-700"><b>Two relay flows:</b> Prompter (6 steps) and Tester (4 steps), each with its own dashboard / queue and stepper.</td>
+                <td class="px-6 py-4 text-slate-600">One Trainer role with a single 7-step form.</td>
+                <td class="px-6 py-4 text-slate-700">Prompter (6 steps) and Tester (4 steps).</td>
+                <td class="px-6 py-4 text-slate-700">Prompter (6 steps) and <b>Tester (5 steps)</b> - new Solution review step.</td>
               </tr>
               <tr class="diff-row">
                 <td class="px-6 py-4 font-medium text-slate-900">Allow Prompter to add skills</td>
-                <td class="px-6 py-4 text-slate-600">No skill concept anywhere in the UI.</td>
-                <td class="px-6 py-4 text-slate-700">New <b>Skills wizard step</b> with "From library" and "Author new" tabs. Skills compile into <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">environment/skills/&lt;id&gt;/SKILL.md</code>.</td>
+                <td class="px-6 py-4 text-slate-600">No skills.</td>
+                <td class="px-6 py-4 text-slate-700"><b>Skills wizard step</b>; skills compile into <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">environment/skills/&lt;id&gt;/SKILL.md</code>.</td>
+                <td class="px-6 py-4 text-slate-700">Same flow, now pulling from the admin-managed skill registry with lifecycle state.</td>
               </tr>
               <tr class="diff-row">
                 <td class="px-6 py-4 font-medium text-slate-900">Evaluator: run with / without skills</td>
-                <td class="px-6 py-4 text-slate-600">Evaluator picks agents, attempts, concurrency only.</td>
-                <td class="px-6 py-4 text-slate-700">Required <b>Skill mode</b> radio: With / Without / Both (A/B). The cost estimate and feed reflect the choice; comparison shows a per-task skill lift.</td>
-              </tr>
-              <tr class="diff-row">
-                <td class="px-6 py-4 font-medium text-slate-900">Proper Harbor format preview</td>
-                <td class="px-6 py-4 text-slate-600">Sections of the task are displayed in custom UI cards (no folder shape).</td>
-                <td class="px-6 py-4 text-slate-700">Generated <b>Harbor folder tree</b> showing <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">task.toml</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">instruction.md</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">environment/Dockerfile</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">environment/skills/</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">tests/rewardkit.yaml</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">solution/</code> - click any file to view.</td>
+                <td class="px-6 py-4 text-slate-600">Evaluator picks agents only.</td>
+                <td class="px-6 py-4 text-slate-700">Required <b>Skill mode</b> radio: With / Without / Both (A/B).</td>
+                <td class="px-6 py-4 text-slate-700">Same as V2.</td>
               </tr>
               <tr class="diff-row">
                 <td class="px-6 py-4 font-medium text-slate-900">File ownership during testing</td>
-                <td class="px-6 py-4 text-slate-600">Single Trainer authors everything; no concept of who-owns-what during testing.</td>
-                <td class="px-6 py-4 text-slate-700">
-                  <b>Tester authors</b> <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">environment/Dockerfile</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">tests/test.sh</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">tests/rewardkit.yaml</code> (visual builder / upload / raw editor).
-                  <b>Prompter retains</b> <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">instruction.md</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">environment/skills/</code>, <code class="font-mono bg-slate-100 px-1 rounded text-[11px]">solution/</code> and can revise them while testing is in progress (<b>Revise my parts</b> CTA).
-                  Everything else is read-only preview for each role.
-                </td>
+                <td class="px-6 py-4 text-slate-600">Single Trainer authors everything.</td>
+                <td class="px-6 py-4 text-slate-700">Tester authors Dockerfile + test.sh + rewardkit.yaml; Prompter retains instruction / skills / solution.</td>
+                <td class="px-6 py-4 text-slate-700">Same V2 ownership, plus <b>task.toml shared</b> and <b>solution/</b> now Tester-editable for tidy-up.</td>
               </tr>
             </tbody>
           </table>
@@ -172,30 +237,32 @@
       <!-- How to demo -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         <div class="bg-white border border-slate-200 rounded-2xl p-6">
-          <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Suggested demo order</div>
+          <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Suggested V3 demo order</div>
           <ol class="mt-3 space-y-2 text-sm text-slate-700 list-decimal pl-5">
-            <li>Open V1 - briefly walk through the Trainer wizard (Template &rarr; Test).</li>
-            <li>Note any pain points the team mentioned (e.g. Trainer doing everything; no Harbor view).</li>
-            <li>Open V2 - run the relay: Prompter submits prompt + solution + skills.</li>
-            <li>Switch to Tester, pick up the prompt, add env + criteria, run Oracle, submit.</li>
-            <li>Switch to Reviewer - first tab is the Harbor folder preview.</li>
-            <li>Switch to Evaluator - new job with Skill mode <b>Both (A/B)</b>, then comparison + trial detail.</li>
+            <li>Open V3 as <b>Project Manager</b> - see Projects, batches, delivery pipeline, and recent activity.</li>
+            <li>Click into <b>Acme Coding / Sprint 3</b> to see batch-scoped tasks + KPI strip.</li>
+            <li>Switch to <b>Prompter</b> - dashboard is breadcrumbed to the same batch.</li>
+            <li>Switch to <b>Tester</b>, open <i>Environment</i>: Daytona banner, expanded env, new <b>task.toml</b> co-author editor.</li>
+            <li>Continue to <i>Solution</i> (new step): file tree + AI tidy + diff vs. prompter's original.</li>
+            <li>Switch to <b>Admin</b> - <i>Skills</i> tab: lifecycle states, version history, deprecate / archive actions.</li>
+            <li>Open a <b>Delivery Batch</b> from any project - shows frozen manifest of approved tasks.</li>
           </ol>
         </div>
         <div class="bg-white border border-slate-200 rounded-2xl p-6">
           <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Hopping between versions</div>
           <ul class="mt-3 space-y-2 text-sm text-slate-700 list-disc pl-5">
-            <li>Every page in V1 and V2 has a <b>Compare versions</b> link in the top-right - returns here.</li>
+            <li>Every page in all three versions has a <b>Compare versions</b> link in the top-right - returns here.</li>
             <li>Inside a version, <b>Switch role</b> goes back to that version's role picker.</li>
-            <li>Read the section above to see exactly which feedback each V2 change targets.</li>
+            <li>V3 nav has a <b>workspace switcher</b> (project / batch dropdown) next to the logo.</li>
+            <li>The table above maps each feedback point to V1 / V2 / V3 so you can argue scope vs. effort.</li>
           </ul>
         </div>
       </div>
 
       <!-- Direct links -->
       <div class="bg-slate-900 text-slate-100 rounded-2xl p-6">
-        <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2">Direct deep links - same flow, both versions</div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2">Direct deep links - same flow, three versions</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div>
             <div class="font-semibold text-amber-300 mb-1">V1 (original Trainer flow)</div>
             <ul class="space-y-1">
@@ -210,15 +277,24 @@
             <div class="font-semibold text-indigo-300 mb-1">V2 (relay + skills + Harbor preview)</div>
             <ul class="space-y-1">
               <li><a href="v2/trainer/dashboard.html" class="text-slate-300 hover:text-white underline">Prompter dashboard</a></li>
-              <li><a href="v2/trainer/wizard-4-skills.html" class="text-slate-300 hover:text-white underline">Prompter - Skills step (new)</a></li>
-              <li><a href="v2/trainer/wizard-6-preview.html" class="text-slate-300 hover:text-white underline">Prompter - Harbor preview (new)</a></li>
-              <li><a href="v2/trainer/revise.html" class="text-slate-300 hover:text-white underline">Prompter - Revise during testing (new)</a></li>
-              <li><a href="v2/tester/queue.html" class="text-slate-300 hover:text-white underline">Tester queue (new)</a></li>
-              <li><a href="v2/tester/wizard-1-environment.html" class="text-slate-300 hover:text-white underline">Tester env - upload / edit Dockerfile (new)</a></li>
-              <li><a href="v2/tester/wizard-2-criteria.html" class="text-slate-300 hover:text-white underline">Tester criteria - upload / edit test.sh (new)</a></li>
-              <li><a href="v2/reviewer/workspace.html" class="text-slate-300 hover:text-white underline">Reviewer workspace (Harbor preview tab)</a></li>
+              <li><a href="v2/trainer/wizard-4-skills.html" class="text-slate-300 hover:text-white underline">Prompter - Skills step</a></li>
+              <li><a href="v2/trainer/revise.html" class="text-slate-300 hover:text-white underline">Prompter - Revise during testing</a></li>
+              <li><a href="v2/tester/wizard-1-environment.html" class="text-slate-300 hover:text-white underline">Tester env (upload / edit Dockerfile)</a></li>
+              <li><a href="v2/reviewer/workspace.html" class="text-slate-300 hover:text-white underline">Reviewer workspace (Harbor preview)</a></li>
               <li><a href="v2/evaluator/new-job.html" class="text-slate-300 hover:text-white underline">Evaluator - Skill mode radio</a></li>
-              <li><a href="v2/evaluator/comparison.html" class="text-slate-300 hover:text-white underline">Comparison - Skill lift</a></li>
+            </ul>
+          </div>
+          <div>
+            <div class="font-semibold text-fuchsia-300 mb-1">V3 (projects + lifecycle + task.toml)</div>
+            <ul class="space-y-1">
+              <li><a href="v3/pm/dashboard.html" class="text-slate-300 hover:text-white underline">Project Manager dashboard <span class="text-fuchsia-300">(new)</span></a></li>
+              <li><a href="v3/projects/list.html" class="text-slate-300 hover:text-white underline">All projects <span class="text-fuchsia-300">(new)</span></a></li>
+              <li><a href="v3/projects/detail.html?project=acme-coding" class="text-slate-300 hover:text-white underline">Project - Acme Coding <span class="text-fuchsia-300">(new)</span></a></li>
+              <li><a href="v3/batches/detail.html?project=acme-coding&batch=sprint-3" class="text-slate-300 hover:text-white underline">Batch - Sprint 3 <span class="text-fuchsia-300">(new)</span></a></li>
+              <li><a href="v3/delivery-batches/detail.html?id=db1" class="text-slate-300 hover:text-white underline">Delivery batch manifest <span class="text-fuchsia-300">(new)</span></a></li>
+              <li><a href="v3/tester/wizard-1-environment.html" class="text-slate-300 hover:text-white underline">Tester env + task.toml co-author <span class="text-fuchsia-300">(new)</span></a></li>
+              <li><a href="v3/tester/wizard-2-solution.html" class="text-slate-300 hover:text-white underline">Tester - Solution editor <span class="text-fuchsia-300">(new)</span></a></li>
+              <li><a href="v3/admin/skills.html" class="text-slate-300 hover:text-white underline">Admin - Skills lifecycle <span class="text-fuchsia-300">(new)</span></a></li>
             </ul>
           </div>
         </div>
