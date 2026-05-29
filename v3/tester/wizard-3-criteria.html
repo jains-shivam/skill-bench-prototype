@@ -75,6 +75,12 @@
 
           <div class="tab-bar px-6 pt-3">
             <button data-crit-tab="builder" class="active">Criteria builder</button>
+            <button data-crit-tab="ai">
+              <span class="inline-flex items-center gap-1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+                Generate with AI
+              </span>
+            </button>
             <button data-crit-tab="upload">Upload test files</button>
             <button data-crit-tab="raw">Edit raw test.sh</button>
           </div>
@@ -86,6 +92,77 @@
               <div>
                 <b>Total: <span id="total-criteria">0</span> criteria across <span id="total-cats">0</span> categories.</b>
                 Each category produces its own score; the trial reward is the per-category mean.
+              </div>
+            </div>
+          </div>
+
+          <div id="crit-tab-ai" class="p-6 space-y-4 hidden">
+            <div class="flex items-start gap-3 bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+              <div class="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+              </div>
+              <div class="flex-1 text-sm text-slate-700">
+                <b class="text-indigo-900">AI compiles the prompter's verifier plan into real graders.</b> It writes <code class="bg-white px-1 rounded border border-indigo-100 font-mono text-xs">tests/test.sh</code> + <code class="bg-white px-1 rounded border border-indigo-100 font-mono text-xs">tests/rewardkit.yaml</code> by reading <code class="bg-white px-1 rounded border border-indigo-100 font-mono text-xs">tests/verifiers.md</code>, the instruction, and the golden solution.
+              </div>
+            </div>
+
+            <!-- Prompter's verifier plan (read-only context) -->
+            <details class="border border-slate-200 rounded-lg" open>
+              <summary class="px-4 py-2 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-2">
+                <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">Prompter</span>
+                Verifier plan to compile
+              </summary>
+              <ul id="ai-verifier-list" class="px-4 py-3 space-y-1.5 text-sm text-slate-700"></ul>
+            </details>
+
+            <div>
+              <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Suggested prompts</div>
+              <div id="ai-crit-chips" class="flex flex-wrap gap-2">
+                <button data-prompt="Compile every verifier into a Reward Kit criterion. Weight Correctness 2.0, Structure 1.0, Quality 1.0." class="text-xs px-2 py-1 rounded-full bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700">Compile verifier plan as-is</button>
+                <button data-prompt="Compile verifier plan but also add a pytest discovery step so unit tests in /app/tests/* are run automatically." class="text-xs px-2 py-1 rounded-full bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700">Also discover pytest</button>
+                <button data-prompt="Compile verifier plan and add an LLM judge that scores code quality 1-5 on a rubric." class="text-xs px-2 py-1 rounded-full bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700">Add code-quality LLM judge</button>
+                <button data-prompt="Strict mode: every verifier must pass or the trial fails. Set min_total_reward to 1.0." class="text-xs px-2 py-1 rounded-full bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700">Strict (all-or-nothing)</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Prompt</label>
+              <textarea id="ai-crit-prompt" rows="3"
+                        class="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200">Compile every verifier into a Reward Kit criterion. Weight Correctness 2.0, Structure 1.0, Quality 1.0.</textarea>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-500">Generate using</span>
+              <select id="ai-crit-model" class="text-xs border border-slate-200 rounded-md px-2 py-1 bg-white">
+                <option>anthropic/claude-sonnet-4-5</option>
+                <option>openai/gpt-5</option>
+                <option>google/gemini-2.5-pro</option>
+              </select>
+              <button id="ai-crit-gen" class="ml-auto inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+                Generate test.sh + rewardkit.yaml
+              </button>
+            </div>
+
+            <div id="ai-crit-output" hidden class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="border border-slate-200 rounded-lg overflow-hidden flex flex-col">
+                <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                  <span class="font-mono text-xs text-slate-700">tests/test.sh</span>
+                  <span class="ml-auto text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">AI draft</span>
+                </div>
+                <pre id="ai-crit-testsh" class="code-block m-0 rounded-none flex-1 scroll-y" style="max-height: 22rem"></pre>
+              </div>
+              <div class="border border-slate-200 rounded-lg overflow-hidden flex flex-col">
+                <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                  <span class="font-mono text-xs text-slate-700">tests/rewardkit.yaml</span>
+                  <span class="ml-auto text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">AI draft</span>
+                </div>
+                <pre id="ai-crit-rkyaml" class="code-block m-0 rounded-none flex-1 scroll-y" style="max-height: 22rem"></pre>
+              </div>
+              <div class="md:col-span-2 flex items-center gap-2">
+                <button id="ai-crit-apply" class="px-3 py-1.5 text-sm rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium">Apply both to Harbor folder</button>
+                <button id="ai-crit-regen" class="px-3 py-1.5 text-sm rounded bg-white border border-slate-200 hover:bg-slate-50">Regenerate</button>
+                <span class="text-xs text-slate-500">Tip: After applying you can still tweak in the <b>Edit raw test.sh</b> tab.</span>
               </div>
             </div>
           </div>
@@ -228,13 +305,122 @@ python -m reward_kit run --config /tests/rewardkit.yaml --workdir /app --output 
 
     /* Criteria tab switcher */
     const critTabs = document.querySelectorAll('button[data-crit-tab]');
-    const critPanels = { builder: document.getElementById('crit-tab-builder'), upload: document.getElementById('crit-tab-upload'), raw: document.getElementById('crit-tab-raw') };
+    const critPanels = {
+      builder: document.getElementById('crit-tab-builder'),
+      ai: document.getElementById('crit-tab-ai'),
+      upload: document.getElementById('crit-tab-upload'),
+      raw: document.getElementById('crit-tab-raw')
+    };
     critTabs.forEach(b => b.addEventListener('click', () => {
       critTabs.forEach(t => t.classList.remove('active'));
       b.classList.add('active');
       for (const k of Object.keys(critPanels)) critPanels[k].classList.add('hidden');
       critPanels[b.dataset.critTab].classList.remove('hidden');
     }));
+
+    /* ----- AI generate test.sh + rewardkit.yaml ----- */
+    function renderVerifierList() {
+      const ul = document.getElementById('ai-verifier-list');
+      const verifiers = (SBData.wizardTask.verifiers || []);
+      ul.innerHTML = '';
+      if (!verifiers.length) {
+        ul.innerHTML = '<li class="text-slate-500 italic">No verifier plan yet - the prompter has not authored verifiers.md.</li>';
+        return;
+      }
+      verifiers.forEach((v, i) => {
+        const li = document.createElement('li');
+        li.className = 'flex items-start gap-2';
+        li.innerHTML = `<span class="text-slate-400 text-xs mt-0.5">${i + 1}.</span><span><b>${v.kindLabel || v.kind}</b> - ${v.desc}</span>`;
+        ul.appendChild(li);
+      });
+    }
+    renderVerifierList();
+
+    document.querySelectorAll('#ai-crit-chips button[data-prompt]').forEach(b => {
+      b.addEventListener('click', () => { document.getElementById('ai-crit-prompt').value = b.dataset.prompt; });
+    });
+
+    function generateAiGraders() {
+      const prompt = document.getElementById('ai-crit-prompt').value || '';
+      const strict = /strict/i.test(prompt);
+      const addPytest = /pytest|discover/i.test(prompt);
+      const addJudge = /llm|judge|quality/i.test(prompt);
+
+      const testSh = `#!/usr/bin/env bash
+set -euo pipefail
+# AI-compiled verifier from tests/verifiers.md.
+# Reward Kit reads tests/rewardkit.yaml and writes /logs/verifier/reward.json.
+
+pip install --quiet reward-kit pytest pandas
+${addPytest ? '\n# Run any pytest tests the agent created under /app/tests/\nif [ -d /app/tests ]; then\n  pytest -q /app/tests || true\nfi\n' : ''}
+python -m reward_kit run \\
+  --config /tests/rewardkit.yaml \\
+  --workdir /app \\
+  --output /logs/verifier/reward.json${strict ? ' \\\n  --min-total-reward 1.0' : ''}
+`;
+
+      const cats = [];
+      cats.push(`  - name: Structure
+    weight: 1.0
+    items:
+      - kind: file_exists
+        weight: 1.0
+        config: { path: /app/textstats.py }
+      - kind: file_exists
+        weight: 1.0
+        config: { path: /app/analyze.py }`);
+      cats.push(`  - name: Correctness
+    weight: 2.0
+    items:
+      - kind: command_succeeds
+        weight: 1.0
+        config: { cmd: "python /app/analyze.py" }
+      - kind: json_key_equals
+        weight: 1.0
+        config: { file: /app/results.json, key: word_count, equals: 42 }
+      - kind: json_key_equals
+        weight: 1.0
+        config: { file: /app/results.json, key: most_common, equals: "the" }`);
+      if (addJudge) {
+        cats.push(`  - name: Quality
+    weight: 1.0
+    items:
+      - kind: llm_judge
+        weight: 1.0
+        config:
+          model: anthropic/claude-sonnet-4-5
+          rubric: "Is the code readable, well-named, idiomatic Python?"
+          scale: likert-1-5`);
+      }
+      const rkYaml = `version: 1
+${strict ? 'strict: true\nmin_total_reward: 1.0\n' : ''}categories:
+${cats.join('\n')}
+`;
+
+      document.getElementById('ai-crit-testsh').textContent = testSh;
+      document.getElementById('ai-crit-rkyaml').textContent = rkYaml;
+      document.getElementById('ai-crit-output').removeAttribute('hidden');
+    }
+
+    document.getElementById('ai-crit-gen').addEventListener('click', () => {
+      const btn = document.getElementById('ai-crit-gen');
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 animate-spin"><path d="M21 12a9 9 0 1 1-3-6.7"/></svg> Generating...';
+      setTimeout(() => {
+        generateAiGraders();
+        btn.disabled = false;
+        btn.innerHTML = original;
+        SB.toast('Graders drafted from the verifier plan.', 'success');
+      }, 1100);
+    });
+    document.getElementById('ai-crit-regen').addEventListener('click', generateAiGraders);
+    document.getElementById('ai-crit-apply').addEventListener('click', () => {
+      const ta = document.getElementById('raw-testsh');
+      if (ta) ta.value = document.getElementById('ai-crit-testsh').textContent;
+      document.querySelector('button[data-crit-tab="raw"]').click();
+      SB.toast('Applied AI draft to tests/test.sh. Edit and save when ready.', 'success');
+    });
     const rawTestBtn = document.getElementById('raw-load-generated-test');
     if (rawTestBtn) rawTestBtn.addEventListener('click', () => {
       SB.toast('Loaded test.sh from criteria builder.', 'success');

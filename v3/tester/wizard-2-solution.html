@@ -91,12 +91,23 @@
           <span class="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">editable</span>
         </div>
 
-        <div class="flex items-center gap-2 px-4 py-2 bg-slate-50 border-b border-slate-100 text-xs">
+        <div class="flex items-center gap-2 px-4 py-2 bg-slate-50 border-b border-slate-100 text-xs flex-wrap">
           <button class="px-2 py-1 rounded bg-white border border-slate-200 hover:bg-slate-100">Format</button>
-          <button id="ai-tidy" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3"><path d="m12 3-1.9 5.8L4 10.5l5 3.7L7.2 20 12 16.6 16.8 20l-1.8-5.8 5-3.7-6.1-1.7z"/></svg>
-            AI tidy
-          </button>
+          <div class="relative inline-block" id="ai-tidy-wrap">
+            <button id="ai-tidy" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3"><path d="m12 3-1.9 5.8L4 10.5l5 3.7L7.2 20 12 16.6 16.8 20l-1.8-5.8 5-3.7-6.1-1.7z"/></svg>
+              AI tidy
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div id="ai-tidy-menu" hidden class="absolute z-20 mt-1 left-0 bg-white border border-slate-200 rounded-md shadow-lg w-72 overflow-hidden">
+              <div class="px-3 py-2 text-[10px] uppercase tracking-wider text-slate-500 bg-slate-50 border-b border-slate-200">Suggested prompts</div>
+              <button data-tidy="default" class="w-full text-left px-3 py-2 text-xs hover:bg-slate-50">Default tidy (typing, guards, safe subprocess)</button>
+              <button data-tidy="docstring" class="w-full text-left px-3 py-2 text-xs hover:bg-slate-50">Add a top-of-file docstring + usage example</button>
+              <button data-tidy="logging" class="w-full text-left px-3 py-2 text-xs hover:bg-slate-50">Add structured logging to stderr</button>
+              <button data-tidy="errors" class="w-full text-left px-3 py-2 text-xs hover:bg-slate-50">Improve error handling + exit codes</button>
+              <button data-tidy="modernize" class="w-full text-left px-3 py-2 text-xs hover:bg-slate-50">Modernize syntax (pathlib, f-strings, walrus)</button>
+            </div>
+          </div>
           <button id="diff-toggle" class="px-2 py-1 rounded bg-white border border-slate-200 hover:bg-slate-100">Show diff vs. original</button>
           <span class="ml-auto text-[11px] text-slate-500" id="ed-meta">utf-8 - LF - 0 lines</span>
         </div>
@@ -212,9 +223,30 @@
       SB.toast('Created ' + name, 'success');
     });
 
-    /* AI tidy */
-    document.getElementById('ai-tidy').addEventListener('click', () => {
-      document.getElementById('ai-result').removeAttribute('hidden');
+    /* AI tidy - menu with suggested prompts */
+    const tidyMenu = document.getElementById('ai-tidy-menu');
+    document.getElementById('ai-tidy').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (tidyMenu.hasAttribute('hidden')) tidyMenu.removeAttribute('hidden');
+      else tidyMenu.setAttribute('hidden', '');
+    });
+    document.addEventListener('click', () => tidyMenu.setAttribute('hidden', ''));
+    tidyMenu.querySelectorAll('button[data-tidy]').forEach(b => {
+      b.addEventListener('click', () => {
+        tidyMenu.setAttribute('hidden', '');
+        const result = document.getElementById('ai-result');
+        const ul = result.querySelector('ul');
+        const presets = {
+          default: ['Add <code class="font-mono">if __name__ == "__main__":</code> guard.', 'Add <code class="font-mono">from __future__ import annotations</code> and type hints.', 'Replace <code class="font-mono">os.system</code> with <code class="font-mono">subprocess.run</code> for safety.', 'Add a top-of-file docstring describing inputs / outputs.'],
+          docstring: ['Add a multi-line module docstring with example invocation.', 'Add Google-style docstrings to every function.', 'Document expected inputs / outputs at the top.'],
+          logging:   ['Add <code class="font-mono">logging.basicConfig(level=INFO, stream=sys.stderr)</code>.', 'Replace print statements with <code class="font-mono">logger.info</code>.', 'Log timing for each step.'],
+          errors:    ['Wrap I/O in try/except FileNotFoundError.', 'Exit with non-zero code on failure with a clear message.', 'Validate inputs early; fail fast.'],
+          modernize: ['Replace <code class="font-mono">open()</code> with <code class="font-mono">Path.read_text()</code>.', 'Use f-strings instead of <code class="font-mono">.format()</code>.', 'Use <code class="font-mono">match</code> statements where appropriate.'],
+        };
+        const items = presets[b.dataset.tidy] || presets.default;
+        ul.innerHTML = items.map(it => `<li>${it}</li>`).join('');
+        result.removeAttribute('hidden');
+      });
     });
     document.getElementById('dismiss-tidy').addEventListener('click', () => {
       document.getElementById('ai-result').setAttribute('hidden','');

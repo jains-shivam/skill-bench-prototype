@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="mx-auto max-w-7xl px-6 py-8">
+    <h1 class="text-2xl font-bold">Admin dashboard</h1>
+    <p class="text-sm text-slate-500 mt-1">Observability for the relay MVP: trainers submit plain language, testers convert, reviewers publish.</p>
+    <div class="grid grid-cols-2 md:grid-cols-6 gap-3 mt-6 mb-6">
+      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Total</div><div id="kpi-total" class="text-2xl font-semibold">-</div></div>
+      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Draft</div><div id="kpi-draft" class="text-2xl font-semibold">-</div></div>
+      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">With tester</div><div id="kpi-tester" class="text-2xl font-semibold text-blue-700">-</div></div>
+      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">In review</div><div id="kpi-review" class="text-2xl font-semibold text-amber-700">-</div></div>
+      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Changes</div><div id="kpi-changes" class="text-2xl font-semibold text-orange-700">-</div></div>
+      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Published</div><div id="kpi-published" class="text-2xl font-semibold text-emerald-700">-</div></div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      <div class="bg-white border rounded-lg overflow-hidden">
+        <div class="px-5 py-3 border-b font-semibold">People</div>
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="text-left px-4 py-2">User</th><th class="text-left px-4 py-2">Role</th><th class="text-left px-4 py-2">Tasks</th></tr></thead>
+          <tbody id="users-rows" class="divide-y"></tbody>
+        </table>
+      </div>
+      <div class="bg-white border rounded-lg overflow-hidden">
+        <div class="px-5 py-3 border-b font-semibold">Recent tasks</div>
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="text-left px-4 py-2">Task</th><th class="text-left px-4 py-2">Status</th><th class="text-left px-4 py-2">Trainer</th></tr></thead>
+          <tbody id="task-rows" class="divide-y"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="bg-white border rounded-lg overflow-hidden">
+      <div class="px-5 py-3 border-b flex justify-between items-center">
+        <div class="font-semibold">Environment templates</div>
+        <span class="text-xs px-2 py-1 rounded bg-slate-100 text-slate-500">Add template — soon</span>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+          <tr>
+            <th class="text-left px-4 py-2">Template</th>
+            <th class="text-left px-4 py-2">Tags</th>
+            <th class="text-left px-4 py-2">Resources</th>
+            <th class="text-left px-4 py-2">Used by testers</th>
+          </tr>
+        </thead>
+        <tbody id="tpl-rows" class="divide-y"></tbody>
+      </table>
+    </div>
+    <div class="mt-8 bg-white border rounded-lg p-5 text-sm text-slate-600">
+      <div class="font-semibold text-slate-900 mb-2">Post-MVP roadmap</div>
+      <ul class="list-disc pl-5 space-y-1">
+        <li>Skills library + lifecycle</li>
+        <li>Projects / Batches scoping</li>
+        <li>Evaluator with/without skills A/B</li>
+        <li>AI-assisted Dockerfile + test compilation</li>
+        <li>No-code criteria builder for testers</li>
+      </ul>
+    </div>
+  </main>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('admin');
+    SB.renderNav();
+    const tasks = SBData.tasks;
+    document.getElementById('kpi-total').textContent = tasks.length;
+    document.getElementById('kpi-draft').textContent = tasks.filter(t => t.status === 'trainer-draft').length;
+    document.getElementById('kpi-tester').textContent = tasks.filter(t => t.status === 'with-tester').length;
+    document.getElementById('kpi-review').textContent = tasks.filter(t => t.status === 'in-review').length;
+    document.getElementById('kpi-changes').textContent = tasks.filter(t => t.status === 'changes-requested').length;
+    document.getElementById('kpi-published').textContent = tasks.filter(t => t.status === 'published').length;
+    const users = document.getElementById('users-rows');
+    SBData.allUsers.forEach(u => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="px-4 py-2">${SB.escapeHtml(u.name)}<div class="text-xs text-slate-500">${SB.escapeHtml(u.email)}</div></td>
+        <td class="px-4 py-2"><span class="text-xs px-2 py-0.5 rounded bg-slate-100">${SB.escapeHtml(u.role)}</span></td>
+        <td class="px-4 py-2">${u.tasksCount}</td>`;
+      users.appendChild(tr);
+    });
+    const trows = document.getElementById('task-rows');
+    tasks.slice(0, 8).forEach(t => {
+      const st = SBData.STATUS[t.status];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="px-4 py-2 font-mono text-xs">${SB.escapeHtml(t.name)}</td>
+        <td class="px-4 py-2"><span class="pill ${st.cls}">${st.label}</span></td>
+        <td class="px-4 py-2">${SB.escapeHtml(t.trainer.name)}</td>`;
+      trows.appendChild(tr);
+    });
+    const tplRows = document.getElementById('tpl-rows');
+    const usage = {};
+    tasks.forEach(t => { if (t.templateId) usage[t.templateId] = (usage[t.templateId] || 0) + 1; });
+    SBData.templates.forEach(tpl => {
+      const tr = document.createElement('tr');
+      const res = tpl.resources;
+      tr.innerHTML = `<td class="px-4 py-2"><div class="font-medium">${SB.escapeHtml(tpl.name)}</div><div class="text-xs text-slate-500">${SB.escapeHtml(tpl.desc)}</div></td>
+        <td class="px-4 py-2">${tpl.tags.map(x => `<span class="text-[10px] px-1 rounded bg-slate-100">${SB.escapeHtml(x)}</span>`).join(' ')}</td>
+        <td class="px-4 py-2 text-xs">${res.cpus} CPU · ${res.memoryGB} GB${res.gpu ? ' · GPU' : ''}</td>
+        <td class="px-4 py-2">${usage[tpl.id] || 0}</td>`;
+      tplRows.appendChild(tr);
+    });
+  </script>
+</body>
+</html>

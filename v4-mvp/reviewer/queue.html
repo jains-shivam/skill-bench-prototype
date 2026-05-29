@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review queue - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="mx-auto max-w-7xl px-6 py-8">
+    <h1 class="text-2xl font-bold">Review queue</h1>
+    <p class="text-sm text-slate-500 mt-1">Tasks where the Tester ran Oracle PASS. Approve to publish, or request changes back to Trainer or Tester.</p>
+    <div class="tab-bar mb-4 mt-5">
+      <button data-tab="pending" class="active">Pending <span id="cnt-pending" class="text-xs bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
+      <button data-tab="changes">Awaiting fixes <span id="cnt-changes" class="text-xs bg-orange-100 text-orange-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
+      <button data-tab="done">Approved / Published <span id="cnt-done" class="text-xs bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase">
+          <tr>
+            <th class="text-left px-4 py-3">Task</th>
+            <th class="text-left px-4 py-3">Trainer</th>
+            <th class="text-left px-4 py-3">Tester</th>
+            <th class="text-left px-4 py-3">Oracle</th>
+            <th class="text-left px-4 py-3">Status</th>
+            <th class="px-2 py-3"></th>
+          </tr>
+        </thead>
+        <tbody id="rows" class="divide-y divide-slate-100"></tbody>
+      </table>
+      <div id="empty" class="hidden py-16 text-center text-slate-500 text-sm">No tasks in this tab.</div>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('reviewer');
+    SB.renderNav();
+    const FILTERS = {
+      pending: t => t.status === 'in-review',
+      changes: t => t.status === 'changes-requested',
+      done: t => t.status === 'approved' || t.status === 'published',
+    };
+    function counts() {
+      document.getElementById('cnt-pending').textContent = SBData.tasks.filter(FILTERS.pending).length;
+      document.getElementById('cnt-changes').textContent = SBData.tasks.filter(FILTERS.changes).length;
+      document.getElementById('cnt-done').textContent = SBData.tasks.filter(FILTERS.done).length;
+    }
+    counts();
+    function render(tab) {
+      const list = SBData.tasks.filter(FILTERS[tab]);
+      const tbody = document.getElementById('rows');
+      tbody.innerHTML = '';
+      document.getElementById('empty').classList.toggle('hidden', list.length > 0);
+      list.forEach(t => {
+        const st = SBData.STATUS[t.status];
+        const oracle = t.oraclePassed
+          ? `<span class="text-xs text-emerald-700">PASS ${t.oracleReward != null ? t.oracleReward.toFixed(2) : ''}</span>`
+          : '<span class="text-xs text-slate-400">—</span>';
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 cursor-pointer';
+        tr.innerHTML = `
+          <td class="px-4 py-3"><div class="font-mono font-medium">${SB.escapeHtml(t.name)}</div><div class="text-xs text-slate-500">${SB.escapeHtml(t.description)}</div></td>
+          <td class="px-4 py-3">${SB.escapeHtml(t.trainer.name)}</td>
+          <td class="px-4 py-3">${t.tester ? SB.escapeHtml(t.tester.name) : '—'}</td>
+          <td class="px-4 py-3">${oracle}</td>
+          <td class="px-4 py-3"><span class="pill ${st.cls}">${st.label}</span>${t.changesTarget ? `<div class="text-[10px] text-slate-500 mt-0.5">→ ${t.changesTarget}</div>` : ''}</td>
+          <td class="px-2 py-3 text-right text-xs text-indigo-600 font-medium">Open &rarr;</td>`;
+        tr.onclick = () => location.href = 'workspace.html?id=' + t.id;
+        tbody.appendChild(tr);
+      });
+    }
+    render('pending');
+    document.querySelectorAll('.tab-bar button[data-tab]').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('.tab-bar button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        render(b.dataset.tab);
+      });
+    });
+  </script>
+</body>
+</html>

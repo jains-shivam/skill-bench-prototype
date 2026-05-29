@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test queue - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="mx-auto max-w-7xl px-6 py-8">
+    <h1 class="text-2xl font-bold">Test queue</h1>
+    <p class="text-sm text-slate-500 mt-1">Pick up tasks from domain experts. You handle environment, solution, tests, and Oracle.</p>
+    <div class="flex flex-wrap gap-1 mt-3 mb-5 text-xs text-slate-500">
+      <span class="px-2 py-1 rounded bg-slate-100">Trainer writes plain language</span>
+      <span>&rarr;</span>
+      <span class="px-2 py-1 rounded bg-emerald-100 text-emerald-700 font-medium">You: Tester</span>
+      <span>&rarr;</span>
+      <span class="px-2 py-1 rounded bg-slate-100">Reviewer</span>
+    </div>
+    <div class="tab-bar mb-4">
+      <button data-tab="available" class="active">Available <span id="cnt-avail" class="text-xs bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
+      <button data-tab="mine">My tasks <span id="cnt-mine" class="text-xs bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
+      <button data-tab="submitted">Submitted <span id="cnt-sub" class="text-xs bg-slate-100 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase">
+          <tr>
+            <th class="text-left px-4 py-3">Task</th>
+            <th class="text-left px-4 py-3">Trainer</th>
+            <th class="text-left px-4 py-3">Domain</th>
+            <th class="text-left px-4 py-3">Submitted</th>
+            <th class="px-2 py-3"></th>
+          </tr>
+        </thead>
+        <tbody id="rows" class="divide-y divide-slate-100"></tbody>
+      </table>
+      <div id="empty" class="hidden py-16 text-center text-slate-500">
+        <p class="font-medium">Nothing in this tab</p>
+        <p class="text-sm mt-1">Check another tab or wait for trainers to submit.</p>
+      </div>
+    </div>
+    <div class="mt-10 border border-emerald-100 bg-emerald-50/50 rounded-lg p-4 text-sm text-slate-700">
+      <b>Tip:</b> Read the trainer&apos;s <code class="text-xs bg-white px-1 rounded">criteria.md</code> on the left when writing <code class="text-xs bg-white px-1 rounded">test.sh</code>. Pick an environment template unless the task truly needs a custom stack.
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('tester');
+    SB.renderNav();
+    const me = SBData.users.tester;
+    const FILTERS = {
+      available: t => t.status === 'with-tester' && !t.tester,
+      mine: t => t.tester && t.tester.id === me.id && (t.status === 'with-tester' || t.status === 'changes-requested'),
+      submitted: t => t.tester && t.tester.id === me.id && ['in-review','approved','published'].includes(t.status),
+    };
+    function counts() {
+      document.getElementById('cnt-avail').textContent = SBData.tasks.filter(FILTERS.available).length;
+      document.getElementById('cnt-mine').textContent = SBData.tasks.filter(FILTERS.mine).length;
+      document.getElementById('cnt-sub').textContent = SBData.tasks.filter(FILTERS.submitted).length;
+    }
+    counts();
+    function render(tab) {
+      const list = SBData.tasks.filter(FILTERS[tab]);
+      const tbody = document.getElementById('rows');
+      tbody.innerHTML = '';
+      document.getElementById('empty').classList.toggle('hidden', list.length > 0);
+      list.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        let cta = '';
+        if (tab === 'available') cta = '<span class="text-xs font-medium text-emerald-600">Pick up &rarr;</span>';
+        else if (tab === 'mine') cta = '<span class="text-xs font-medium text-indigo-600">Continue &rarr;</span>';
+        else cta = '<span class="text-xs text-slate-500">View &rarr;</span>';
+        tr.innerHTML = `
+          <td class="px-4 py-3">
+            <div class="font-medium font-mono">${SB.escapeHtml(t.name)}</div>
+            <div class="text-xs text-slate-500">${SB.escapeHtml(t.description)}</div>
+          </td>
+          <td class="px-4 py-3">${SB.escapeHtml(t.trainer.name)}</td>
+          <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-slate-100">${SB.escapeHtml(t.domain)}</span></td>
+          <td class="px-4 py-3 text-slate-500">${SB.escapeHtml(t.updatedAt)}</td>
+          <td class="px-2 py-3 text-right">${cta}</td>`;
+        tr.style.cursor = 'pointer';
+        tr.addEventListener('click', () => {
+          if (tab === 'available') {
+            SB.pickUpTask(t.id);
+            SB.toast('Task picked up.', 'success');
+          } else {
+            SB.setWizardTaskId(t.id);
+          }
+          location.href = 'wizard-1-environment.html?id=' + t.id;
+        });
+        tbody.appendChild(tr);
+      });
+    }
+    render('available');
+    document.querySelectorAll('.tab-bar button[data-tab]').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('.tab-bar button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        render(b.dataset.tab);
+      });
+    });
+  </script>
+</body>
+</html>

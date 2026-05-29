@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tests - Tester - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="mx-auto max-w-7xl px-6 py-6">
+    <div class="flex justify-between mb-4 text-sm text-slate-500">
+      <span><a href="queue.html">Test queue</a> / <span class="font-mono text-slate-900" id="task-name"></span></span>
+      <a href="queue.html">Save &amp; Exit</a>
+    </div>
+    <div id="wizard-stepper" class="mb-6 stepper-tester"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- Left: Trainer references -->
+      <div class="space-y-3">
+        <section class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <div class="px-4 py-2.5 border-b border-indigo-100 bg-indigo-50 flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-indigo-600"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span class="text-sm font-semibold text-indigo-900">Acceptance Criteria</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-200 text-indigo-800 ml-auto">tests/criteria.md</span>
+          </div>
+          <pre id="ctx-criteria" class="p-4 text-xs whitespace-pre-wrap text-slate-700 max-h-[16rem] overflow-y-auto scroll-y"></pre>
+        </section>
+        <section class="bg-amber-50 border border-amber-200 rounded-lg overflow-hidden">
+          <div class="px-4 py-2.5 border-b border-amber-200 flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-amber-600"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <span class="text-sm font-semibold text-amber-900">Golden Solution</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-800 ml-auto">solution/golden.md</span>
+          </div>
+          <pre id="ctx-golden" class="p-4 text-xs whitespace-pre-wrap text-slate-700 max-h-[14rem] overflow-y-auto scroll-y"></pre>
+        </section>
+        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800">
+          <strong>Your job:</strong> Convert the plain-language criteria (above) into automated assertions in <code class="bg-white px-1 rounded">test.sh</code>. Run solve.sh first, then verify the outputs match what the trainer described.
+        </div>
+      </div>
+      <!-- Right: Test editor -->
+      <section class="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
+        <div class="px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-sm font-medium">tests/test.sh</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Your verifier</span>
+          </div>
+          <label class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs border border-dashed border-slate-300 rounded-md cursor-pointer hover:bg-slate-50 hover:border-emerald-400 transition-colors">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            Import file
+            <input id="file-upload" type="file" accept=".sh,.bash,.py,.txt" class="hidden">
+          </label>
+        </div>
+        <textarea id="f-tests" class="w-full px-4 py-3 text-sm font-mono border-0 flex-1 min-h-[28rem] resize-none"
+          placeholder="#!/usr/bin/env bash&#10;set -euo pipefail&#10;&#10;# 1. Run the solution&#10;bash /app/solve.sh&#10;&#10;# 2. Assert outputs match criteria&#10;# ..."></textarea>
+        <div class="px-4 py-2 border-t border-slate-100 bg-slate-50 text-xs text-slate-500 flex justify-between">
+          <span>Automated verifier — must exit 0 on success, non-zero on failure</span>
+          <span id="line-count">0 lines</span>
+        </div>
+      </section>
+    </div>
+    <div class="mt-6"><div id="harbor-preview"></div></div>
+    <div class="mt-8 flex justify-between">
+      <a href="wizard-2-solution.html" class="text-sm text-slate-600">&larr; Back</a>
+      <a id="next" href="wizard-4-oracle.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md">Next: Oracle &rarr;</a>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('tester');
+    SB.renderNav();
+    SB.renderWizardStepper(3, 'tester');
+    const t = SB.getWizardTaskFromSession();
+    document.getElementById('task-name').textContent = t.name;
+    document.getElementById('ctx-criteria').textContent = t.criteriaMd || '(No criteria provided)';
+    document.getElementById('ctx-golden').textContent = t.goldenSolution || '(No golden solution provided)';
+
+    const STARTER_TEMPLATE = '#!/usr/bin/env bash\nset -euo pipefail\n\n# Step 1: Run the golden solution\nbash /app/solve.sh\n\n# Step 2: Verify outputs match trainer criteria\n# TODO: Add assertions based on the criteria on the left\n\necho "All checks passed"\nexit 0\n';
+    const ta = document.getElementById('f-tests');
+    ta.value = t.testSh || STARTER_TEMPLATE;
+
+    function updateLineCount() {
+      const lines = ta.value.split('\n').length;
+      document.getElementById('line-count').textContent = lines + ' line' + (lines !== 1 ? 's' : '');
+    }
+    function persist() {
+      t.testSh = ta.value;
+      SB.saveWizardTaskToSession(t);
+      SB.renderHarborPreview('harbor-preview', t, { initial: 'tests/test.sh' });
+      updateLineCount();
+    }
+    ta.addEventListener('input', persist);
+    persist();
+
+    document.getElementById('file-upload').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function() {
+        ta.value = reader.result;
+        persist();
+        SB.toast('Imported ' + file.name, 'success');
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    document.getElementById('next').addEventListener('click', persist);
+  </script>
+</body>
+</html>

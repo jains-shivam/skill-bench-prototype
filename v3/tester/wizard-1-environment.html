@@ -89,6 +89,12 @@
 
         <div class="tab-bar px-6 pt-3">
           <button data-tab="visual" class="active">Visual builder</button>
+          <button data-tab="ai">
+            <span class="inline-flex items-center gap-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+              Generate with AI
+            </span>
+          </button>
           <button data-tab="upload">Upload Dockerfile</button>
           <button data-tab="raw">Edit raw text</button>
         </div>
@@ -203,6 +209,63 @@ RUN pip install --no-cache-dir pandas==2.2 numpy==1.26 pytest==8.4
 COPY sample.txt /app/
 </pre>
         </details>
+        </div>
+
+        <!-- Tab: AI generate -->
+        <div id="tab-ai" class="p-6 space-y-4 hidden">
+          <div class="flex items-start gap-3 bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+            <div class="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+            </div>
+            <div class="flex-1 text-sm text-slate-700">
+              <b class="text-indigo-900">Let AI draft your Dockerfile.</b> Skill Bench reads the prompter's instruction + skills + solution and proposes an environment that runs the task end-to-end. Review and tweak before saving.
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Suggested prompts</div>
+            <div id="ai-prompt-chips" class="flex flex-wrap gap-2">
+              <button data-prompt="Match my prompter's solution exactly - install Python 3.12 with pandas, numpy, pytest, and copy sample.txt into /app." class="text-xs px-2 py-1 rounded-full bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700">Match the golden solution exactly</button>
+              <button data-prompt="Lean Python 3.12 + uv image, pandas + pytest only. Workdir /app. No GPU. Include the sample.txt file." class="text-xs px-2 py-1 rounded-full bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700">Minimal Python + uv</button>
+              <button data-prompt="Node 20 base image, install npm packages required by the solution, set workdir /app." class="text-xs px-2 py-1 rounded-full bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700">Node 20 baseline</button>
+              <button data-prompt="CUDA-enabled image (cuda:12.4) with PyTorch and Python 3.11. Set non-root user." class="text-xs px-2 py-1 rounded-full bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700">CUDA + PyTorch</button>
+              <button data-prompt="Headless Chromium + Playwright for browser automation tasks. Python 3.12." class="text-xs px-2 py-1 rounded-full bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700">Browser automation</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Prompt</label>
+            <textarea id="ai-env-prompt" rows="3"
+                      class="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200">Match my prompter's solution exactly - install Python 3.12 with pandas, numpy, pytest, and copy sample.txt into /app.</textarea>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-500">Generate using</span>
+            <select id="ai-env-model" class="text-xs border border-slate-200 rounded-md px-2 py-1 bg-white">
+              <option>anthropic/claude-sonnet-4-5</option>
+              <option>openai/gpt-5</option>
+              <option>google/gemini-2.5-pro</option>
+            </select>
+            <label class="inline-flex items-center gap-1 ml-2 text-xs text-slate-500">
+              <input type="checkbox" checked class="accent-indigo-600"> Include task.toml
+            </label>
+            <button id="ai-env-gen" class="ml-auto inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+              Generate
+            </button>
+          </div>
+
+          <div id="ai-env-output" hidden class="border border-slate-200 rounded-lg overflow-hidden">
+            <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+              <span class="font-mono text-xs text-slate-700">environment/Dockerfile</span>
+              <span class="ml-auto text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">AI draft</span>
+              <button id="ai-env-apply" class="text-xs px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium">Apply to raw editor</button>
+              <button id="ai-env-regen" class="text-xs px-2 py-1 rounded bg-white border border-slate-200 hover:bg-slate-100">Regenerate</button>
+            </div>
+            <pre id="ai-env-content" class="code-block m-0 rounded-none"></pre>
+          </div>
+
+          <div class="text-xs text-slate-500">In the real product, generation streams from the AI Gateway. The draft never overwrites your file - you click <b>Apply</b> to copy it into the raw editor.</div>
         </div>
 
         <!-- Tab: upload -->
@@ -445,9 +508,9 @@ COPY sample.txt /app/
     task.oraclePassed = false;
     SB.renderHarborPreview('harbor-preview', task, { initial: 'environment/Dockerfile', role: 'tester' });
 
-    /* Tab switcher: Visual builder / Upload Dockerfile / Edit raw */
+    /* Tab switcher: Visual builder / AI generate / Upload Dockerfile / Edit raw */
     const envTabs = document.querySelectorAll('.tab-bar button[data-tab]');
-    const envPanels = { visual: document.getElementById('tab-visual'), upload: document.getElementById('tab-upload'), raw: document.getElementById('tab-raw') };
+    const envPanels = { visual: document.getElementById('tab-visual'), ai: document.getElementById('tab-ai'), upload: document.getElementById('tab-upload'), raw: document.getElementById('tab-raw') };
     envTabs.forEach(b => b.addEventListener('click', () => {
       envTabs.forEach(t => t.classList.remove('active'));
       b.classList.add('active');
@@ -457,6 +520,69 @@ COPY sample.txt /app/
     document.getElementById('raw-load-generated').addEventListener('click', () => {
       document.getElementById('raw-dockerfile').value = document.getElementById('generated-dockerfile').textContent;
       SB.toast('Loaded Dockerfile from visual builder.', 'success');
+    });
+
+    /* AI generate Dockerfile */
+    document.querySelectorAll('#ai-prompt-chips button[data-prompt]').forEach(b => {
+      b.addEventListener('click', () => { document.getElementById('ai-env-prompt').value = b.dataset.prompt; });
+    });
+    const AI_TEMPLATES = {
+      python: `FROM python:3.12-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends \\
+    build-essential curl ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir pandas==2.2 numpy==1.26 pytest==8.4
+COPY sample.txt /app/
+ENV PYTHONUNBUFFERED=1
+CMD ["bash"]`,
+      uv: `FROM python:3.12-slim
+WORKDIR /app
+RUN pip install --no-cache-dir uv
+RUN uv pip install --system pandas==2.2 pytest==8.4
+COPY sample.txt /app/
+ENV PYTHONUNBUFFERED=1`,
+      node: `FROM node:20-bookworm
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+ENV NODE_ENV=production`,
+      cuda: `FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
+RUN apt-get update && apt-get install -y --no-install-recommends \\
+    python3.11 python3-pip && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir torch==2.4.0 --index-url https://download.pytorch.org/whl/cu124
+WORKDIR /app`,
+      browser: `FROM mcr.microsoft.com/playwright/python:v1.45.0-jammy
+WORKDIR /app
+RUN pip install --no-cache-dir pytest==8.4
+ENV PYTHONUNBUFFERED=1`,
+    };
+    function generateAiDockerfile() {
+      const prompt = (document.getElementById('ai-env-prompt').value || '').toLowerCase();
+      let tpl = AI_TEMPLATES.python;
+      if (/cuda|gpu|pytorch/.test(prompt)) tpl = AI_TEMPLATES.cuda;
+      else if (/playwright|browser|chromium/.test(prompt)) tpl = AI_TEMPLATES.browser;
+      else if (/\bnode\b|npm|next\.?js/.test(prompt)) tpl = AI_TEMPLATES.node;
+      else if (/\buv\b/.test(prompt)) tpl = AI_TEMPLATES.uv;
+      document.getElementById('ai-env-content').textContent = tpl;
+      document.getElementById('ai-env-output').removeAttribute('hidden');
+    }
+    document.getElementById('ai-env-gen').addEventListener('click', () => {
+      const btn = document.getElementById('ai-env-gen');
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 animate-spin"><path d="M21 12a9 9 0 1 1-3-6.7"/></svg> Generating...';
+      setTimeout(() => {
+        generateAiDockerfile();
+        btn.disabled = false;
+        btn.innerHTML = original;
+        SB.toast('Dockerfile drafted by AI. Review and apply.', 'success');
+      }, 900);
+    });
+    document.getElementById('ai-env-regen').addEventListener('click', generateAiDockerfile);
+    document.getElementById('ai-env-apply').addEventListener('click', () => {
+      document.getElementById('raw-dockerfile').value = document.getElementById('ai-env-content').textContent;
+      document.querySelector('.tab-bar button[data-tab="raw"]').click();
+      SB.toast('Applied AI draft to the raw editor.', 'success');
     });
 
     /* --------------------- task.toml co-author wiring --------------------- */

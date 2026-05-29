@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Criteria - Trainer - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="mx-auto max-w-5xl px-6 py-6">
+    <div class="flex justify-between mb-4 text-sm text-slate-500">
+      <span><a href="dashboard.html">My Tasks</a> / New task</span>
+      <a href="dashboard.html">Save &amp; Exit</a>
+    </div>
+    <div id="wizard-stepper" class="mb-8 stepper-trainer"></div>
+    <section class="bg-white border border-slate-200 rounded-lg p-6">
+      <h2 class="text-lg font-semibold">Acceptance criteria (plain language)</h2>
+      <p class="text-sm text-slate-500 mt-1">
+        Describe what success looks like. A Tester will convert this into automated tests.
+        Example: &ldquo;The output file <code class="text-xs bg-slate-100 px-1 rounded">/app/results.json</code> must contain <code class="text-xs">word_count</code> equal to 42.&rdquo;
+      </p>
+      <textarea id="f-criteria" rows="14" class="mt-4 w-full px-3 py-3 text-sm border rounded-md"></textarea>
+      <div class="mt-6 border-t border-slate-200 pt-6">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <div class="font-medium text-slate-900">Attachments</div>
+            <p class="text-xs text-slate-500">Sample data, expected outputs, rough notes, pseudocode — anything that helps the Tester understand the problem.</p>
+          </div>
+          <label class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium border border-dashed border-indigo-300 rounded-md cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 text-indigo-700 transition-colors">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            Upload files
+            <input id="file-input" type="file" class="hidden" multiple>
+          </label>
+        </div>
+        <div id="attach-list" class="space-y-2"></div>
+        <p class="text-xs text-slate-400 mt-2">Files are stored in-browser for this prototype.</p>
+      </div>
+    </section>
+    <div class="mt-6"><div id="harbor-preview"></div></div>
+    <div class="mt-8 flex justify-between">
+      <a href="wizard-2-instruction.html" class="text-sm text-slate-600">Back</a>
+      <a id="next" href="wizard-4-solution.html" class="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md">Next: Solution &rarr;</a>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('trainer');
+    SB.renderNav();
+    SB.renderWizardStepper(3, 'trainer');
+    const t = SB.getWizardTaskFromSession();
+    if (!t.attachments) t.attachments = [];
+    document.getElementById('f-criteria').value = t.criteriaMd || '';
+    const listEl = document.getElementById('attach-list');
+    function renderAttach() {
+      listEl.innerHTML = '';
+      if (!t.attachments.length) {
+        listEl.innerHTML = '<p class="text-sm text-slate-400 italic">No attachments yet.</p>';
+        return;
+      }
+      t.attachments.forEach((a, i) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-3 text-sm border border-slate-200 rounded-md px-3 py-2';
+        row.innerHTML = `
+          <span class="font-mono text-slate-800 flex-1">${SB.escapeHtml(a.name)}</span>
+          <span class="text-xs text-slate-400">${SB.escapeHtml(a.kind || 'file')} &middot; ${SB.escapeHtml(a.size || '')}</span>
+          <button type="button" data-i="${i}" class="text-slate-400 hover:text-red-600">&times;</button>`;
+        row.querySelector('button').onclick = () => { t.attachments.splice(i, 1); persist(); };
+        listEl.appendChild(row);
+      });
+    }
+    function persist() {
+      t.criteriaMd = document.getElementById('f-criteria').value;
+      if (!t.criteriaMd.trim().startsWith('#')) {
+        t.criteriaMd = '# Acceptance criteria\n\n' + t.criteriaMd;
+      }
+      SB.saveWizardTaskToSession(t);
+      SB.renderHarborPreview('harbor-preview', t, { initial: 'tests/criteria.md' });
+      renderAttach();
+    }
+    document.getElementById('f-criteria').addEventListener('input', persist);
+    document.getElementById('file-input').addEventListener('change', e => {
+      Array.from(e.target.files || []).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          t.attachments.push({
+            name: file.name,
+            kind: file.name.split('.').pop() || 'file',
+            size: (file.size / 1024).toFixed(1) + ' KB',
+            content: String(reader.result),
+          });
+          persist();
+        };
+        reader.readAsText(file);
+      });
+      e.target.value = '';
+    });
+    renderAttach();
+    persist();
+    document.getElementById('next').addEventListener('click', persist);
+  </script>
+</body>
+</html>

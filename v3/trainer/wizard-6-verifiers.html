@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New prompt - Verifiers - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+
+  <main class="mx-auto max-w-6xl px-6 py-6">
+
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="dashboard.html" class="hover:text-slate-900">My Prompts</a>
+        <span>/</span>
+        <span class="text-slate-900 font-medium">New prompt</span>
+      </div>
+      <a href="dashboard.html" class="text-sm text-slate-500 hover:text-slate-900">Save & Exit</a>
+    </div>
+
+    <div id="wizard-stepper" class="mb-8"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6">
+
+      <aside class="bg-white border border-slate-200 rounded-lg p-4 h-fit space-y-4">
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Tips</div>
+          <ul class="text-sm text-slate-600 space-y-2 list-disc pl-4">
+            <li>Describe <b>what</b> a correct solution must satisfy, not <b>how</b> to check it.</li>
+            <li>Be specific - paths, expected outputs, JSON keys.</li>
+            <li>The Tester turns these into <code class="bg-slate-100 px-1 rounded">tests/test.sh</code> + <code class="bg-slate-100 px-1 rounded">tests/rewardkit.yaml</code>.</li>
+            <li>Add an <b>LLM judge</b> point for anything subjective (code quality, style).</li>
+          </ul>
+        </div>
+        <div class="border-t border-slate-100 pt-3">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Handoff</div>
+          <div class="text-xs text-slate-600">Your verifier plan lands at <code class="bg-slate-100 px-1 rounded">tests/verifiers.md</code> in the Harbor folder as a read-only reference for the tester.</div>
+        </div>
+      </aside>
+
+      <section class="space-y-4">
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-900">Verifiers - what must be true for success?</h2>
+              <p class="text-sm text-slate-500 mt-1">Outline the verification points. The tester compiles these into real graders in the next stage.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="quick-pick" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-md hover:bg-slate-50">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+                Quick pick from library
+              </button>
+              <button id="ai-suggest" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+                Suggest with AI
+              </button>
+            </div>
+          </div>
+
+          <div id="verifier-list" class="divide-y divide-slate-100"></div>
+
+          <div id="empty-state" class="p-8 text-center text-sm text-slate-500 hidden">
+            <div class="w-10 h-10 mx-auto rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mb-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+            </div>
+            No verifiers yet. Use <b>Quick pick</b>, <b>Suggest with AI</b>, or the manual add below.
+          </div>
+
+          <!-- Manual add -->
+          <div class="bg-slate-50 px-6 py-4 border-t border-slate-200">
+            <div class="grid grid-cols-1 md:grid-cols-[10rem_1fr_auto] gap-2">
+              <select id="v-kind" class="px-3 py-2 text-sm border border-slate-200 rounded-md bg-white">
+                <option value="file_exists">File must exist</option>
+                <option value="file_contains">File contains text</option>
+                <option value="command_output">Command output matches</option>
+                <option value="json_key_equals">JSON key equals</option>
+                <option value="csv_cell_equals">CSV cell equals</option>
+                <option value="llm_judge">LLM / agent judge</option>
+                <option value="freeform">Free-form note</option>
+              </select>
+              <input id="v-desc" type="text" placeholder='e.g. /app/results.json must contain "word_count" with value 42'
+                     class="px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200">
+              <button id="v-add" class="px-3 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium">Add</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI suggest panel -->
+        <div id="ai-panel" hidden class="bg-amber-50 border border-amber-100 rounded-lg p-5">
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <div class="font-semibold text-amber-900">AI suggested verifiers</div>
+              <div class="text-xs text-slate-600 mt-0.5">Based on the instruction + skills + golden solution you wrote.</div>
+            </div>
+            <button id="ai-close" class="text-slate-400 hover:text-slate-900">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs text-slate-500">Generate using</span>
+            <select class="text-xs border border-slate-200 rounded-md px-2 py-1 bg-white">
+              <option>anthropic/claude-sonnet-4-5</option>
+              <option>openai/gpt-5</option>
+            </select>
+            <button id="ai-rerun" class="ml-auto text-xs px-2 py-1 rounded bg-white border border-amber-200 hover:bg-amber-100 text-amber-700">Re-generate</button>
+          </div>
+          <ul id="ai-suggestions" class="space-y-2"></ul>
+        </div>
+
+        <!-- Preview of generated verifiers.md -->
+        <details class="bg-white border border-slate-200 rounded-lg">
+          <summary class="cursor-pointer px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Preview generated <code class="font-mono">tests/verifiers.md</code></summary>
+          <pre id="verifiers-md" class="code-block scroll-y m-0 rounded-none rounded-b-lg" style="max-height: 24rem"></pre>
+        </details>
+      </section>
+
+    </div>
+
+    <div class="mt-8 flex items-center justify-between">
+      <a href="wizard-5-solution.html" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Back</a>
+      <div class="flex items-center gap-3">
+        <button class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50">Save draft</button>
+        <a href="wizard-7-preview.html"
+           class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md inline-flex items-center gap-2">
+          Next: Preview & Submit
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Quick-pick modal -->
+  <div id="lib-modal" class="modal-overlay" hidden>
+    <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col shadow-xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h3 class="font-semibold text-slate-900">Pick verifiers from the library</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Common verification patterns. Adapt the description to your task.</p>
+        </div>
+        <button onclick="SB.closeModal('lib-modal')" class="text-slate-400 hover:text-slate-700">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="lib-list" class="flex-1 overflow-y-auto scroll-y p-5 space-y-2"></div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('prompter');
+    SB.renderNav();
+    SB.renderWizardStepper(6, 'prompter');
+
+    const KIND_META = {
+      file_exists:        { label: 'File exists',       cls: 'bg-blue-100 text-blue-700' },
+      file_contains:      { label: 'File contains',     cls: 'bg-blue-100 text-blue-700' },
+      command_output:     { label: 'Command output',    cls: 'bg-emerald-100 text-emerald-700' },
+      json_key_equals:    { label: 'JSON key',          cls: 'bg-amber-100 text-amber-700' },
+      csv_cell_equals:    { label: 'CSV cell',          cls: 'bg-amber-100 text-amber-700' },
+      llm_judge:          { label: 'LLM judge',         cls: 'bg-purple-100 text-purple-700' },
+      freeform:           { label: 'Note',              cls: 'bg-slate-100 text-slate-700' },
+    };
+
+    /* Seed with a few sensible defaults derived from the wizardTask. */
+    const verifiers = [
+      { kind: 'file_exists',     desc: '/app/textstats.py exists and defines word_count and most_common.' },
+      { kind: 'command_output',  desc: 'python /app/analyze.py exits 0 and writes /app/results.json.' },
+      { kind: 'json_key_equals', desc: '/app/results.json has word_count = 42 and most_common = "the".' },
+      { kind: 'llm_judge',       desc: 'Code is readable, idiomatic Python (Likert 1-5).' },
+    ];
+
+    const LIB = [
+      { kind: 'file_exists',     desc: 'A specific file must be created at a path.' },
+      { kind: 'file_contains',   desc: 'A file must contain an exact string or pattern.' },
+      { kind: 'command_output',  desc: 'Running a specific command must succeed and produce expected stdout.' },
+      { kind: 'json_key_equals', desc: 'A JSON file must have a specific key/value pair.' },
+      { kind: 'csv_cell_equals', desc: 'A CSV file must have a specific cell value.' },
+      { kind: 'llm_judge',       desc: 'Subjective quality judged by an LLM on a 1-5 rubric.' },
+    ];
+
+    function render() {
+      const list = document.getElementById('verifier-list');
+      const empty = document.getElementById('empty-state');
+      list.innerHTML = '';
+      if (!verifiers.length) { empty.classList.remove('hidden'); renderMd(); return; }
+      empty.classList.add('hidden');
+      verifiers.forEach((v, i) => {
+        const m = KIND_META[v.kind] || KIND_META.freeform;
+        const row = document.createElement('div');
+        row.className = 'px-6 py-3 flex items-start gap-3';
+        row.innerHTML = `
+          <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${m.cls}">${m.label}</span>
+              <span class="text-xs text-slate-400">#${i + 1}</span>
+            </div>
+            <div class="text-sm text-slate-800 mt-1 leading-relaxed">${v.desc}</div>
+          </div>
+          <button data-i="${i}" class="text-slate-400 hover:text-red-500" title="Remove">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>`;
+        list.appendChild(row);
+      });
+      list.querySelectorAll('button[data-i]').forEach(b => {
+        b.addEventListener('click', () => { verifiers.splice(+b.dataset.i, 1); render(); });
+      });
+      renderMd();
+    }
+
+    function renderMd() {
+      const out = ['# Verifiers - what success looks like', '', '_Authored by the Prompter. The Tester compiles these into tests/test.sh + tests/rewardkit.yaml._', ''];
+      if (!verifiers.length) {
+        out.push('_No verifiers defined yet._');
+      } else {
+        verifiers.forEach((v, i) => {
+          out.push(`${i + 1}. **${(KIND_META[v.kind] || KIND_META.freeform).label}** - ${v.desc}`);
+        });
+      }
+      document.getElementById('verifiers-md').textContent = out.join('\n');
+    }
+
+    document.getElementById('v-add').addEventListener('click', () => {
+      const kind = document.getElementById('v-kind').value;
+      const desc = document.getElementById('v-desc').value.trim();
+      if (!desc) return SB.toast('Add a description first.', 'error');
+      verifiers.push({ kind, desc });
+      document.getElementById('v-desc').value = '';
+      render();
+      SB.toast('Verifier added.', 'success');
+    });
+
+    /* Quick-pick modal */
+    document.getElementById('quick-pick').addEventListener('click', () => {
+      const root = document.getElementById('lib-list');
+      root.innerHTML = '';
+      LIB.forEach(l => {
+        const m = KIND_META[l.kind];
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'w-full text-left border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 rounded-md p-3 flex items-start gap-3';
+        btn.innerHTML = `
+          <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${m.cls} shrink-0">${m.label}</span>
+          <span class="text-sm text-slate-700">${l.desc}</span>`;
+        btn.addEventListener('click', () => {
+          verifiers.push({ kind: l.kind, desc: l.desc });
+          SB.closeModal('lib-modal');
+          render();
+          SB.toast('Verifier added from library.', 'success');
+        });
+        root.appendChild(btn);
+      });
+      SB.openModal('lib-modal');
+    });
+
+    /* AI suggest */
+    function showAiSuggestions() {
+      const panel = document.getElementById('ai-panel');
+      const ul = document.getElementById('ai-suggestions');
+      const suggestions = [
+        { kind: 'file_exists',     desc: '/app/textstats.py must define word_count(text) and most_common(text).' },
+        { kind: 'file_exists',     desc: '/app/analyze.py must run end-to-end and write /app/results.json.' },
+        { kind: 'json_key_equals', desc: 'results.json must have integer word_count matching pandas reference output.' },
+        { kind: 'json_key_equals', desc: 'results.json must have most_common as a non-empty lowercase string.' },
+        { kind: 'llm_judge',       desc: 'Solution should not hardcode answers - judge for general correctness on 3 sample inputs.' },
+      ];
+      ul.innerHTML = '';
+      suggestions.forEach((s, i) => {
+        const m = KIND_META[s.kind];
+        const li = document.createElement('li');
+        li.className = 'flex items-start gap-3 bg-white border border-amber-200 rounded-md p-3';
+        li.innerHTML = `
+          <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${m.cls} shrink-0">${m.label}</span>
+          <span class="flex-1 text-sm text-slate-700">${s.desc}</span>
+          <button data-i="${i}" class="text-xs px-2 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white font-medium">Accept</button>`;
+        li.querySelector('button').addEventListener('click', () => {
+          verifiers.push({ kind: s.kind, desc: s.desc });
+          li.remove();
+          render();
+          SB.toast('Added to verifier plan.', 'success');
+        });
+        ul.appendChild(li);
+      });
+      panel.removeAttribute('hidden');
+    }
+    document.getElementById('ai-suggest').addEventListener('click', showAiSuggestions);
+    document.getElementById('ai-rerun').addEventListener('click', showAiSuggestions);
+    document.getElementById('ai-close').addEventListener('click', () => {
+      document.getElementById('ai-panel').setAttribute('hidden', '');
+    });
+
+    render();
+  </script>
+</body>
+</html>

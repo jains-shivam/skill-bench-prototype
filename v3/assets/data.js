@@ -66,13 +66,29 @@ window.SBData = (function () {
     { id: 'db3', batchId: 'b6', name: 'Web Tooling · Bug-Fix Pack',         tasksCount: 12, deliveredAt: '2026-03-18', recipient: 'BetaScale Inc.', status: 'delivered' },
   ];
 
+  /* Skill domains - top-level taxonomy that skills are mapped to.
+     Used by the admin filter + the "Skills by domain" overview. */
+  const skillDomains = [
+    { id: 'python',     name: 'Python',         color: 'bg-indigo-100 text-indigo-700',   icon: 'code',     desc: 'Python language patterns, idioms, standard library.' },
+    { id: 'data',       name: 'Data & ML',      color: 'bg-emerald-100 text-emerald-700', icon: 'chart',    desc: 'pandas, numpy, spark, ML pipelines.' },
+    { id: 'web',        name: 'Web',            color: 'bg-amber-100 text-amber-700',     icon: 'globe',    desc: 'FastAPI, Flask, REST, frontend.' },
+    { id: 'devops',     name: 'DevOps',         color: 'bg-purple-100 text-purple-700',   icon: 'terminal', desc: 'Docker, CI, deploy, cloud CLIs.' },
+    { id: 'shell',      name: 'Shell / CLI',    color: 'bg-orange-100 text-orange-700',   icon: 'terminal', desc: 'Bash scripting, CLI tooling.' },
+    { id: 'process',    name: 'Process',        color: 'bg-slate-100 text-slate-700',     icon: 'book',     desc: 'Git, code review, conventions.' },
+  ];
+
   /* Skill lifecycle - one row per skill in the registry plus version history.
-     state: draft | published | deprecated | archived. */
+     state: draft | published | deprecated | archived.
+     domain: maps to one of skillDomains.
+     projectSlugs: which projects this skill is in scope for. */
   const skillLifecycle = [
     {
       id: 'parse-csv-safely',
       name: 'Parse CSV safely',
       author: 'platform',
+      domain: 'data',
+      tags: ['python', 'pandas', 'io'],
+      projectSlugs: ['acme-coding', 'data-pipelines'],
       state: 'published',
       currentVersion: '1.3.0',
       usageTasks: 28,
@@ -88,6 +104,9 @@ window.SBData = (function () {
       id: 'format-json-output',
       name: 'Format JSON output',
       author: 'platform',
+      domain: 'python',
+      tags: ['python', 'json', 'output'],
+      projectSlugs: ['acme-coding', 'data-pipelines', 'web-tooling'],
       state: 'published',
       currentVersion: '2.0.0',
       usageTasks: 41,
@@ -102,6 +121,9 @@ window.SBData = (function () {
       id: 'design-fastapi-routes',
       name: 'Design FastAPI routes',
       author: 'platform',
+      domain: 'web',
+      tags: ['python', 'fastapi', 'web'],
+      projectSlugs: ['web-tooling'],
       state: 'published',
       currentVersion: '1.1.0',
       usageTasks: 14,
@@ -113,9 +135,77 @@ window.SBData = (function () {
       ],
     },
     {
+      id: 'write-pytest-tests',
+      name: 'Write pytest tests',
+      author: 'platform',
+      domain: 'python',
+      tags: ['python', 'pytest', 'testing'],
+      projectSlugs: ['acme-coding', 'web-tooling'],
+      state: 'published',
+      currentVersion: '1.0.2',
+      usageTasks: 19,
+      usageJobs: 31,
+      pendingChanges: 0,
+      history: [
+        { version: '1.0.2', publishedAt: '2026-04-10', author: 'platform', changes: 'Add parametrize examples.' },
+        { version: '1.0.0', publishedAt: '2026-02-20', author: 'platform', changes: 'Initial publish.' },
+      ],
+    },
+    {
+      id: 'safe-shell-scripting',
+      name: 'Safe shell scripting',
+      author: 'platform',
+      domain: 'shell',
+      tags: ['bash', 'shell'],
+      projectSlugs: ['acme-coding', 'web-tooling'],
+      state: 'published',
+      currentVersion: '1.0.0',
+      usageTasks: 8,
+      usageJobs: 11,
+      pendingChanges: 0,
+      history: [
+        { version: '1.0.0', publishedAt: '2026-01-05', author: 'platform', changes: 'Initial publish.' },
+      ],
+    },
+    {
+      id: 'commit-message-style',
+      name: 'Commit message style',
+      author: 'platform',
+      domain: 'process',
+      tags: ['git', 'process'],
+      projectSlugs: ['acme-coding', 'data-pipelines', 'web-tooling'],
+      state: 'published',
+      currentVersion: '1.0.0',
+      usageTasks: 5,
+      usageJobs: 5,
+      pendingChanges: 0,
+      history: [
+        { version: '1.0.0', publishedAt: '2026-01-12', author: 'platform', changes: 'Initial publish.' },
+      ],
+    },
+    {
+      id: 'docker-multistage',
+      name: 'Docker multi-stage builds',
+      author: 'dave@my-org.com',
+      domain: 'devops',
+      tags: ['docker', 'devops', 'build'],
+      projectSlugs: ['web-tooling'],
+      state: 'published',
+      currentVersion: '1.0.0',
+      usageTasks: 6,
+      usageJobs: 9,
+      pendingChanges: 0,
+      history: [
+        { version: '1.0.0', publishedAt: '2026-03-02', author: 'Dave Patel', changes: 'Initial publish.' },
+      ],
+    },
+    {
       id: 'handle-pdf-extraction',
       name: 'Handle PDF extraction',
       author: 'jane@my-org.com',
+      domain: 'data',
+      tags: ['pdf', 'parsing', 'python'],
+      projectSlugs: ['data-pipelines'],
       state: 'draft',
       currentVersion: '0.1.0',
       usageTasks: 0,
@@ -126,23 +216,46 @@ window.SBData = (function () {
       ],
     },
     {
+      id: 'spark-pipeline-conventions',
+      name: 'Spark pipeline conventions',
+      author: 'priya@my-org.com',
+      domain: 'data',
+      tags: ['spark', 'data', 'pipeline'],
+      projectSlugs: ['data-pipelines'],
+      state: 'draft',
+      currentVersion: '0.2.0',
+      usageTasks: 0,
+      usageJobs: 0,
+      pendingChanges: 0,
+      history: [
+        { version: '0.2.0', publishedAt: null, author: 'Priya Kapoor', changes: 'Draft v2 - add windowing examples.' },
+        { version: '0.1.0', publishedAt: null, author: 'Priya Kapoor', changes: 'Initial draft.' },
+      ],
+    },
+    {
       id: 'spark-onboarding-v0',
       name: 'Spark onboarding (legacy)',
       author: 'platform',
+      domain: 'data',
+      tags: ['spark', 'legacy'],
+      projectSlugs: ['data-pipelines'],
       state: 'deprecated',
       currentVersion: '0.9.0',
       usageTasks: 3,
       usageJobs: 12,
       pendingChanges: 0,
-      replacedBy: 'spark-onboarding-v1',
+      replacedBy: 'spark-pipeline-conventions',
       history: [
-        { version: '0.9.0', publishedAt: '2025-11-04', author: 'platform', changes: 'Deprecated in favor of spark-onboarding-v1.' },
+        { version: '0.9.0', publishedAt: '2025-11-04', author: 'platform', changes: 'Deprecated in favor of spark-pipeline-conventions.' },
       ],
     },
     {
       id: 'aws-cli-2024',
       name: 'AWS CLI v2 patterns (2024)',
       author: 'platform',
+      domain: 'devops',
+      tags: ['aws', 'cli', 'cloud'],
+      projectSlugs: [],
       state: 'archived',
       currentVersion: '0.8.0',
       usageTasks: 0,
@@ -462,6 +575,12 @@ The file \`sample.txt\` is already in \`/app\` for you to analyze.`,
         md: skillsLibrary[1].md,
       },
     ],
+    verifiers: [
+      { kind: 'file_exists',     kindLabel: 'File exists',    desc: '/app/textstats.py exists and defines word_count and most_common.' },
+      { kind: 'command_output',  kindLabel: 'Command output', desc: 'python /app/analyze.py exits 0 and writes /app/results.json.' },
+      { kind: 'json_key_equals', kindLabel: 'JSON key',       desc: '/app/results.json has word_count = 42 and most_common = "the".' },
+      { kind: 'llm_judge',       kindLabel: 'LLM judge',      desc: 'Code is readable, idiomatic Python (Likert 1-5).' },
+    ],
     environment: {
       os: 'Ubuntu 24.04',
       languages: [{ name: 'Python', version: '3.12' }],
@@ -742,6 +861,16 @@ ${cats}
     return t.instructionMd || '';
   }
 
+  function makeVerifiersMd(t) {
+    const list = (t.verifiers || []).map((v, i) => `${i + 1}. **${v.kindLabel || v.kind}** - ${v.desc}`).join('\n');
+    return `# Verifiers - what success looks like
+
+_Authored by the Prompter. The Tester compiles these into tests/test.sh + tests/rewardkit.yaml._
+
+${list || '_No verifiers defined yet._'}
+`;
+  }
+
   /* Returns an object describing the Harbor folder for a task.
      Each node has { type: 'dir'|'file', path, label, content, language }. */
   function harborFiles(t) {
@@ -766,6 +895,7 @@ ${cats}
       }
     }
     out.push({ type: 'dir',  path: 'tests',            label: 'tests/' });
+    out.push({ type: 'file', path: 'tests/verifiers.md', label: 'verifiers.md', content: makeVerifiersMd(t),  language: 'markdown', owner: 'prompter' });
     out.push({ type: 'file', path: 'tests/test.sh',    label: 'test.sh',       content: makeTestSh(t),       language: 'bash', owner: 'tester' });
     out.push({ type: 'file', path: 'tests/rewardkit.yaml', label: 'rewardkit.yaml', content: makeRewardkitYaml(t), language: 'yaml', owner: 'tester' });
     out.push({ type: 'dir',  path: 'solution',         label: 'solution/' });
@@ -806,5 +936,6 @@ ${cats}
     deliveryBatches,
     workspaces,
     skillLifecycle,
+    skillDomains,
   };
 })();

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Oracle - Tester - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="mx-auto max-w-6xl px-6 py-6">
+    <div class="flex justify-between mb-4 text-sm text-slate-500">
+      <span><a href="queue.html">Test queue</a> / <span class="font-mono text-slate-900" id="task-name"></span></span>
+      <a href="queue.html">Save &amp; Exit</a>
+    </div>
+    <div id="wizard-stepper" class="mb-8 stepper-tester"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-[18rem_1fr] gap-6">
+      <aside class="bg-white border border-slate-200 rounded-lg p-5 text-sm">
+        <div class="text-xs font-semibold uppercase text-slate-500 mb-3">Summary</div>
+        <dl id="summary" class="space-y-2 text-sm"></dl>
+      </aside>
+      <section class="bg-white border border-slate-200 rounded-lg p-6">
+        <h2 class="text-lg font-semibold">Run Oracle test</h2>
+        <p class="text-sm text-slate-500 mt-1">Runs solution + verifier in Daytona. <b>Must PASS (reward 1.0)</b> before you can submit to the reviewer.</p>
+        <div id="state-idle" class="mt-6 flex gap-3 flex-wrap">
+          <button id="run-pass" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-medium">Run Oracle Test</button>
+          <button id="run-fail" class="px-3 py-2.5 text-sm border rounded-md bg-white">Demo: simulate FAIL</button>
+        </div>
+        <div id="state-running" class="mt-6 hidden">
+          <div class="border rounded-lg p-4">
+            <div class="flex items-center gap-2 mb-3"><span class="live-dot"></span><b>Running</b><span id="run-elapsed" class="ml-auto text-xs font-mono"></span></div>
+            <div class="progress-bar"><div id="run-bar" style="width:0%"></div></div>
+            <ul id="run-stages" class="mt-3 text-sm space-y-2"></ul>
+          </div>
+        </div>
+        <div id="state-pass" class="mt-6 hidden">
+          <div class="border border-emerald-200 bg-emerald-50 rounded-lg p-5">
+            <div class="font-semibold text-emerald-900">Oracle PASSED &middot; reward 1.00</div>
+            <p class="text-sm text-emerald-800 mt-1">Submit to reviewer.</p>
+          </div>
+          <div class="mt-4 flex gap-3">
+            <button id="run-again" class="text-sm border px-3 py-2 rounded-md">Run again</button>
+            <button id="submit" class="ml-auto px-4 py-2 text-sm bg-emerald-600 text-white rounded-md font-medium">Submit for review</button>
+          </div>
+        </div>
+        <div id="state-fail" class="mt-6 hidden">
+          <div class="border border-red-200 bg-red-50 rounded-lg p-5">
+            <div class="font-semibold text-red-900">Oracle FAILED</div>
+            <p class="text-sm text-red-800 mt-1">Fix solution or tests, then run again.</p>
+          </div>
+          <div class="mt-4"><a href="wizard-3-tests.html" class="text-sm border px-3 py-2 rounded-md bg-white">Back to Tests</a></div>
+        </div>
+      </section>
+    </div>
+    <div class="mt-6"><div id="harbor-preview"></div></div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('tester');
+    SB.renderNav();
+    SB.renderWizardStepper(4, 'tester');
+    const t = SB.getWizardTaskFromSession();
+    document.getElementById('task-name').textContent = t.name;
+    const tpl = t.templateId ? SBData.getTemplate(t.templateId) : null;
+    const solutionLines = (t.solveSh || '').split('\n').length;
+    const testLines = (t.testSh || '').split('\n').length;
+    document.getElementById('summary').innerHTML = `
+      <div class="flex justify-between"><span class="text-slate-500">Task</span><span class="font-mono text-xs truncate max-w-[10rem]">${SB.escapeHtml(t.name)}</span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Trainer</span><span>${SB.escapeHtml(t.trainer ? t.trainer.name : '—')}</span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Domain</span><span>${SB.escapeHtml(t.domain || '—')}</span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Template</span><span>${tpl ? SB.escapeHtml(tpl.name) : 'Custom'}</span></div>
+      <div class="flex justify-between"><span class="text-slate-500">solve.sh</span><span>${solutionLines} lines</span></div>
+      <div class="flex justify-between"><span class="text-slate-500">test.sh</span><span>${testLines} lines</span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Attachments</span><span>${(t.attachments || []).length} file(s)</span></div>`;
+    SB.renderHarborPreview('harbor-preview', t, { initial: 'task.toml' });
+    const idle = document.getElementById('state-idle');
+    const running = document.getElementById('state-running');
+    const pass = document.getElementById('state-pass');
+    const fail = document.getElementById('state-fail');
+    function show(s) {
+      [idle, running, pass, fail].forEach(el => el.classList.add('hidden'));
+      ({ idle, running, pass, fail })[s].classList.remove('hidden');
+    }
+    function start(simFail) {
+      show('running');
+      const stagesEl = document.getElementById('run-stages');
+      const bar = document.getElementById('run-bar');
+      stagesEl.innerHTML = '';
+      const started = Date.now();
+      const timer = setInterval(() => {
+        document.getElementById('run-elapsed').textContent = ((Date.now() - started) / 1000).toFixed(1) + 's';
+      }, 100);
+      SB.runOracle({
+        fail: simFail,
+        onProgress(p) {
+          bar.style.width = p.percent + '%';
+          if (!stagesEl.children[p.stageIndex]) {
+            const li = document.createElement('li');
+            li.textContent = p.stage;
+            stagesEl.appendChild(li);
+          }
+        },
+        onComplete(r) {
+          clearInterval(timer);
+          t.oraclePassed = r.pass;
+          t.oracleReward = r.reward;
+          SB.saveWizardTaskToSession(t);
+          SB.renderHarborPreview('harbor-preview', t, { initial: 'task.toml' });
+          show(r.pass ? 'pass' : 'fail');
+        },
+      });
+    }
+    document.getElementById('run-pass').onclick = () => start(false);
+    document.getElementById('run-fail').onclick = () => start(true);
+    document.getElementById('run-again').onclick = () => start(false);
+    document.getElementById('submit').onclick = () => {
+      if (!t.oraclePassed) { SB.toast('Oracle must pass first.', 'warning'); return; }
+      SB.submitTesterToReview(t);
+      SB.toast('Submitted for review.', 'success');
+      setTimeout(() => { location.href = 'queue.html'; }, 700);
+    };
+  </script>
+</body>
+</html>

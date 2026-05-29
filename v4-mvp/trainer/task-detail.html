@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Task - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="mx-auto max-w-7xl px-6 py-6">
+    <div class="text-sm text-slate-500 mb-3"><a href="dashboard.html">My Tasks</a> / <span id="bc-name" class="font-mono text-slate-900"></span></div>
+    <header class="bg-white border border-slate-200 rounded-lg p-5 mb-4">
+      <div class="flex flex-wrap justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-3">
+            <h1 id="t-name" class="text-xl font-semibold font-mono"></h1>
+            <span id="t-status" class="pill"></span>
+          </div>
+          <p id="t-desc" class="text-sm text-slate-500 mt-1"></p>
+          <div id="t-meta" class="text-xs text-slate-500 mt-2"></div>
+        </div>
+        <a id="action-btn" href="#" class="hidden px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md font-medium"></a>
+      </div>
+    </header>
+    <div id="handoff-banner" class="mb-4"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_22rem] gap-4">
+      <div class="bg-white border border-slate-200 rounded-lg p-5">
+        <div class="font-semibold mb-3">Harbor folder</div>
+        <div id="harbor-preview"></div>
+      </div>
+      <aside class="space-y-4">
+        <div id="tester-card" class="bg-white border border-slate-200 rounded-lg p-5 hidden">
+          <div class="text-xs font-semibold uppercase text-emerald-700 mb-2">Tester contribution</div>
+          <dl id="tester-meta" class="text-sm space-y-1"></dl>
+        </div>
+        <div id="comments-card" class="bg-white border border-slate-200 rounded-lg p-5 hidden">
+          <div class="font-semibold mb-3">Reviewer comments</div>
+          <div id="comments-list" class="space-y-3 text-sm"></div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg p-5">
+          <div class="font-semibold mb-3">History</div>
+          <ol id="history-list" class="space-y-3 text-sm border-l-2 border-slate-200 pl-4"></ol>
+        </div>
+      </aside>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('trainer');
+    SB.renderNav();
+    const id = new URLSearchParams(location.search).get('id');
+    const t = id ? SBData.getTaskById(id) : SBData.tasks[0];
+    document.getElementById('bc-name').textContent = t.name;
+    document.getElementById('t-name').textContent = t.name;
+    document.getElementById('t-desc').textContent = t.description;
+    const st = SBData.STATUS[t.status];
+    const statusEl = document.getElementById('t-status');
+    statusEl.className = 'pill ' + st.cls;
+    statusEl.textContent = st.label;
+    const meta = [`Domain <b>${SB.escapeHtml(t.domain)}</b>`, `Updated ${SB.escapeHtml(t.updatedAt)}`];
+    if (t.tester) meta.push(`Tester <b>${SB.escapeHtml(t.tester.name)}</b>`);
+    if (t.oraclePassed) meta.push(`Oracle <b class="text-emerald-700">PASS</b>`);
+    document.getElementById('t-meta').innerHTML = meta.join(' &middot; ');
+    SB.renderHandoffBanner(document.getElementById('handoff-banner'), t, 'trainer');
+    if (t.status === 'trainer-draft' || (t.status === 'changes-requested' && t.changesTarget === 'trainer')) {
+      const btn = document.getElementById('action-btn');
+      btn.href = 'wizard-1-brief.html?id=' + t.id;
+      btn.textContent = 'Continue editing \u2192';
+      btn.classList.remove('hidden');
+      SB.setWizardTaskId(t.id);
+    }
+    if (t.tester && (t.solveSh || t.templateId)) {
+      document.getElementById('tester-card').classList.remove('hidden');
+      const tpl = t.templateId ? SBData.getTemplate(t.templateId) : null;
+      document.getElementById('tester-meta').innerHTML = `
+        <div><b>${SB.escapeHtml(t.tester.name)}</b></div>
+        <div class="text-slate-500">Template: ${tpl ? SB.escapeHtml(tpl.name) : 'Custom Dockerfile'}</div>`;
+    }
+    SB.renderHarborPreview('harbor-preview', t);
+    if (t.comments && t.comments.length) {
+      document.getElementById('comments-card').classList.remove('hidden');
+      const list = document.getElementById('comments-list');
+      t.comments.forEach(c => {
+        const d = document.createElement('div');
+        d.className = 'border rounded-md p-3';
+        d.innerHTML = `<div class="text-xs text-slate-500 mb-1">${SB.escapeHtml(c.author.name)} &middot; ${SB.escapeHtml(c.when)}</div><div>${SB.escapeHtml(c.body)}</div>`;
+        list.appendChild(d);
+      });
+    }
+    const hist = document.getElementById('history-list');
+    (t.history || []).forEach(h => {
+      const li = document.createElement('li');
+      li.className = 'relative';
+      li.innerHTML = `<span class="absolute -left-[1.4rem] top-1.5 w-3 h-3 rounded-full bg-indigo-500 border-2 border-white"></span>
+        <div>${SB.escapeHtml(h.event)}</div><div class="text-xs text-slate-500">${SB.escapeHtml(h.who)} &middot; ${SB.escapeHtml(h.when)}</div>`;
+      hist.appendChild(li);
+    });
+  </script>
+</body>
+</html>

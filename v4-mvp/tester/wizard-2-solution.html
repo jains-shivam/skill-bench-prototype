@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Solution - Tester - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="mx-auto max-w-7xl px-6 py-6">
+    <div class="flex justify-between mb-4 text-sm text-slate-500">
+      <span><a href="queue.html">Test queue</a> / <span class="font-mono text-slate-900" id="task-name"></span></span>
+      <a href="queue.html">Save &amp; Exit</a>
+    </div>
+    <div id="wizard-stepper" class="mb-6 stepper-tester"></div>
+    <div id="handoff-banner" class="mb-4"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4">
+      <!-- Left: Trainer context -->
+      <div class="space-y-3">
+        <div class="bg-amber-50 border border-amber-200 rounded-lg overflow-hidden">
+          <div class="px-4 py-2.5 border-b border-amber-200 flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-amber-600"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <span class="text-sm font-semibold text-amber-900">Trainer's Golden Solution</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-800 ml-auto">Reference</span>
+          </div>
+          <pre id="ctx-golden" class="p-4 text-xs whitespace-pre-wrap text-slate-700 max-h-[22rem] overflow-y-auto scroll-y"></pre>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <div class="px-4 py-2.5 border-b border-slate-200">
+            <span class="text-sm font-medium text-slate-700">Problem statement</span>
+          </div>
+          <pre id="ctx-instr" class="p-4 text-xs whitespace-pre-wrap text-slate-600 max-h-[14rem] overflow-y-auto scroll-y"></pre>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg p-4">
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Attachments from trainer</div>
+          <div id="ctx-attach" class="space-y-1 text-xs"></div>
+        </div>
+      </div>
+      <!-- Right: Editor -->
+      <section class="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
+        <div class="px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-sm font-medium">solution/solve.sh</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Your implementation</span>
+          </div>
+          <label class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs border border-dashed border-slate-300 rounded-md cursor-pointer hover:bg-slate-50 hover:border-emerald-400 transition-colors">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            Import file
+            <input id="file-upload" type="file" accept=".sh,.bash,.py,.txt" class="hidden">
+          </label>
+        </div>
+        <textarea id="f-solve" class="w-full px-4 py-3 text-sm font-mono border-0 flex-1 min-h-[28rem] resize-none"
+          placeholder="#!/usr/bin/env bash&#10;set -euo pipefail&#10;&#10;# Convert the trainer's golden solution into an executable script.&#10;# This script must produce the expected outputs when run in the container."></textarea>
+        <div class="px-4 py-2 border-t border-slate-100 bg-slate-50 text-xs text-slate-500 flex justify-between">
+          <span>Convert the trainer's golden solution (left) into an executable bash script</span>
+          <span id="line-count">0 lines</span>
+        </div>
+      </section>
+    </div>
+    <div class="mt-6"><div id="harbor-preview"></div></div>
+    <div class="mt-8 flex justify-between">
+      <a href="wizard-1-environment.html" class="text-sm text-slate-600">&larr; Back</a>
+      <a id="next" href="wizard-3-tests.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md">Next: Tests &rarr;</a>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('tester');
+    SB.renderNav();
+    SB.renderWizardStepper(2, 'tester');
+    const t = SB.getWizardTaskFromSession();
+    document.getElementById('task-name').textContent = t.name;
+    SB.renderHandoffBanner(document.getElementById('handoff-banner'), t, 'tester');
+    document.getElementById('ctx-instr').textContent = t.instructionMd || '';
+    document.getElementById('ctx-golden').textContent = t.goldenSolution || '(No golden solution provided by trainer)';
+    const attachEl = document.getElementById('ctx-attach');
+    if (!t.attachments || !t.attachments.length) {
+      attachEl.innerHTML = '<span class="text-slate-400 italic">No attachments</span>';
+    } else {
+      attachEl.innerHTML = t.attachments.map(a => `
+        <div class="flex items-center gap-2 font-mono px-2 py-1.5 bg-slate-50 border border-slate-100 rounded">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5 text-slate-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          <span>${SB.escapeHtml(a.name)}</span>
+          <span class="text-slate-400 ml-auto">${SB.escapeHtml(a.size || '')}</span>
+        </div>`).join('');
+    }
+
+    const STARTER_TEMPLATE = '#!/usr/bin/env bash\nset -euo pipefail\ncd /app\n\n# TODO: Convert the trainer\'s golden solution into executable commands.\n# The script should produce the expected output files.\n\n';
+    const ta = document.getElementById('f-solve');
+    ta.value = t.solveSh || STARTER_TEMPLATE;
+
+    function updateLineCount() {
+      const lines = ta.value.split('\n').length;
+      document.getElementById('line-count').textContent = lines + ' line' + (lines !== 1 ? 's' : '');
+    }
+    function persist() {
+      t.solveSh = ta.value;
+      SB.saveWizardTaskToSession(t);
+      SB.renderHarborPreview('harbor-preview', t, { initial: 'solution/solve.sh' });
+      updateLineCount();
+    }
+    ta.addEventListener('input', persist);
+    persist();
+
+    document.getElementById('file-upload').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function() {
+        ta.value = reader.result;
+        persist();
+        SB.toast('Imported ' + file.name, 'success');
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    document.getElementById('next').addEventListener('click', persist);
+  </script>
+</body>
+</html>

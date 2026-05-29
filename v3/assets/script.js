@@ -236,10 +236,11 @@ window.SB = (function () {
     prompter: [
       { id: 1, label: 'Template',    href: 'wizard-1-template.html' },
       { id: 2, label: 'Brief',       href: 'wizard-2-brief.html' },
-      { id: 3, label: 'Instruction', href: 'wizard-3-instruction.html' },
-      { id: 4, label: 'Skills',      href: 'wizard-4-skills.html' },
+      { id: 3, label: 'Skills',      href: 'wizard-3-skills.html' },
+      { id: 4, label: 'Instruction', href: 'wizard-4-instruction.html' },
       { id: 5, label: 'Solution',    href: 'wizard-5-solution.html' },
-      { id: 6, label: 'Preview',     href: 'wizard-6-preview.html' },
+      { id: 6, label: 'Verifiers',   href: 'wizard-6-verifiers.html' },
+      { id: 7, label: 'Preview',     href: 'wizard-7-preview.html' },
     ],
     tester: [
       { id: 1, label: 'Environment', href: 'wizard-1-environment.html' },
@@ -349,9 +350,10 @@ window.SB = (function () {
   const EDIT_TARGETS = {
     prompter: {
       'task.toml':                                 'wizard-2-brief.html',
-      'instruction.md':                            'wizard-3-instruction.html',
-      'environment/skills/':                       'wizard-4-skills.html',
+      'environment/skills/':                       'wizard-3-skills.html',
+      'instruction.md':                            'wizard-4-instruction.html',
       'solution/':                                 'wizard-5-solution.html',
+      'tests/verifiers.md':                        'wizard-6-verifiers.html',
     },
     tester: {
       'environment/Dockerfile':                    'wizard-1-environment.html',

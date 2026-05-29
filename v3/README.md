@@ -50,17 +50,18 @@ prototype/
   trainer/                              PROMPTER flow (folder kept for URL stability)
     dashboard.html                      My Prompts list with status pills
     wizard-1-template.html              Step 1 - pick a template
-    wizard-2-brief.html                 Step 2 - name, difficulty, keywords
-    wizard-3-instruction.html           Step 3 - markdown editor + live preview
-    wizard-4-skills.html                Step 4 - attach skills (library + author tabs)
+    wizard-2-brief.html                 Step 2 - name, difficulty, keywords (no OS - tester picks it)
+    wizard-3-skills.html                Step 3 - attach skills first (library + author tabs)
+    wizard-4-instruction.html           Step 4 - markdown editor + live preview (knows the skills)
     wizard-5-solution.html              Step 5 - upload / in-browser editor / AI-generate
-    wizard-6-preview.html               Step 6 - Harbor folder preview + Submit for testing
+    wizard-6-verifiers.html             Step 6 - outline verifier plan (compiled by tester)
+    wizard-7-preview.html               Step 7 - Harbor folder preview + Submit for testing
     task-detail.html                    Read-only Harbor view (preview + summary + runs)
   tester/                               TESTER flow
     queue.html                          Inbox of prompts waiting for testing
-    wizard-1-environment.html           Step 1 - env builder + task.toml co-author + Daytona banner
-    wizard-2-solution.html              Step 2 - solution editor (file tree + AI tidy + diff)
-    wizard-3-criteria.html              Step 3 - grading criteria builder + Harbor preview
+    wizard-1-environment.html           Step 1 - Visual / AI-generate / Upload / Raw Dockerfile + task.toml co-author
+    wizard-2-solution.html              Step 2 - solution editor (file tree + AI tidy menu + diff)
+    wizard-3-criteria.html              Step 3 - Builder / AI-compile from verifiers.md / Upload / Raw
     wizard-4-oracle.html                Step 4 - Oracle simulator (PASS / FAIL)
     wizard-5-preview.html               Step 5 - full Harbor preview + Submit for review
   reviewer/
@@ -100,24 +101,26 @@ prototype/
 ### 1. Land on `index.html` (~30s)
 Point out the 5 roles and the workflow strip across the top.
 
-### 2. Prompter (~2 min)
+### 2. Prompter (~2.5 min)
 - Click **Continue as Prompter** -> **My Prompts** list (statuses: Prompter draft, Ready for tester, Tester in progress, In review, Changes requested, Approved, Published).
 - Click **New prompt**.
 - **Step 1 Template**: pick **Python Script**.
-- **Step 2 Brief**: prefilled name, add a keyword chip.
-- **Step 3 Instruction**: type one line to demo the live preview.
-- **Step 4 Skills**: click **Add skill** to open the modal.
+- **Step 2 Brief**: prefilled name, add a keyword chip. Note there is **no OS field** anymore - the Tester picks the base image.
+- **Step 3 Skills** (new earlier position): click **Add skill** to open the modal.
   - **From library** tab: pick "Parse CSV safely" - it lands in the attached list.
   - **Author new** tab: write a short SKILL.md inline and see the live preview.
+- **Step 4 Instruction**: type one line to demo the live preview - the instruction is written *after* skills so it can reference them.
 - **Step 5 Solution**: click through the three tabs (Upload / In-browser editor / Generate with AI).
-- **Step 6 Preview**: this is the **Harbor preview** - click `task.toml`, `instruction.md`, then `environment/skills/parse-csv-safely/SKILL.md`. The tree shows which files are owned by Prompter vs Tester vs auto-generated. Submit for testing.
+- **Step 6 Verifiers** (NEW): list the verification points - what success looks like. Use **Quick pick** for a library, or **Suggest with AI** to draft based on instruction + solution. The Tester compiles these into real graders.
+- **Step 7 Preview**: this is the **Harbor preview** - click `task.toml`, `instruction.md`, `environment/skills/parse-csv-safely/SKILL.md`, and `tests/verifiers.md`. Submit for testing.
 
-### 3. Tester (~2 min)
+### 3. Tester (~2.5 min)
 - Click **Switch role** -> **Continue as Tester** -> **Test queue** (the prompter's submission shows here).
-- **Step 1 Environment**: visual builder. Scroll down - the **Full Harbor preview** at the bottom updates live as you build.
-- **Step 2 Criteria**: open **+ Add criterion** to demo the picker. Note the preview now includes `tests/rewardkit.yaml` and `tests/test.sh`.
-- **Step 3 Oracle**: click **Run Oracle Test**, watch the 6s simulator. Also show **Demo: run with FAIL outcome**.
-- **Step 4 Preview**: this is the **final** Harbor folder, all sections filled. Submit for review.
+- **Step 1 Environment**: click the **Generate with AI** tab. Pick a suggested prompt chip ("Match the golden solution exactly"), hit **Generate** - watch the AI draft a Dockerfile, then click **Apply** to copy it into the raw editor.
+- **Step 2 Solution**: click **AI tidy** to open the prompt suggestions menu - each one shows a different cleanup recipe.
+- **Step 3 Criteria**: click the **Generate with AI** tab. The prompter's `verifiers.md` plan is shown as context. Hit **Generate test.sh + rewardkit.yaml**, the AI compiles the verifier plan into real Reward Kit graders.
+- **Step 4 Oracle**: click **Run Oracle Test**, watch the 6s simulator. Also show **Demo: run with FAIL outcome**.
+- **Step 5 Preview**: this is the **final** Harbor folder, all sections filled. Submit for review.
 
 ### 4. Reviewer (~1 min)
 - Click **Switch role** -> **Continue as Reviewer**.
@@ -133,8 +136,13 @@ Point out the 5 roles and the workflow strip across the top.
 - **View comparison**: side-by-side with/without columns, plus a **Skill lift** column. Use the View dropdown to switch between Side-by-side / With only / Without only / Lift.
 - Click any reward cell to open the trial. The header carries a **Skills: with (1 mounted)** badge and links to the without-skills counterpart trial.
 
-### 6. Optional - Admin (~30s)
-Users / templates / providers / quotas overview.
+### 6. Admin - Skills lifecycle (~1 min)
+- Click **Switch role** -> **Continue as Admin** -> **Skills** (in the top nav).
+- The **Lifecycle pipeline** strip shows Draft -> Published -> Deprecated -> Archived counts.
+- The **Skills by domain** overview shows skills grouped into Python / Data / Web / DevOps / Shell / Process. Click a domain to filter the list.
+- Use the filter bar to search by name/tag, filter by **domain**, **state**, **project**, and **author**, and sort by usage/state/domain.
+- Tick checkboxes to perform **bulk deprecate / archive** on multiple skills at once.
+- Click any skill to see project scope, version history, and lifecycle action buttons (Publish, New version, Deprecate, Archive, Restore, etc.).
 
 ---
 
