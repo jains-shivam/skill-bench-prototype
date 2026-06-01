@@ -6,7 +6,7 @@
   <title>Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=3">
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-900">
   <div class="min-h-screen flex flex-col">
@@ -26,23 +26,49 @@
     <main class="flex-1 flex items-center justify-center px-6 py-8">
       <div class="w-full max-w-5xl">
         <div class="text-center mb-8">
-          <h1 class="text-3xl font-bold tracking-tight">Choose your role</h1>
-          <p class="mt-2 text-slate-600 max-w-2xl mx-auto">5-role relay model with domain expert review gate.</p>
+          <h1 class="text-3xl font-bold tracking-tight">Switch role</h1>
+          <p class="mt-2 text-slate-600 max-w-2xl mx-auto">7-role platform: management, task creation, review, and publication pipeline.</p>
         </div>
 
         <div class="flex items-center justify-center text-xs text-slate-500 mb-8 flex-wrap gap-1">
+          <span class="px-2 py-1 rounded bg-cyan-100 text-cyan-700 font-medium">PM assigns</span>
+          <span>&rarr;</span>
           <span class="px-2 py-1 rounded bg-indigo-100 text-indigo-700 font-medium">Prompter</span>
           <span>&rarr;</span>
           <span class="px-2 py-1 rounded bg-violet-100 text-violet-700 font-medium">Domain Reviewer</span>
           <span>&rarr;</span>
           <span class="px-2 py-1 rounded bg-emerald-100 text-emerald-700 font-medium">Tester</span>
           <span>&rarr;</span>
-          <span class="px-2 py-1 rounded bg-amber-100 text-amber-700 font-medium">Tech Reviewer</span>
+          <span class="px-2 py-1 rounded bg-amber-100 text-amber-700 font-medium">Task Reviewer</span>
           <span>&rarr;</span>
           <span class="px-2 py-1 rounded bg-green-100 text-green-700 font-medium">Published</span>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <a href="super-admin/dashboard.html" data-role="superAdmin" class="role-card card-hover bg-white border-2 border-rose-200 hover:border-rose-400 rounded-xl p-4 flex flex-col gap-2 transition-colors">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-xs font-bold">SC</span>
+              <div><div class="font-semibold text-sm">Super Admin</div><div class="text-[11px] text-slate-500">Sarah Chen</div></div>
+            </div>
+            <div class="text-xs text-slate-600 mt-1">Full platform control, system settings, user management, skills catalog.</div>
+            <div class="mt-auto pt-2 text-[10px] text-rose-600 font-medium">Platform settings &rarr;</div>
+          </a>
+          <a href="admin/dashboard.html" data-role="admin" class="role-card card-hover bg-white border-2 border-slate-200 hover:border-slate-400 rounded-xl p-4 flex flex-col gap-2 transition-colors">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold">DP</span>
+              <div><div class="font-semibold text-sm">Admin</div><div class="text-[11px] text-slate-500">Dave Patel</div></div>
+            </div>
+            <div class="text-xs text-slate-600 mt-1">Organization admin, manages team members, views analytics and pipeline.</div>
+            <div class="mt-auto pt-2 text-[10px] text-slate-600 font-medium">Dashboard &rarr;</div>
+          </a>
+          <a href="project-manager/dashboard.html" data-role="projectManager" class="role-card card-hover bg-white border-2 border-cyan-200 hover:border-cyan-400 rounded-xl p-4 flex flex-col gap-2 transition-colors">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center text-xs font-bold">NR</span>
+              <div><div class="font-semibold text-sm">Project Manager</div><div class="text-[11px] text-slate-500">Nina Roy</div></div>
+            </div>
+            <div class="text-xs text-slate-600 mt-1">Assigns tasks to prompters, monitors progress, manages batches and deadlines.</div>
+            <div class="mt-auto pt-2 text-[10px] text-cyan-600 font-medium">Task management &rarr;</div>
+          </a>
           <a href="prompter/dashboard.html" data-role="prompter" class="role-card card-hover bg-white border-2 border-indigo-200 hover:border-indigo-400 rounded-xl p-4 flex flex-col gap-2 transition-colors">
             <div class="flex items-center gap-2">
               <span class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">JD</span>
@@ -56,7 +82,7 @@
               <span class="w-8 h-8 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold">RM</span>
               <div><div class="font-semibold text-sm">Domain Reviewer</div><div class="text-[11px] text-slate-500">Raj Mehta</div></div>
             </div>
-            <div class="text-xs text-slate-600 mt-1">Review prompt quality, golden solution correctness, and verifier logic before tester picks up.</div>
+            <div class="text-xs text-slate-600 mt-1">Review prompt quality, golden solution correctness, and verifier logic.</div>
             <div class="mt-auto pt-2 text-[10px] text-violet-600 font-medium">Review queue &rarr;</div>
           </a>
           <a href="tester/queue.html" data-role="tester" class="role-card card-hover bg-white border-2 border-emerald-200 hover:border-emerald-400 rounded-xl p-4 flex flex-col gap-2 transition-colors">
@@ -64,47 +90,36 @@
               <span class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">TW</span>
               <div><div class="font-semibold text-sm">Tester</div><div class="text-[11px] text-slate-500">Tara Wu</div></div>
             </div>
-            <div class="text-xs text-slate-600 mt-1">Set up environment, implement solve.sh, compile tests, run Oracle, submit for tech review.</div>
+            <div class="text-xs text-slate-600 mt-1">Set up environment, implement solve.sh, compile tests, run Oracle.</div>
             <div class="mt-auto pt-2 text-[10px] text-emerald-600 font-medium">5-step wizard &rarr;</div>
           </a>
-          <a href="reviewer/queue.html" data-role="reviewer" class="role-card card-hover bg-white border-2 border-amber-200 hover:border-amber-400 rounded-xl p-4 flex flex-col gap-2 transition-colors">
+          <a href="reviewer/queue.html" data-role="taskReviewer" class="role-card card-hover bg-white border-2 border-amber-200 hover:border-amber-400 rounded-xl p-4 flex flex-col gap-2 transition-colors">
             <div class="flex items-center gap-2">
               <span class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">BS</span>
-              <div><div class="font-semibold text-sm">Tech Reviewer</div><div class="text-[11px] text-slate-500">Bob Smith</div></div>
+              <div><div class="font-semibold text-sm">Task Reviewer</div><div class="text-[11px] text-slate-500">Bob Smith</div></div>
             </div>
-            <div class="text-xs text-slate-600 mt-1">Full Harbor preview, solution first. Approve or request changes routed to prompter/tester.</div>
+            <div class="text-xs text-slate-600 mt-1">Final technical review of complete task package. Approve or request changes.</div>
             <div class="mt-auto pt-2 text-[10px] text-amber-600 font-medium">Review queue &rarr;</div>
-          </a>
-          <a href="admin/dashboard.html" data-role="admin" class="role-card card-hover bg-white border-2 border-slate-200 hover:border-slate-400 rounded-xl p-4 flex flex-col gap-2 transition-colors">
-            <div class="flex items-center gap-2">
-              <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold">DP</span>
-              <div><div class="font-semibold text-sm">Admin</div><div class="text-[11px] text-slate-500">Dave Patel</div></div>
-            </div>
-            <div class="text-xs text-slate-600 mt-1">KPIs, people, environment templates, skills catalog overview.</div>
-            <div class="mt-auto pt-2 text-[10px] text-slate-600 font-medium">Dashboard &rarr;</div>
           </a>
         </div>
 
-        <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="bg-white border border-slate-200 rounded-lg p-4">
-            <div class="text-xs uppercase tracking-wider text-emerald-700 font-semibold mb-2">In this MVP</div>
-            <ul class="text-sm text-slate-700 space-y-1 list-disc pl-5">
-              <li>5-role relay with domain expert review gate</li>
-              <li>7-step prompter wizard with skills picker + structured verifiers</li>
-              <li>Mock model execution to validate verifiers before handoff</li>
-              <li>Tester: context view, environment, solution, tests, Oracle</li>
-              <li>Tech reviewer sees solution first, then criteria</li>
-              <li>7-state lifecycle with full Harbor preview</li>
+        <div class="mt-8 bg-white border border-slate-200 rounded-lg p-4">
+          <div class="text-xs uppercase tracking-wider text-emerald-700 font-semibold mb-2">Platform capabilities</div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-slate-700">
+            <ul class="space-y-1 list-disc pl-5">
+              <li>7-role relay workflow</li>
+              <li>People management + role assignment</li>
+              <li>Project Manager task assignment</li>
             </ul>
-          </div>
-          <div class="bg-white border border-slate-200 rounded-lg p-4">
-            <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2">Deferred</div>
-            <ul class="text-sm text-slate-500 space-y-1 list-disc pl-5">
-              <li>Skills versioning + lifecycle management</li>
-              <li>Projects / Batches scoping</li>
-              <li>Real model API integration</li>
-              <li>AI-assisted verifier generation</li>
-              <li>Evaluator A/B runs</li>
+            <ul class="space-y-1 list-disc pl-5">
+              <li>7-step prompter wizard</li>
+              <li>Mock model execution + verifiers</li>
+              <li>Domain + task review gates</li>
+            </ul>
+            <ul class="space-y-1 list-disc pl-5">
+              <li>7-state lifecycle pipeline</li>
+              <li>Full Harbor preview</li>
+              <li>Skills catalog management</li>
             </ul>
           </div>
         </div>
@@ -112,9 +127,10 @@
     </main>
     <footer class="px-6 py-4 text-center text-xs text-slate-400">&copy; Skill Bench MVP</footer>
   </div>
-  <script src="assets/data.js"></script>
-  <script src="assets/script.js"></script>
+  <script src="assets/data.js?v=3"></script>
+  <script src="assets/script.js?v=3"></script>
   <script>
+    if (!SB.isAuthenticated()) { location.href = 'login.html'; }
     document.querySelectorAll('.role-card').forEach(c => c.addEventListener('click', () => SB.setRole(c.dataset.role)));
   </script>
 </body>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Assignments - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css?v=3">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="max-w-7xl">
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Assignments</h1>
+        <p class="text-sm text-slate-500 mt-1">Track who is working on what and reassign as needed</p>
+      </div>
+    </div>
+
+    <!-- Workload cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" id="workload-cards"></div>
+
+    <!-- Unassigned tasks -->
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+        <div class="font-semibold text-sm">Unassigned / awaiting pick-up</div>
+        <span class="text-xs text-slate-500" id="unassigned-count"></span>
+      </div>
+      <div id="unassigned-list" class="divide-y divide-slate-100"></div>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js?v=3"></script>
+  <script src="../assets/script.js?v=3"></script>
+  <script>
+    if (!SB.requireAuth()) throw 'auth';
+    SB.setRole('projectManager');
+    SB.renderNav();
+
+    const tasks = SBData.tasks;
+    const cardsEl = document.getElementById('workload-cards');
+
+    // Build workload per person
+    const workload = {};
+    tasks.forEach(t => {
+      if (t.prompter) { const k = t.prompter.name; workload[k] = workload[k] || { user: t.prompter, role: 'Prompter', tasks: [] }; workload[k].tasks.push(t); }
+      if (t.tester) { const k = t.tester.name; workload[k] = workload[k] || { user: t.tester, role: 'Tester', tasks: [] }; workload[k].tasks.push(t); }
+    });
+
+    Object.values(workload).forEach(w => {
+      const roleInfo = Object.values(SBData.ROLES).find(r => r.label === w.role) || {};
+      const rc = roleInfo.color || 'bg-slate-100 text-slate-700';
+      const active = w.tasks.filter(t => t.status !== 'published');
+      const card = document.createElement('div');
+      card.className = 'bg-white border border-slate-200 rounded-lg p-4';
+      card.innerHTML = `
+        <div class="flex items-center gap-2 mb-3">
+          <div class="avatar" style="width:2rem;height:2rem;font-size:0.65rem">${w.user.initials || '?'}</div>
+          <div><div class="text-sm font-medium">${SB.escapeHtml(w.user.name)}</div><span class="text-[10px] px-2 py-0.5 rounded font-medium ${rc}">${w.role}</span></div>
+        </div>
+        <div class="text-xs text-slate-500 mb-2">${active.length} active task(s)</div>
+        <div class="space-y-1.5">
+          ${active.slice(0, 3).map(t => { const s = SBData.STATUS[t.status]; return `<div class="flex items-center justify-between"><span class="text-xs truncate max-w-[10rem]">${SB.escapeHtml(t.name.split('/')[1] || t.name)}</span><span class="pill ${s.cls}" style="font-size:9px;padding:1px 6px">${s.label}</span></div>`; }).join('')}
+          ${active.length > 3 ? `<div class="text-[10px] text-slate-400">+${active.length - 3} more</div>` : ''}
+        </div>`;
+      cardsEl.appendChild(card);
+    });
+
+    // Unassigned
+    const unassigned = tasks.filter(t => t.status === 'with-tester' && !t.tester);
+    document.getElementById('unassigned-count').textContent = unassigned.length + ' task(s)';
+    const listEl = document.getElementById('unassigned-list');
+    if (unassigned.length) {
+      unassigned.forEach(t => {
+        const s = SBData.STATUS[t.status];
+        listEl.innerHTML += `<div class="px-5 py-3 flex items-center justify-between"><div><div class="text-sm font-medium">${SB.escapeHtml(t.name)}</div><div class="text-xs text-slate-500">${SB.escapeHtml((t.description||'').slice(0,50))}</div></div><div class="flex items-center gap-2"><span class="pill ${s.cls}">${s.label}</span><a href="tasks.html" class="text-xs text-indigo-600 font-medium">Assign</a></div></div>`;
+      });
+    } else {
+      listEl.innerHTML = '<div class="px-5 py-6 text-center text-xs text-slate-400">All tasks are assigned</div>';
+    }
+  </script>
+</body>
+</html>

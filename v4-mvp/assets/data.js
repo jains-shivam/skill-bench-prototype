@@ -1,25 +1,43 @@
 /* Skill Bench MVP - Data layer (client-side mock).
-   5 roles: Prompter, Domain Expert Reviewer, Tester, Technical Reviewer, Admin
+   7 roles: Super Admin, Admin, Project Manager, Prompter, Domain Expert Reviewer, Tester, Task Reviewer
    7-state lifecycle: prompter-draft → domain-review → with-tester → in-review → changes-requested → approved → published */
 const SBData = (function () {
   'use strict';
 
+  /* ───── Roles definition ───── */
+  const ROLES = {
+    superAdmin:      { key: 'superAdmin',      label: 'Super Admin',      color: 'bg-rose-100 text-rose-700',    desc: 'Full platform control, system settings, user management across all orgs' },
+    admin:           { key: 'admin',           label: 'Admin',            color: 'bg-slate-100 text-slate-700',   desc: 'Organization admin, manages team, views analytics' },
+    projectManager:  { key: 'projectManager',  label: 'Project Manager',  color: 'bg-cyan-100 text-cyan-700',    desc: 'Assigns tasks, manages batches, monitors progress' },
+    prompter:        { key: 'prompter',        label: 'Prompter',         color: 'bg-indigo-100 text-indigo-700', desc: 'Domain expert who creates prompts, verifiers, golden solutions' },
+    domainReviewer:  { key: 'domainReviewer',  label: 'Domain Reviewer',  color: 'bg-violet-100 text-violet-700', desc: 'Reviews prompt quality, verifier logic, golden solution correctness' },
+    tester:          { key: 'tester',          label: 'Tester',           color: 'bg-emerald-100 text-emerald-700', desc: 'Sets up environment, implements solution scripts, runs Oracle' },
+    taskReviewer:    { key: 'taskReviewer',    label: 'Task Reviewer',    color: 'bg-amber-100 text-amber-700',  desc: 'Final technical review of complete task package before publish' },
+  };
+
   const users = {
-    prompter:       { id: 'u1', name: 'Jane Doe',   email: 'jane@my-org.com',  role: 'Prompter',        initials: 'JD' },
-    domainReviewer: { id: 'u2', name: 'Raj Mehta',  email: 'raj@my-org.com',   role: 'Domain Reviewer', initials: 'RM' },
-    tester:         { id: 'u3', name: 'Tara Wu',    email: 'tara@my-org.com',  role: 'Tester',          initials: 'TW' },
-    reviewer:       { id: 'u4', name: 'Bob Smith',  email: 'bob@my-org.com',   role: 'Tech Reviewer',   initials: 'BS' },
-    admin:          { id: 'u5', name: 'Dave Patel', email: 'dave@my-org.com',  role: 'Admin',           initials: 'DP' },
+    superAdmin:     { id: 'u0', name: 'Sarah Chen',  email: 'sarah@my-org.com',  role: 'Super Admin',      initials: 'SC' },
+    admin:          { id: 'u5', name: 'Dave Patel',  email: 'dave@my-org.com',   role: 'Admin',            initials: 'DP' },
+    projectManager: { id: 'u8', name: 'Nina Roy',    email: 'nina@my-org.com',   role: 'Project Manager',  initials: 'NR' },
+    prompter:       { id: 'u1', name: 'Jane Doe',    email: 'jane@my-org.com',   role: 'Prompter',         initials: 'JD' },
+    domainReviewer: { id: 'u2', name: 'Raj Mehta',   email: 'raj@my-org.com',    role: 'Domain Reviewer',  initials: 'RM' },
+    tester:         { id: 'u3', name: 'Tara Wu',     email: 'tara@my-org.com',   role: 'Tester',           initials: 'TW' },
+    taskReviewer:   { id: 'u4', name: 'Bob Smith',   email: 'bob@my-org.com',    role: 'Task Reviewer',    initials: 'BS' },
   };
 
   const allUsers = [
-    { ...users.admin,          lastSeen: 'just now',    tasksCount: 0 },
-    { ...users.prompter,       lastSeen: '1 min ago',   tasksCount: 6 },
-    { ...users.domainReviewer, lastSeen: '5 min ago',   tasksCount: 0 },
-    { ...users.tester,         lastSeen: '2 min ago',   tasksCount: 8 },
-    { ...users.reviewer,       lastSeen: '10 min ago',  tasksCount: 0 },
-    { id: 'u6', name: 'Aisha Khan',  email: 'aisha@my-org.com', role: 'Prompter',   initials: 'AK', lastSeen: 'yesterday', tasksCount: 3 },
-    { id: 'u7', name: 'Marco Silva', email: 'marco@my-org.com', role: 'Tester',     initials: 'MS', lastSeen: '3 hours ago', tasksCount: 5 },
+    { ...users.superAdmin,      lastSeen: 'just now',    tasksCount: 0,  status: 'active', joinedAt: '2024-01-15' },
+    { ...users.admin,           lastSeen: '5 min ago',   tasksCount: 0,  status: 'active', joinedAt: '2024-02-01' },
+    { ...users.projectManager,  lastSeen: '2 min ago',   tasksCount: 12, status: 'active', joinedAt: '2024-03-10' },
+    { ...users.prompter,        lastSeen: '1 min ago',   tasksCount: 6,  status: 'active', joinedAt: '2024-03-15' },
+    { ...users.domainReviewer,  lastSeen: '10 min ago',  tasksCount: 0,  status: 'active', joinedAt: '2024-04-01' },
+    { ...users.tester,          lastSeen: '2 min ago',   tasksCount: 8,  status: 'active', joinedAt: '2024-04-10' },
+    { ...users.taskReviewer,    lastSeen: '15 min ago',  tasksCount: 0,  status: 'active', joinedAt: '2024-05-01' },
+    { id: 'u6', name: 'Aisha Khan',   email: 'aisha@my-org.com',  role: 'Prompter',        initials: 'AK', lastSeen: 'yesterday',   tasksCount: 3, status: 'active', joinedAt: '2024-06-01' },
+    { id: 'u7', name: 'Marco Silva',  email: 'marco@my-org.com',  role: 'Tester',          initials: 'MS', lastSeen: '3 hours ago', tasksCount: 5, status: 'active', joinedAt: '2024-06-15' },
+    { id: 'u9', name: 'Priya Sharma', email: 'priya@my-org.com',  role: 'Domain Reviewer', initials: 'PS', lastSeen: '1 day ago',   tasksCount: 2, status: 'active', joinedAt: '2024-07-01' },
+    { id: 'u10', name: 'James Liu',   email: 'james@my-org.com',  role: 'Prompter',        initials: 'JL', lastSeen: '2 days ago',  tasksCount: 1, status: 'inactive', joinedAt: '2024-07-15' },
+    { id: 'u11', name: 'Fatima Al-Rashid', email: 'fatima@my-org.com', role: 'Project Manager', initials: 'FA', lastSeen: '4 hours ago', tasksCount: 7, status: 'active', joinedAt: '2024-08-01' },
   ];
 
   /* ───── Skill domains + library ───── */
@@ -70,7 +88,7 @@ const SBData = (function () {
     'prompter-draft':    { label: 'Draft',             cls: 'pill-draft',     owner: 'prompter' },
     'domain-review':     { label: 'Domain review',     cls: 'pill-review',    owner: 'domainReviewer' },
     'with-tester':       { label: 'With tester',       cls: 'pill-running',   owner: 'tester' },
-    'in-review':         { label: 'Tech review',       cls: 'pill-techreview', owner: 'reviewer' },
+    'in-review':         { label: 'Task review',       cls: 'pill-techreview', owner: 'taskReviewer' },
     'changes-requested': { label: 'Changes requested', cls: 'pill-changes',   owner: null },
     'approved':          { label: 'Approved',          cls: 'pill-approved',  owner: 'admin' },
     'published':         { label: 'Published',         cls: 'pill-published', owner: null },
@@ -296,7 +314,7 @@ PY
         { when: '1 hour ago', who: 'Tara Wu', event: 'Submitted for tech review' },
       ],
       comments: [
-        { author: users.reviewer, when: '20 min ago', body: 'Could you add a row-count check in test.sh?' },
+        { author: users.taskReviewer, when: '20 min ago', body: 'Could you add a row-count check in test.sh?' },
       ],
     },
     {
@@ -332,7 +350,7 @@ PY
         { when: '3 hours ago', who: 'Bob Smith', event: 'Requested changes (tester)' },
       ],
       comments: [
-        { author: users.reviewer, when: '3 hours ago', body: 'Regex is too lax - add tests for edge cases like a..b@my-org.com.' },
+        { author: users.taskReviewer, when: '3 hours ago', body: 'Regex is too lax - add tests for edge cases like a..b@my-org.com.' },
       ],
     },
     {
@@ -496,7 +514,7 @@ last_reward = ${t.oracleReward != null ? t.oracleReward.toFixed(2) : '0.00'}
   }
 
   return {
-    users, allUsers, skillDomains, skillsLibrary, templates, STATUS, VERIFIER_TYPES,
+    ROLES, users, allUsers, skillDomains, skillsLibrary, templates, STATUS, VERIFIER_TYPES,
     tasks, wizardTask, harborFiles, renderVerifiersMd, makeTaskToml,
     getTemplate, resolveDockerfile, getTaskById, getSkillsByDomain,
   };

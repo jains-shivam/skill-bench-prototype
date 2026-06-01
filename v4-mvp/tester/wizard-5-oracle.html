@@ -6,11 +6,11 @@
   <title>Oracle - Tester - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/style.css?v=3">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
-  <main class="mx-auto max-w-6xl px-6 py-6">
+  <main class="max-w-6xl">
     <div class="flex justify-between mb-4 text-sm text-slate-500">
       <span><a href="queue.html">Test queue</a> / <span class="font-mono text-slate-900" id="task-name"></span></span>
       <a href="queue.html">Save &amp; Exit</a>
@@ -84,23 +84,23 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js"></script>
-  <script src="../assets/script.js"></script>
+  <script src="../assets/data.js?v=3"></script>
+  <script src="../assets/script.js?v=3"></script>
   <script>
+    if (!SB.requireAuth()) throw 'auth';
     SB.setRole('tester');
     SB.renderNav();
-    SB.renderWizardStepper(5, 'tester');
+    SB.renderWizardStepper(4, 'tester');
     const t = SB.getWizardTaskFromSession();
     document.getElementById('task-name').textContent = t.name;
 
-    const tpl = t.templateId ? SBData.getTemplate(t.templateId) : null;
     const solutionLines = (t.solveSh || '').split('\n').length;
     const testLines = (t.testSh || '').split('\n').length;
     document.getElementById('summary').innerHTML = `
       <div class="flex justify-between"><span class="text-slate-500">Task</span><span class="font-mono text-xs truncate max-w-[10rem]">${SB.escapeHtml(t.name)}</span></div>
       <div class="flex justify-between"><span class="text-slate-500">Prompter</span><span>${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</span></div>
       <div class="flex justify-between"><span class="text-slate-500">Domain</span><span>${SB.escapeHtml(t.domain || '—')}</span></div>
-      <div class="flex justify-between"><span class="text-slate-500">Template</span><span>${tpl ? SB.escapeHtml(tpl.name) : 'Custom'}</span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Environment</span><span>${t.dockerfile ? 'Configured' : 'Not set'}</span></div>
       <div class="flex justify-between"><span class="text-slate-500">solve.sh</span><span>${solutionLines} lines</span></div>
       <div class="flex justify-between"><span class="text-slate-500">test.sh</span><span>${testLines} lines</span></div>
       <div class="flex justify-between"><span class="text-slate-500">Verifiers</span><span>${(t.verifiers || []).length} defined</span></div>

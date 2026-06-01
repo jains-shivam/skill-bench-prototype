@@ -6,11 +6,11 @@
   <title>Test queue - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/style.css?v=3">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
-  <main class="mx-auto max-w-7xl px-6 py-8">
+  <main class="max-w-7xl">
     <h1 class="text-2xl font-bold">Test queue</h1>
     <p class="text-sm text-slate-500 mt-1">Pick up tasks from prompters (domain-reviewed). You handle environment, solution, tests, and Oracle.</p>
     <div class="flex flex-wrap gap-1 mt-3 mb-5 text-xs text-slate-500">
@@ -20,12 +20,15 @@
       <span>&rarr;</span>
       <span class="px-2 py-1 rounded bg-emerald-100 text-emerald-700 font-medium">You: Tester</span>
       <span>&rarr;</span>
-      <span class="px-2 py-1 rounded bg-amber-100 text-amber-700">Tech Reviewer</span>
+      <span class="px-2 py-1 rounded bg-amber-100 text-amber-700">Task Reviewer</span>
     </div>
-    <div class="tab-bar mb-4">
-      <button data-tab="available" class="active">Available <span id="cnt-avail" class="text-xs bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
-      <button data-tab="mine">My tasks <span id="cnt-mine" class="text-xs bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
-      <button data-tab="submitted">Submitted <span id="cnt-sub" class="text-xs bg-slate-100 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
+    <div class="flex items-center justify-between mb-4">
+      <div class="tab-bar">
+        <button data-tab="available" class="active">Available <span id="cnt-avail" class="text-xs bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
+        <button data-tab="mine">My tasks <span id="cnt-mine" class="text-xs bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
+        <button data-tab="submitted">Submitted <span id="cnt-sub" class="text-xs bg-slate-100 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
+      </div>
+      <input id="search" type="text" placeholder="Search..." class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg w-48 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400">
     </div>
     <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
       <table class="w-full text-sm">
@@ -42,7 +45,7 @@
       </table>
       <div id="empty" class="hidden py-16 text-center text-slate-500">
         <p class="font-medium">Nothing in this tab</p>
-        <p class="text-sm mt-1">Check another tab or wait for trainers to submit.</p>
+        <p class="text-sm mt-1">Check another tab or wait for prompters to submit.</p>
       </div>
     </div>
     <div class="mt-10 border border-emerald-100 bg-emerald-50/50 rounded-lg p-4 text-sm text-slate-700">
@@ -50,9 +53,10 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js"></script>
-  <script src="../assets/script.js"></script>
+  <script src="../assets/data.js?v=3"></script>
+  <script src="../assets/script.js?v=3"></script>
   <script>
+    if (!SB.requireAuth()) throw 'auth';
     SB.setRole('tester');
     SB.renderNav();
     const me = SBData.users.tester;
@@ -68,7 +72,12 @@
     }
     counts();
     function render(tab) {
-      const list = SBData.tasks.filter(FILTERS[tab]);
+      var q = (document.getElementById('search').value || '').trim().toLowerCase();
+      const list = SBData.tasks.filter(function(t) {
+        if (!FILTERS[tab](t)) return false;
+        if (q && !(t.name + ' ' + t.description + ' ' + (t.domain || '')).toLowerCase().includes(q)) return false;
+        return true;
+      });
       const tbody = document.getElementById('rows');
       tbody.innerHTML = '';
       document.getElementById('empty').classList.toggle('hidden', list.length > 0);
@@ -101,14 +110,17 @@
         tbody.appendChild(tr);
       });
     }
+    var activeTab = 'available';
     render('available');
     document.querySelectorAll('.tab-bar button[data-tab]').forEach(b => {
       b.addEventListener('click', () => {
         document.querySelectorAll('.tab-bar button').forEach(x => x.classList.remove('active'));
         b.classList.add('active');
-        render(b.dataset.tab);
+        activeTab = b.dataset.tab;
+        render(activeTab);
       });
     });
+    document.getElementById('search').addEventListener('input', function() { render(activeTab); });
   </script>
 </body>
 </html>

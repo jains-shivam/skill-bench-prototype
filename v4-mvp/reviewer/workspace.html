@@ -6,11 +6,11 @@
   <title>Review - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/style.css?v=3">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
-  <main class="mx-auto max-w-7xl px-6 py-6">
+  <main class="max-w-7xl">
     <div class="text-sm text-slate-500 mb-4"><a href="queue.html">Review queue</a> / <span id="bc-name" class="font-mono text-slate-900"></span></div>
     <header class="bg-white border border-slate-200 rounded-lg p-5 mb-4 flex flex-wrap justify-between gap-4">
       <div>
@@ -80,14 +80,19 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js"></script>
-  <script src="../assets/script.js"></script>
+  <script src="../assets/data.js?v=3"></script>
+  <script src="../assets/script.js?v=3"></script>
   <script>
-    SB.setRole('reviewer');
+    if (!SB.requireAuth()) throw 'auth';
+    SB.setRole('taskReviewer');
     SB.renderNav();
+    (function() {
     const id = new URLSearchParams(location.search).get('id');
     const t = id ? SBData.getTaskById(id) : SBData.tasks.find(x => x.status === 'in-review');
-    if (!t) { document.querySelector('main').innerHTML = '<p class="p-12 text-slate-500 text-center">No task found.</p>'; }
+    if (!t) {
+      document.querySelector('main').innerHTML = '<p class="p-12 text-slate-500 text-center">No task found. <a href="queue.html" class="text-indigo-600 hover:underline">Back to queue</a></p>';
+      return;
+    }
     if (!t.comments) t.comments = [];
     if (!t.history) t.history = [];
 
@@ -134,11 +139,11 @@
             class="px-3 py-1.5 text-sm rounded-md font-medium ${canApprove ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}"
             title="${canApprove ? '' : 'Oracle must PASS'}">Approve &amp; publish</button>`;
         document.getElementById('btn-changes').onclick = () => SB.renderRequestChangesModal(t, ({ body, target }) => {
-          t.comments.push({ author: SBData.users.reviewer, when: 'just now', body });
+          t.comments.push({ author: SBData.users.taskReviewer, when: 'just now', body });
           t.status = 'changes-requested';
           t.changesTarget = target;
           t.updatedAt = 'just now';
-          t.history.push({ when: 'just now', who: SBData.users.reviewer.name, event: 'Requested changes (' + target + ')' });
+          t.history.push({ when: 'just now', who: SBData.users.taskReviewer.name, event: 'Requested changes (' + target + ')' });
           SB.toast('Changes requested.', 'success');
           refresh();
         });
@@ -176,7 +181,7 @@
     function approve() {
       t.status = 'published';
       t.updatedAt = 'just now';
-      t.history.push({ when: 'just now', who: SBData.users.reviewer.name, event: 'Approved + published to Harbor registry' });
+      t.history.push({ when: 'just now', who: SBData.users.taskReviewer.name, event: 'Approved + published to Harbor registry' });
       SB.toast('Task published!', 'success');
       refresh();
     }
@@ -184,13 +189,14 @@
     document.getElementById('add-comment').onclick = () => {
       const body = document.getElementById('new-comment').value.trim();
       if (!body) return;
-      t.comments.push({ author: SBData.users.reviewer, when: 'just now', body });
+      t.comments.push({ author: SBData.users.taskReviewer, when: 'just now', body });
       document.getElementById('new-comment').value = '';
       renderComments();
       SB.toast('Comment added.', 'success');
     };
 
     refresh();
+    })();
   </script>
 </body>
 </html>

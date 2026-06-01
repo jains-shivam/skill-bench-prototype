@@ -6,11 +6,11 @@
   <title>Solution - Tester - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/style.css?v=3">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
-  <main class="mx-auto max-w-7xl px-6 py-6">
+  <main class="max-w-7xl">
     <div class="flex justify-between mb-4 text-sm text-slate-500">
       <span><a href="queue.html">Test queue</a> / <span class="font-mono text-slate-900" id="task-name"></span></span>
       <a href="queue.html">Save &amp; Exit</a>
@@ -62,17 +62,18 @@
     </div>
     <div class="mt-6"><div id="harbor-preview"></div></div>
     <div class="mt-8 flex justify-between">
-      <a href="wizard-2-environment.html" class="text-sm text-slate-600">&larr; Back: Environment</a>
+      <a href="wizard-1-context.html" class="text-sm text-slate-600">&larr; Back: Context</a>
       <a id="next" href="wizard-4-tests.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md">Next: Tests &rarr;</a>
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js"></script>
-  <script src="../assets/script.js"></script>
+  <script src="../assets/data.js?v=3"></script>
+  <script src="../assets/script.js?v=3"></script>
   <script>
+    if (!SB.requireAuth()) throw 'auth';
     SB.setRole('tester');
     SB.renderNav();
-    SB.renderWizardStepper(3, 'tester');
+    SB.renderWizardStepper(2, 'tester');
     const t = SB.getWizardTaskFromSession();
     document.getElementById('task-name').textContent = t.name;
     // Context shown in step 1; left panel has golden solution
@@ -89,6 +90,8 @@
           <span class="text-slate-400 ml-auto">${SB.escapeHtml(a.size || '')}</span>
         </div>`).join('');
     }
+
+    if (!t.dockerfile) t.dockerfile = 'FROM python:3.12-slim\nWORKDIR /app\nRUN pip install --no-cache-dir pandas numpy\n';
 
     const STARTER_TEMPLATE = '#!/usr/bin/env bash\nset -euo pipefail\ncd /app\n\n# TODO: Convert the prompter\'s golden solution into executable commands.\n# The script should produce the expected output files.\n\n';
     const ta = document.getElementById('f-solve');

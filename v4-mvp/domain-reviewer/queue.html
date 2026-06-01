@@ -6,17 +6,23 @@
   <title>Domain review queue - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/style.css?v=3">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
-  <main class="mx-auto max-w-7xl px-6 py-8">
+  <main class="max-w-7xl">
     <div class="flex items-center gap-3 mb-1">
       <h1 class="text-2xl font-bold">Domain review queue</h1>
       <span id="count-badge" class="text-xs bg-violet-100 text-violet-700 rounded-full px-2 py-0.5 font-medium">0</span>
     </div>
     <p class="text-sm text-slate-500 mt-1">Review problem statements, verifiers, and golden solutions from Prompters before tasks enter the tester pool.</p>
-    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden mt-6">
+    <div class="flex items-center gap-3 mt-5 mb-4">
+      <input id="search" type="text" placeholder="Search tasks..." class="px-3 py-2 text-sm border border-slate-300 rounded-lg w-64 focus:ring-2 focus:ring-violet-200 focus:border-violet-400">
+      <select id="filter-domain" class="px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-violet-200">
+        <option value="">All domains</option>
+      </select>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase">
           <tr>
@@ -36,34 +42,46 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js"></script>
-  <script src="../assets/script.js"></script>
+  <script src="../assets/data.js?v=3"></script>
+  <script src="../assets/script.js?v=3"></script>
   <script>
+    if (!SB.requireAuth()) throw 'auth';
     SB.setRole('domainReviewer');
     SB.renderNav();
 
+    var search = document.getElementById('search');
+    var domainSel = document.getElementById('filter-domain');
+    SBData.skillDomains.forEach(function(d) {
+      domainSel.innerHTML += '<option value="' + d.id + '">' + SB.escapeHtml(d.name) + '</option>';
+    });
+
     function render() {
-      const list = SBData.tasks.filter(t => t.status === 'domain-review');
+      var q = search.value.trim().toLowerCase();
+      var dom = domainSel.value;
+      var list = SBData.tasks.filter(function(t) {
+        if (t.status !== 'domain-review') return false;
+        if (dom && t.domain !== dom) return false;
+        if (q && !(t.name + ' ' + t.description + ' ' + (t.domain || '')).toLowerCase().includes(q)) return false;
+        return true;
+      });
       document.getElementById('count-badge').textContent = list.length;
-      const tbody = document.getElementById('rows');
+      var tbody = document.getElementById('rows');
       tbody.innerHTML = '';
       document.getElementById('empty').classList.toggle('hidden', list.length > 0);
-      list.forEach(t => {
-        const tr = document.createElement('tr');
+      list.forEach(function(t) {
+        var tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 cursor-pointer';
-        tr.innerHTML = `
-          <td class="px-4 py-3">
-            <div class="font-medium font-mono text-slate-900">${SB.escapeHtml(t.name)}</div>
-            <div class="text-xs text-slate-500 mt-0.5">${SB.escapeHtml(t.description)}</div>
-          </td>
-          <td class="px-4 py-3">${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</td>
-          <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-slate-100">${SB.escapeHtml(t.domain || '—')}</span></td>
-          <td class="px-4 py-3 text-slate-500">${SB.escapeHtml(t.updatedAt)}</td>
-          <td class="px-2 py-3 text-right text-xs text-violet-600 font-medium">Review &rarr;</td>`;
-        tr.onclick = () => { location.href = 'workspace.html?id=' + encodeURIComponent(t.id); };
+        tr.innerHTML = '<td class="px-4 py-3"><div class="font-medium font-mono text-slate-900">' + SB.escapeHtml(t.name) + '</div><div class="text-xs text-slate-500 mt-0.5">' + SB.escapeHtml(t.description) + '</div></td>' +
+          '<td class="px-4 py-3">' + SB.escapeHtml(t.prompter ? t.prompter.name : '—') + '</td>' +
+          '<td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-slate-100">' + SB.escapeHtml(t.domain || '—') + '</span></td>' +
+          '<td class="px-4 py-3 text-slate-500">' + SB.escapeHtml(t.updatedAt) + '</td>' +
+          '<td class="px-2 py-3 text-right text-xs text-violet-600 font-medium">Review &rarr;</td>';
+        tr.onclick = function() { location.href = 'workspace.html?id=' + encodeURIComponent(t.id); };
         tbody.appendChild(tr);
       });
     }
+    search.addEventListener('input', render);
+    domainSel.addEventListener('change', render);
     render();
   </script>
 </body>

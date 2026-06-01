@@ -6,11 +6,11 @@
   <title>My Tasks - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/style.css?v=3">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
-  <main class="mx-auto max-w-7xl px-6 py-8">
+  <main class="max-w-7xl">
     <div class="flex items-end justify-between mb-2">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">My Tasks</h1>
@@ -90,9 +90,10 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js"></script>
-  <script src="../assets/script.js"></script>
+  <script src="../assets/data.js?v=3"></script>
+  <script src="../assets/script.js?v=3"></script>
   <script>
+    if (!SB.requireAuth()) throw 'auth';
     SB.setRole('prompter');
     SB.renderNav();
 
@@ -119,7 +120,10 @@
     function render() {
       const q = search.value.trim().toLowerCase();
       const f = filter.value;
+      const session = SB.getSession();
+      const myId = session ? session.userId : null;
       const visible = SBData.tasks.filter(t => {
+        if (t.prompter && myId && t.prompter.id !== myId) return false;
         if (f && t.status !== f) return false;
         if (q && !(t.name + ' ' + t.description + ' ' + (t.domain || '')).toLowerCase().includes(q)) return false;
         return true;

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project Manager - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css?v=3">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="max-w-7xl">
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Project Dashboard</h1>
+        <p class="text-sm text-slate-500 mt-1">Monitor task pipeline and team performance</p>
+      </div>
+      <a href="tasks.html" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5">
+        View all tasks
+      </a>
+    </div>
+
+    <!-- Pipeline summary -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
+      <div class="bg-white border border-slate-200 rounded-lg p-3 text-center">
+        <div class="text-lg font-bold" id="kpi-total">-</div>
+        <div class="text-[10px] text-slate-500 uppercase mt-0.5">Total</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-3 text-center">
+        <div class="text-lg font-bold" id="kpi-draft">-</div>
+        <div class="text-[10px] text-slate-500 uppercase mt-0.5">Draft</div>
+      </div>
+      <div class="bg-white border border-violet-200 rounded-lg p-3 text-center">
+        <div class="text-lg font-bold text-violet-700" id="kpi-domain">-</div>
+        <div class="text-[10px] text-violet-600 uppercase mt-0.5">Domain review</div>
+      </div>
+      <div class="bg-white border border-blue-200 rounded-lg p-3 text-center">
+        <div class="text-lg font-bold text-blue-700" id="kpi-tester">-</div>
+        <div class="text-[10px] text-blue-600 uppercase mt-0.5">With tester</div>
+      </div>
+      <div class="bg-white border border-amber-200 rounded-lg p-3 text-center">
+        <div class="text-lg font-bold text-amber-700" id="kpi-review">-</div>
+        <div class="text-[10px] text-amber-600 uppercase mt-0.5">Task review</div>
+      </div>
+      <div class="bg-white border border-orange-200 rounded-lg p-3 text-center">
+        <div class="text-lg font-bold text-orange-700" id="kpi-changes">-</div>
+        <div class="text-[10px] text-orange-600 uppercase mt-0.5">Changes</div>
+      </div>
+      <div class="bg-white border border-emerald-200 rounded-lg p-3 text-center">
+        <div class="text-lg font-bold text-emerald-700" id="kpi-published">-</div>
+        <div class="text-[10px] text-emerald-600 uppercase mt-0.5">Published</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      <!-- Tasks needing attention -->
+      <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-200 font-semibold text-sm">Needs attention</div>
+        <div id="attention-list" class="divide-y divide-slate-100 max-h-72 overflow-y-auto scroll-y"></div>
+      </div>
+
+      <!-- Team workload -->
+      <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-200 font-semibold text-sm">Team workload</div>
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="text-left px-4 py-2.5">Person</th><th class="text-left px-4 py-2.5">Role</th><th class="text-left px-4 py-2.5">Active tasks</th><th class="text-left px-4 py-2.5">Status</th></tr></thead>
+          <tbody id="workload-rows" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recent activity -->
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-200 font-semibold text-sm">Recent activity</div>
+      <div id="activity-feed" class="divide-y divide-slate-100 max-h-60 overflow-y-auto scroll-y"></div>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js?v=3"></script>
+  <script src="../assets/script.js?v=3"></script>
+  <script>
+    if (!SB.requireAuth()) throw 'auth';
+    SB.setRole('projectManager');
+    SB.renderNav();
+
+    const tasks = SBData.tasks;
+    document.getElementById('kpi-total').textContent = tasks.length;
+    document.getElementById('kpi-draft').textContent = tasks.filter(t => t.status === 'prompter-draft').length;
+    document.getElementById('kpi-domain').textContent = tasks.filter(t => t.status === 'domain-review').length;
+    document.getElementById('kpi-tester').textContent = tasks.filter(t => t.status === 'with-tester').length;
+    document.getElementById('kpi-review').textContent = tasks.filter(t => t.status === 'in-review').length;
+    document.getElementById('kpi-changes').textContent = tasks.filter(t => t.status === 'changes-requested').length;
+    document.getElementById('kpi-published').textContent = tasks.filter(t => t.status === 'published' || t.status === 'approved').length;
+
+    // Needs attention
+    const attentionEl = document.getElementById('attention-list');
+    const needsAttention = tasks.filter(t => ['changes-requested','with-tester'].includes(t.status) && !t.tester);
+    if (needsAttention.length) {
+      needsAttention.forEach(t => {
+        const st = SBData.STATUS[t.status];
+        attentionEl.innerHTML += `<div class="px-5 py-3 flex items-center justify-between"><div><div class="text-sm font-medium">${SB.escapeHtml(t.name)}</div><div class="text-xs text-slate-500">${SB.escapeHtml(t.description || '').slice(0,50)}</div></div><span class="pill ${st.cls}">${st.label}</span></div>`;
+      });
+    } else {
+      tasks.filter(t => t.status !== 'published').slice(0, 4).forEach(t => {
+        const st = SBData.STATUS[t.status];
+        attentionEl.innerHTML += `<div class="px-5 py-3 flex items-center justify-between"><div><div class="text-sm font-medium">${SB.escapeHtml(t.name)}</div><div class="text-xs text-slate-500">${SB.escapeHtml(t.description || '').slice(0,50)}</div></div><span class="pill ${st.cls}">${st.label}</span></div>`;
+      });
+    }
+
+    // Team workload
+    const workloadEl = document.getElementById('workload-rows');
+    const teamRoles = ['Prompter','Tester','Domain Reviewer','Task Reviewer'];
+    SBData.allUsers.filter(u => teamRoles.includes(u.role)).forEach(u => {
+      const roleInfo = Object.values(SBData.ROLES).find(r => r.label === u.role) || {};
+      const rc = roleInfo.color || 'bg-slate-100 text-slate-700';
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-50';
+      tr.innerHTML = `
+        <td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="avatar" style="width:1.5rem;height:1.5rem;font-size:0.55rem">${u.initials}</div><span class="text-xs font-medium">${SB.escapeHtml(u.name)}</span></div></td>
+        <td class="px-4 py-2.5"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${rc}">${SB.escapeHtml(u.role)}</span></td>
+        <td class="px-4 py-2.5 text-xs font-medium">${u.tasksCount}</td>
+        <td class="px-4 py-2.5"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${u.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${u.status}</span></td>`;
+      workloadEl.appendChild(tr);
+    });
+
+    // Activity
+    const feedEl = document.getElementById('activity-feed');
+    const allActivity = [];
+    tasks.forEach(t => { (t.history || []).forEach(h => allActivity.push({ task: t.name, ...h })); });
+    allActivity.slice(0, 10).forEach(a => {
+      feedEl.innerHTML += `<div class="px-5 py-2.5 text-xs"><b>${SB.escapeHtml(a.who)}</b> ${SB.escapeHtml(a.event)}<div class="text-[10px] text-slate-400 mt-0.5">${SB.escapeHtml(a.task)} &middot; ${SB.escapeHtml(a.when)}</div></div>`;
+    });
+    if (!allActivity.length) feedEl.innerHTML = '<div class="px-5 py-6 text-xs text-slate-400 text-center">No activity yet</div>';
+  </script>
+</body>
+</html>

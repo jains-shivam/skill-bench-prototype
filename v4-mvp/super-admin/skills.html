@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skills Catalog - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css?v=3">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="max-w-7xl">
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Skills Catalog</h1>
+        <p class="text-sm text-slate-500 mt-1">Manage skill domains and individual skills used in task tagging</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <label class="px-3.5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          Import file
+          <input id="skills-file-upload" type="file" accept=".csv,.json,.txt" class="hidden">
+        </label>
+        <button id="btn-add-skill" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+          Add skill
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-4">
+      <!-- Domains panel -->
+      <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+          <span class="font-semibold text-sm">Domains</span>
+          <button id="btn-add-domain" class="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-0.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><path d="M12 5v14M5 12h14"/></svg>
+            Add
+          </button>
+        </div>
+        <div id="domains-list" class="divide-y divide-slate-100"></div>
+      </div>
+
+      <!-- Skills panel -->
+      <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div class="font-semibold text-sm" id="skills-title">All skills</div>
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="skill-search" type="text" placeholder="Search skills..." class="pl-8 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-44">
+            </div>
+            <span class="text-xs text-slate-500" id="skills-count"></span>
+          </div>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+            <tr><th class="text-left px-4 py-2.5">Skill</th><th class="text-left px-4 py-2.5">Domain</th><th class="text-left px-4 py-2.5">Tags</th><th class="text-right px-4 py-2.5">Actions</th></tr>
+          </thead>
+          <tbody id="skills-tbody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Domain Modal -->
+  <div id="domain-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h3 id="domain-modal-title" class="font-semibold text-lg">Add domain</h3>
+        <button id="domain-modal-close" class="text-slate-400 hover:text-slate-600">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="domain-form" class="px-6 py-5 space-y-4">
+        <input type="hidden" id="domain-edit-id" value="">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">ID / key</label>
+          <input id="domain-field-id" type="text" required placeholder="e.g. python" pattern="[a-z0-9-]+" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono">
+          <p class="text-[11px] text-slate-500 mt-1">Lowercase letters, numbers, and hyphens only</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+          <input id="domain-field-name" type="text" required placeholder="e.g. Python" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Color</label>
+          <select id="domain-field-color" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="bg-indigo-100 text-indigo-700">Indigo</option>
+            <option value="bg-emerald-100 text-emerald-700">Emerald</option>
+            <option value="bg-amber-100 text-amber-700">Amber</option>
+            <option value="bg-purple-100 text-purple-700">Purple</option>
+            <option value="bg-cyan-100 text-cyan-700">Cyan</option>
+            <option value="bg-rose-100 text-rose-700">Rose</option>
+            <option value="bg-slate-100 text-slate-700">Slate</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+          <textarea id="domain-field-desc" rows="3" placeholder="Brief description of this domain..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+        </div>
+      </form>
+      <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-2">
+        <button id="domain-modal-cancel" type="button" class="px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
+        <button id="domain-modal-save" type="button" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skill Modal -->
+  <div id="skill-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h3 id="skill-modal-title" class="font-semibold text-lg">Add skill</h3>
+        <button id="skill-modal-close" class="text-slate-400 hover:text-slate-600">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="skill-form" class="px-6 py-5 space-y-4">
+        <input type="hidden" id="skill-edit-id" value="">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+          <input id="skill-field-name" type="text" required placeholder="e.g. Parse CSV safely" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Domain</label>
+          <select id="skill-field-domain" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="">Select a domain...</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+          <textarea id="skill-field-desc" rows="3" placeholder="What this skill covers..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Tags</label>
+          <input id="skill-field-tags" type="text" placeholder="e.g. python, pandas, io" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <p class="text-[11px] text-slate-500 mt-1">Comma-separated list</p>
+        </div>
+      </form>
+      <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-2">
+        <button id="skill-modal-cancel" type="button" class="px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
+        <button id="skill-modal-save" type="button" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="../assets/data.js?v=3"></script>
+  <script src="../assets/script.js?v=3"></script>
+  <script>
+    if (!SB.requireAuth()) throw 'auth';
+    SB.setRole('superAdmin');
+    SB.renderNav();
+
+    const DOMAIN_COLORS = [
+      'bg-indigo-100 text-indigo-700',
+      'bg-emerald-100 text-emerald-700',
+      'bg-amber-100 text-amber-700',
+      'bg-purple-100 text-purple-700',
+      'bg-cyan-100 text-cyan-700',
+      'bg-rose-100 text-rose-700',
+      'bg-slate-100 text-slate-700',
+    ];
+
+    let activeDomain = null;
+    const domainsList = document.getElementById('domains-list');
+    const skillsTitle = document.getElementById('skills-title');
+    const skillsCount = document.getElementById('skills-count');
+    const skillsTbody = document.getElementById('skills-tbody');
+    const skillSearch = document.getElementById('skill-search');
+
+    // Domain modal elements
+    const domainOverlay = document.getElementById('domain-modal-overlay');
+    const domainModalTitle = document.getElementById('domain-modal-title');
+    const domainEditId = document.getElementById('domain-edit-id');
+    const domainFieldId = document.getElementById('domain-field-id');
+    const domainFieldName = document.getElementById('domain-field-name');
+    const domainFieldColor = document.getElementById('domain-field-color');
+    const domainFieldDesc = document.getElementById('domain-field-desc');
+
+    // Skill modal elements
+    const skillOverlay = document.getElementById('skill-modal-overlay');
+    const skillModalTitle = document.getElementById('skill-modal-title');
+    const skillEditId = document.getElementById('skill-edit-id');
+    const skillFieldName = document.getElementById('skill-field-name');
+    const skillFieldDomain = document.getElementById('skill-field-domain');
+    const skillFieldDesc = document.getElementById('skill-field-desc');
+    const skillFieldTags = document.getElementById('skill-field-tags');
+
+    function openOverlay(el) {
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+    }
+    function closeOverlay(el) {
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    }
+
+    function populateDomainDropdown() {
+      skillFieldDomain.innerHTML = '<option value="">Select a domain...</option>';
+      SBData.skillDomains.forEach(d => {
+        skillFieldDomain.innerHTML += `<option value="${SB.escapeHtml(d.id)}">${SB.escapeHtml(d.name)}</option>`;
+      });
+    }
+
+    function renderDomains() {
+      domainsList.innerHTML = '';
+      const allItem = document.createElement('button');
+      allItem.type = 'button';
+      allItem.className = 'w-full text-left px-4 py-3 text-sm hover:bg-slate-50 flex items-center justify-between' + (!activeDomain ? ' bg-indigo-50 text-indigo-700 font-medium' : ' text-slate-700');
+      allItem.innerHTML = `<span>All domains</span><span class="text-xs text-slate-400">${SBData.skillsLibrary.length}</span>`;
+      allItem.addEventListener('click', () => { activeDomain = null; renderDomains(); renderSkills(); });
+      domainsList.appendChild(allItem);
+
+      SBData.skillDomains.forEach(d => {
+        const count = SBData.getSkillsByDomain(d.id).length;
+        const row = document.createElement('div');
+        row.className = 'flex items-stretch' + (activeDomain === d.id ? ' bg-indigo-50' : '');
+
+        const selectBtn = document.createElement('button');
+        selectBtn.type = 'button';
+        selectBtn.className = 'flex-1 text-left px-4 py-3 text-sm hover:bg-slate-50 flex items-center gap-2 min-w-0' + (activeDomain === d.id ? ' text-indigo-700 font-medium' : ' text-slate-700');
+        selectBtn.innerHTML = `<span class="text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${d.color}">${SB.escapeHtml(d.id)}</span><span class="truncate">${SB.escapeHtml(d.name)}</span><span class="text-xs ml-auto shrink-0 ${activeDomain === d.id ? 'text-indigo-500' : 'text-slate-400'}">${count}</span>`;
+        selectBtn.addEventListener('click', () => { activeDomain = d.id; renderDomains(); renderSkills(); });
+
+        const actions = document.createElement('div');
+        actions.className = 'flex items-center gap-1 px-2 border-l border-slate-100';
+        actions.innerHTML = `
+          <button type="button" data-id="${SB.escapeHtml(d.id)}" class="domain-edit-btn p-1 text-slate-400 hover:text-indigo-600" title="Edit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button type="button" data-id="${SB.escapeHtml(d.id)}" class="domain-delete-btn p-1 text-slate-400 hover:text-red-600" title="Delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>`;
+
+        row.appendChild(selectBtn);
+        row.appendChild(actions);
+        domainsList.appendChild(row);
+      });
+
+      document.querySelectorAll('.domain-edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); openEditDomainModal(btn.dataset.id); });
+      });
+      document.querySelectorAll('.domain-delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); deleteDomain(btn.dataset.id); });
+      });
+    }
+
+    function getFilteredSkills() {
+      let skills = activeDomain ? SBData.getSkillsByDomain(activeDomain) : SBData.skillsLibrary.slice();
+      const query = skillSearch.value.toLowerCase().trim();
+      if (query) skills = skills.filter(s => s.name.toLowerCase().includes(query) || s.id.toLowerCase().includes(query));
+      return skills;
+    }
+
+    function renderSkills() {
+      const skills = getFilteredSkills();
+      const domainLabel = activeDomain ? SBData.skillDomains.find(d => d.id === activeDomain)?.name : 'All';
+      skillsTitle.textContent = domainLabel + ' skills';
+      const total = activeDomain ? SBData.getSkillsByDomain(activeDomain).length : SBData.skillsLibrary.length;
+      skillsCount.textContent = skills.length === total ? total + ' skills' : skills.length + ' of ' + total + ' skills';
+      skillsTbody.innerHTML = '';
+
+      if (!skills.length) {
+        skillsTbody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-xs text-slate-400">No skills found</td></tr>`;
+        return;
+      }
+
+      skills.forEach(s => {
+        const domain = SBData.skillDomains.find(d => d.id === s.domain);
+        const tagsHtml = (s.tags || []).slice(0, 3).map(t => '<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">' + SB.escapeHtml(t) + '</span>').join(' ');
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="px-4 py-2.5">
+            <div class="font-medium text-xs">${SB.escapeHtml(s.name)}</div>
+            ${s.desc ? `<div class="text-[10px] text-slate-400 mt-0.5 line-clamp-1">${SB.escapeHtml(s.desc)}</div>` : ''}
+          </td>
+          <td class="px-4 py-2.5"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${domain ? domain.color : 'bg-slate-100 text-slate-600'}">${domain ? SB.escapeHtml(domain.name) : SB.escapeHtml(s.domain)}</span></td>
+          <td class="px-4 py-2.5"><div class="flex flex-wrap gap-1">${tagsHtml || '<span class="text-[10px] text-slate-400">—</span>'}</div></td>
+          <td class="px-4 py-2.5 text-right whitespace-nowrap">
+            <button data-id="${SB.escapeHtml(s.id)}" class="skill-edit-btn text-xs text-indigo-600 hover:text-indigo-700 font-medium mr-2">Edit</button>
+            <button data-id="${SB.escapeHtml(s.id)}" class="skill-delete-btn text-xs text-red-600 hover:text-red-700 font-medium">Delete</button>
+          </td>`;
+        skillsTbody.appendChild(tr);
+      });
+
+      document.querySelectorAll('.skill-edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => openEditSkillModal(btn.dataset.id));
+      });
+      document.querySelectorAll('.skill-delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => deleteSkill(btn.dataset.id));
+      });
+    }
+
+    // Domain CRUD
+    function openAddDomainModal() {
+      domainModalTitle.textContent = 'Add domain';
+      domainEditId.value = '';
+      domainFieldId.value = '';
+      domainFieldId.disabled = false;
+      domainFieldName.value = '';
+      domainFieldColor.value = DOMAIN_COLORS[0];
+      domainFieldDesc.value = '';
+      openOverlay(domainOverlay);
+    }
+
+    function openEditDomainModal(id) {
+      const d = SBData.skillDomains.find(x => x.id === id);
+      if (!d) return;
+      domainModalTitle.textContent = 'Edit domain';
+      domainEditId.value = d.id;
+      domainFieldId.value = d.id;
+      domainFieldId.disabled = true;
+      domainFieldName.value = d.name;
+      domainFieldColor.value = DOMAIN_COLORS.includes(d.color) ? d.color : DOMAIN_COLORS[0];
+      domainFieldDesc.value = d.desc || '';
+      openOverlay(domainOverlay);
+    }
+
+    function saveDomain() {
+      const id = domainFieldId.value.trim().toLowerCase();
+      const name = domainFieldName.value.trim();
+      const color = domainFieldColor.value;
+      const desc = domainFieldDesc.value.trim();
+      if (!id || !name) { SB.toast('Please fill required fields', 'error'); return; }
+      if (!/^[a-z0-9-]+$/.test(id)) { SB.toast('ID must use lowercase letters, numbers, and hyphens', 'error'); return; }
+
+      if (domainEditId.value) {
+        const d = SBData.skillDomains.find(x => x.id === domainEditId.value);
+        if (d) { d.name = name; d.color = color; d.desc = desc; }
+        SB.toast('Updated domain "' + name + '"', 'success');
+      } else {
+        if (SBData.skillDomains.some(x => x.id === id)) { SB.toast('Domain ID already exists', 'error'); return; }
+        SBData.skillDomains.push({ id, name, color, desc });
+        SB.toast('Added domain "' + name + '"', 'success');
+      }
+      closeOverlay(domainOverlay);
+      populateDomainDropdown();
+      renderDomains();
+      renderSkills();
+    }
+
+    function deleteDomain(id) {
+      const d = SBData.skillDomains.find(x => x.id === id);
+      if (!d) return;
+      const skillCount = SBData.getSkillsByDomain(id).length;
+      if (skillCount > 0) {
+        SB.toast('Cannot delete domain with ' + skillCount + ' skill(s). Reassign or delete them first.', 'error');
+        return;
+      }
+      if (!confirm('Delete domain "' + d.name + '"? This cannot be undone.')) return;
+      const idx = SBData.skillDomains.findIndex(x => x.id === id);
+      if (idx !== -1) SBData.skillDomains.splice(idx, 1);
+      if (activeDomain === id) activeDomain = null;
+      SB.toast('Deleted domain "' + d.name + '"', 'success');
+      populateDomainDropdown();
+      renderDomains();
+      renderSkills();
+    }
+
+    // Skill CRUD
+    function generateId(name) {
+      return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 40);
+    }
+
+    function openAddSkillModal() {
+      populateDomainDropdown();
+      skillModalTitle.textContent = 'Add skill';
+      skillEditId.value = '';
+      skillFieldName.value = '';
+      skillFieldDomain.value = activeDomain || '';
+      skillFieldDesc.value = '';
+      skillFieldTags.value = '';
+      openOverlay(skillOverlay);
+    }
+
+    function openEditSkillModal(id) {
+      const s = SBData.skillsLibrary.find(x => x.id === id);
+      if (!s) return;
+      populateDomainDropdown();
+      skillModalTitle.textContent = 'Edit skill';
+      skillEditId.value = s.id;
+      skillFieldName.value = s.name;
+      skillFieldDomain.value = s.domain;
+      skillFieldDesc.value = s.desc || '';
+      skillFieldTags.value = (s.tags || []).join(', ');
+      openOverlay(skillOverlay);
+    }
+
+    function parseTags(str) {
+      return str.split(',').map(t => t.trim()).filter(Boolean);
+    }
+
+    function saveSkill() {
+      const name = skillFieldName.value.trim();
+      const domain = skillFieldDomain.value;
+      const desc = skillFieldDesc.value.trim();
+      const tags = parseTags(skillFieldTags.value);
+      if (!name || !domain) { SB.toast('Please fill required fields', 'error'); return; }
+
+      if (skillEditId.value) {
+        const s = SBData.skillsLibrary.find(x => x.id === skillEditId.value);
+        if (s) { s.name = name; s.domain = domain; s.desc = desc; s.tags = tags; }
+        SB.toast('Updated skill "' + name + '"', 'success');
+      } else {
+        var id = generateId(name);
+        var suffix = 1;
+        while (SBData.skillsLibrary.some(x => x.id === id)) { id = generateId(name) + '-' + suffix; suffix++; }
+        SBData.skillsLibrary.push({ id: id, name: name, domain: domain, desc: desc, tags: tags });
+        SB.toast('Added skill "' + name + '"', 'success');
+      }
+      closeOverlay(skillOverlay);
+      renderDomains();
+      renderSkills();
+    }
+
+    // File upload for bulk skills import
+    document.getElementById('skills-file-upload').addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        var content = ev.target.result;
+        var imported = 0;
+        try {
+          if (file.name.endsWith('.json')) {
+            var data = JSON.parse(content);
+            var arr = Array.isArray(data) ? data : (data.skills || []);
+            arr.forEach(function(item) {
+              var nm = item.name || item.skill || '';
+              if (!nm) return;
+              var dom = item.domain || activeDomain || SBData.skillDomains[0].id;
+              var id = generateId(nm);
+              var sfx = 1;
+              while (SBData.skillsLibrary.some(function(x) { return x.id === id; })) { id = generateId(nm) + '-' + sfx; sfx++; }
+              SBData.skillsLibrary.push({ id: id, name: nm, domain: dom, desc: item.description || item.desc || '', tags: item.tags || [] });
+              imported++;
+            });
+          } else {
+            var lines = content.split('\n').map(function(l) { return l.trim(); }).filter(Boolean);
+            if (file.name.endsWith('.csv') && lines.length > 0) {
+              var header = lines[0].toLowerCase();
+              var hasHeader = header.includes('name') || header.includes('skill');
+              var startIdx = hasHeader ? 1 : 0;
+              for (var i = startIdx; i < lines.length; i++) {
+                var cols = lines[i].split(',').map(function(c) { return c.trim().replace(/^"|"$/g, ''); });
+                var nm = cols[0];
+                if (!nm) continue;
+                var dom = cols[1] || activeDomain || SBData.skillDomains[0].id;
+                var id = generateId(nm);
+                var sfx = 1;
+                while (SBData.skillsLibrary.some(function(x) { return x.id === id; })) { id = generateId(nm) + '-' + sfx; sfx++; }
+                SBData.skillsLibrary.push({ id: id, name: nm, domain: dom, desc: cols[2] || '', tags: [] });
+                imported++;
+              }
+            } else {
+              lines.forEach(function(line) {
+                if (!line) return;
+                var nm = line;
+                var dom = activeDomain || SBData.skillDomains[0].id;
+                var id = generateId(nm);
+                var sfx = 1;
+                while (SBData.skillsLibrary.some(function(x) { return x.id === id; })) { id = generateId(nm) + '-' + sfx; sfx++; }
+                SBData.skillsLibrary.push({ id: id, name: nm, domain: dom, desc: '', tags: [] });
+                imported++;
+              });
+            }
+          }
+        } catch(err) {
+          SB.toast('Failed to parse file: ' + err.message, 'error');
+          return;
+        }
+        if (imported > 0) {
+          SB.toast('Imported ' + imported + ' skill(s) from file', 'success');
+          renderDomains();
+          renderSkills();
+        } else {
+          SB.toast('No skills found in file', 'error');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    function deleteSkill(id) {
+      const s = SBData.skillsLibrary.find(x => x.id === id);
+      if (!s) return;
+      if (!confirm('Delete skill "' + s.name + '"? This cannot be undone.')) return;
+      const idx = SBData.skillsLibrary.findIndex(x => x.id === id);
+      if (idx !== -1) SBData.skillsLibrary.splice(idx, 1);
+      SB.toast('Deleted skill "' + s.name + '"', 'success');
+      renderDomains();
+      renderSkills();
+    }
+
+    // Event listeners
+    document.getElementById('btn-add-domain').addEventListener('click', openAddDomainModal);
+    document.getElementById('btn-add-skill').addEventListener('click', openAddSkillModal);
+    document.getElementById('domain-modal-close').addEventListener('click', () => closeOverlay(domainOverlay));
+    document.getElementById('domain-modal-cancel').addEventListener('click', () => closeOverlay(domainOverlay));
+    document.getElementById('domain-modal-save').addEventListener('click', saveDomain);
+    domainOverlay.addEventListener('click', (e) => { if (e.target === domainOverlay) closeOverlay(domainOverlay); });
+    document.getElementById('skill-modal-close').addEventListener('click', () => closeOverlay(skillOverlay));
+    document.getElementById('skill-modal-cancel').addEventListener('click', () => closeOverlay(skillOverlay));
+    document.getElementById('skill-modal-save').addEventListener('click', saveSkill);
+    skillOverlay.addEventListener('click', (e) => { if (e.target === skillOverlay) closeOverlay(skillOverlay); });
+    skillSearch.addEventListener('input', renderSkills);
+
+    populateDomainDropdown();
+    renderDomains();
+    renderSkills();
+  </script>
+</body>
+</html>

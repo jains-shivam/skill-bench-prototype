@@ -3,75 +3,165 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Admin - Skill Bench MVP</title>
+  <title>Admin Dashboard - Skill Bench</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/style.css?v=3">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
-  <main class="mx-auto max-w-7xl px-6 py-8">
-    <h1 class="text-2xl font-bold">Admin dashboard</h1>
-    <p class="text-sm text-slate-500 mt-1">Observability: Prompters → Domain Review → Testers → Tech Review → Published.</p>
-    <div class="grid grid-cols-2 md:grid-cols-7 gap-3 mt-6 mb-6">
-      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Total</div><div id="kpi-total" class="text-2xl font-semibold">-</div></div>
-      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Draft</div><div id="kpi-draft" class="text-2xl font-semibold">-</div></div>
-      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Domain review</div><div id="kpi-domain" class="text-2xl font-semibold text-violet-700">-</div></div>
-      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">With tester</div><div id="kpi-tester" class="text-2xl font-semibold text-blue-700">-</div></div>
-      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Tech review</div><div id="kpi-review" class="text-2xl font-semibold text-amber-700">-</div></div>
-      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Changes</div><div id="kpi-changes" class="text-2xl font-semibold text-orange-700">-</div></div>
-      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Published</div><div id="kpi-published" class="text-2xl font-semibold text-emerald-700">-</div></div>
-    </div>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-      <div class="bg-white border rounded-lg overflow-hidden">
-        <div class="px-5 py-3 border-b font-semibold">People</div>
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="text-left px-4 py-2">User</th><th class="text-left px-4 py-2">Role</th><th class="text-left px-4 py-2">Tasks</th></tr></thead>
-          <tbody id="users-rows" class="divide-y"></tbody>
-        </table>
+  <main class="max-w-7xl">
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <p class="text-sm text-slate-500 mt-1">Platform overview and task pipeline health</p>
       </div>
-      <div class="bg-white border rounded-lg overflow-hidden">
-        <div class="px-5 py-3 border-b font-semibold">Recent tasks</div>
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="text-left px-4 py-2">Task</th><th class="text-left px-4 py-2">Status</th><th class="text-left px-4 py-2">Prompter</th></tr></thead>
-          <tbody id="task-rows" class="divide-y"></tbody>
-        </table>
+      <div class="text-xs text-slate-500 flex items-center gap-1.5">
+        <span class="live-dot"></span> Live data &middot; Last updated: just now
       </div>
     </div>
-    <div class="bg-white border rounded-lg overflow-hidden">
-      <div class="px-5 py-3 border-b flex justify-between items-center">
-        <div class="font-semibold">Environment templates</div>
-        <span class="text-xs px-2 py-1 rounded bg-slate-100 text-slate-500">Add template — soon</span>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
+      <div class="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+        <div class="text-[10px] text-slate-500 uppercase font-medium tracking-wider">Total tasks</div>
+        <div id="kpi-total" class="text-2xl font-bold mt-1">-</div>
+        <div class="text-[10px] text-emerald-600 mt-1">+3 this week</div>
       </div>
-      <table class="w-full text-sm">
-        <thead class="bg-slate-50 text-xs uppercase text-slate-500">
-          <tr>
-            <th class="text-left px-4 py-2">Template</th>
-            <th class="text-left px-4 py-2">Tags</th>
-            <th class="text-left px-4 py-2">Resources</th>
-            <th class="text-left px-4 py-2">Used by testers</th>
-          </tr>
-        </thead>
-        <tbody id="tpl-rows" class="divide-y"></tbody>
-      </table>
+      <div class="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+        <div class="text-[10px] text-slate-500 uppercase font-medium tracking-wider">Draft</div>
+        <div id="kpi-draft" class="text-2xl font-bold mt-1">-</div>
+      </div>
+      <div class="bg-white border border-violet-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+        <div class="text-[10px] text-violet-600 uppercase font-medium tracking-wider">Domain review</div>
+        <div id="kpi-domain" class="text-2xl font-bold text-violet-700 mt-1">-</div>
+      </div>
+      <div class="bg-white border border-blue-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+        <div class="text-[10px] text-blue-600 uppercase font-medium tracking-wider">With tester</div>
+        <div id="kpi-tester" class="text-2xl font-bold text-blue-700 mt-1">-</div>
+      </div>
+      <div class="bg-white border border-amber-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+        <div class="text-[10px] text-amber-600 uppercase font-medium tracking-wider">Tech review</div>
+        <div id="kpi-review" class="text-2xl font-bold text-amber-700 mt-1">-</div>
+      </div>
+      <div class="bg-white border border-orange-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+        <div class="text-[10px] text-orange-600 uppercase font-medium tracking-wider">Changes req.</div>
+        <div id="kpi-changes" class="text-2xl font-bold text-orange-700 mt-1">-</div>
+      </div>
+      <div class="bg-white border border-emerald-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+        <div class="text-[10px] text-emerald-600 uppercase font-medium tracking-wider">Published</div>
+        <div id="kpi-published" class="text-2xl font-bold text-emerald-700 mt-1">-</div>
+      </div>
     </div>
-    <div class="mt-8 bg-white border rounded-lg p-5 text-sm text-slate-600">
-      <div class="font-semibold text-slate-900 mb-2">Post-MVP roadmap</div>
-      <ul class="list-disc pl-5 space-y-1">
-        <li>Skills library + lifecycle</li>
-        <li>Projects / Batches scoping</li>
-        <li>Evaluator with/without skills A/B</li>
-        <li>AI-assisted Dockerfile + test compilation</li>
-        <li>No-code criteria builder for testers</li>
-      </ul>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_20rem] gap-4 mb-4">
+      <!-- Left column: Tables -->
+      <div class="space-y-4">
+        <!-- Recent tasks -->
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+            <div class="font-semibold text-sm">All tasks</div>
+            <span class="text-xs text-slate-500" id="task-count"></span>
+          </div>
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th class="text-left px-4 py-2.5">Task</th>
+                <th class="text-left px-4 py-2.5">Prompter</th>
+                <th class="text-left px-4 py-2.5">Status</th>
+                <th class="text-left px-4 py-2.5">Updated</th>
+              </tr>
+            </thead>
+            <tbody id="task-rows" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+
+        <!-- People -->
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden" id="people">
+          <div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+            <div class="font-semibold text-sm">Team members</div>
+            <span class="text-xs text-slate-500" id="users-count"></span>
+          </div>
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th class="text-left px-4 py-2.5">User</th>
+                <th class="text-left px-4 py-2.5">Role</th>
+                <th class="text-left px-4 py-2.5">Last seen</th>
+                <th class="text-left px-4 py-2.5">Tasks</th>
+              </tr>
+            </thead>
+            <tbody id="users-rows" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+
+        <!-- Quick links -->
+        <div class="bg-white border border-slate-200 rounded-lg p-5">
+          <div class="font-semibold text-sm mb-3">Quick actions</div>
+          <div class="grid grid-cols-2 gap-2">
+            <a href="people.html" class="px-3 py-2.5 rounded-lg border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors text-xs font-medium text-slate-700 flex items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-400"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+              Add person
+            </a>
+            <a href="skills.html" class="px-3 py-2.5 rounded-lg border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors text-xs font-medium text-slate-700 flex items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Manage skills
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column: Activity feed + Skills -->
+      <div class="space-y-4">
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-200">
+            <div class="font-semibold text-sm">Recent activity</div>
+          </div>
+          <div id="activity-feed" class="divide-y divide-slate-100 max-h-[28rem] overflow-y-auto scroll-y"></div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg p-4" id="skills">
+          <div class="font-semibold text-sm mb-3">Skills catalog</div>
+          <div class="space-y-2" id="skills-summary"></div>
+          <div class="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+            <span id="skills-total">0</span> skills across <span id="domains-total">0</span> domains
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg p-4">
+          <div class="font-semibold text-sm mb-2">Pipeline health</div>
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-600">Avg. time to publish</span>
+              <span class="font-medium">3.2 days</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-600">Oracle pass rate</span>
+              <span class="font-medium text-emerald-700">87%</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-600">Changes requested rate</span>
+              <span class="font-medium text-amber-700">23%</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-600">Active prompters (7d)</span>
+              <span class="font-medium">4</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
-  <script src="../assets/data.js"></script>
-  <script src="../assets/script.js"></script>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js?v=3"></script>
+  <script src="../assets/script.js?v=3"></script>
   <script>
+    if (!SB.requireAuth()) throw 'auth';
     SB.setRole('admin');
     SB.renderNav();
     const tasks = SBData.tasks;
+
+    // KPIs
     document.getElementById('kpi-total').textContent = tasks.length;
     document.getElementById('kpi-draft').textContent = tasks.filter(t => t.status === 'prompter-draft').length;
     document.getElementById('kpi-domain').textContent = tasks.filter(t => t.status === 'domain-review').length;
@@ -79,35 +169,69 @@
     document.getElementById('kpi-review').textContent = tasks.filter(t => t.status === 'in-review').length;
     document.getElementById('kpi-changes').textContent = tasks.filter(t => t.status === 'changes-requested').length;
     document.getElementById('kpi-published').textContent = tasks.filter(t => t.status === 'published' || t.status === 'approved').length;
-    const users = document.getElementById('users-rows');
-    SBData.allUsers.forEach(u => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td class="px-4 py-2">${SB.escapeHtml(u.name)}<div class="text-xs text-slate-500">${SB.escapeHtml(u.email)}</div></td>
-        <td class="px-4 py-2"><span class="text-xs px-2 py-0.5 rounded bg-slate-100">${SB.escapeHtml(u.role)}</span></td>
-        <td class="px-4 py-2">${u.tasksCount}</td>`;
-      users.appendChild(tr);
-    });
+
+    // Tasks table
+    document.getElementById('task-count').textContent = tasks.length + ' total';
     const trows = document.getElementById('task-rows');
-    tasks.slice(0, 8).forEach(t => {
+    tasks.forEach(t => {
       const st = SBData.STATUS[t.status];
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td class="px-4 py-2 font-mono text-xs">${SB.escapeHtml(t.name)}</td>
-        <td class="px-4 py-2"><span class="pill ${st.cls}">${st.label}</span></td>
-        <td class="px-4 py-2">${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</td>`;
+      tr.className = 'hover:bg-slate-50';
+      tr.innerHTML = `
+        <td class="px-4 py-2.5"><div class="font-mono text-xs font-medium">${SB.escapeHtml(t.name)}</div><div class="text-[11px] text-slate-500 mt-0.5">${SB.escapeHtml(t.description || '').slice(0, 60)}</div></td>
+        <td class="px-4 py-2.5 text-xs">${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</td>
+        <td class="px-4 py-2.5"><span class="pill ${st.cls}">${st.label}</span></td>
+        <td class="px-4 py-2.5 text-xs text-slate-500">${SB.escapeHtml(t.updatedAt || '—')}</td>`;
       trows.appendChild(tr);
     });
-    const tplRows = document.getElementById('tpl-rows');
-    const usage = {};
-    tasks.forEach(t => { if (t.templateId) usage[t.templateId] = (usage[t.templateId] || 0) + 1; });
-    SBData.templates.forEach(tpl => {
+
+    // Users table
+    document.getElementById('users-count').textContent = SBData.allUsers.length + ' users';
+    const usersEl = document.getElementById('users-rows');
+    SBData.allUsers.forEach(u => {
       const tr = document.createElement('tr');
-      const res = tpl.resources;
-      tr.innerHTML = `<td class="px-4 py-2"><div class="font-medium">${SB.escapeHtml(tpl.name)}</div><div class="text-xs text-slate-500">${SB.escapeHtml(tpl.desc)}</div></td>
-        <td class="px-4 py-2">${tpl.tags.map(x => `<span class="text-[10px] px-1 rounded bg-slate-100">${SB.escapeHtml(x)}</span>`).join(' ')}</td>
-        <td class="px-4 py-2 text-xs">${res.cpus} CPU · ${res.memoryGB} GB${res.gpu ? ' · GPU' : ''}</td>
-        <td class="px-4 py-2">${usage[tpl.id] || 0}</td>`;
-      tplRows.appendChild(tr);
+      tr.className = 'hover:bg-slate-50';
+      const roleColors = Object.fromEntries(Object.values(SBData.ROLES).map(r => [r.label, r.color]));
+      const rc = roleColors[u.role] || 'bg-slate-100 text-slate-700';
+      tr.innerHTML = `
+        <td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="avatar" style="width:1.5rem;height:1.5rem;font-size:0.55rem">${u.initials || '?'}</div><div><div class="text-xs font-medium">${SB.escapeHtml(u.name)}</div><div class="text-[10px] text-slate-500">${SB.escapeHtml(u.email)}</div></div></div></td>
+        <td class="px-4 py-2.5"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${rc}">${SB.escapeHtml(u.role)}</span></td>
+        <td class="px-4 py-2.5 text-xs text-slate-500">${SB.escapeHtml(u.lastSeen || '—')}</td>
+        <td class="px-4 py-2.5 text-xs">${u.tasksCount || 0}</td>`;
+      usersEl.appendChild(tr);
     });
+
+    // Activity feed
+    const feed = document.getElementById('activity-feed');
+    const allActivity = [];
+    tasks.forEach(t => {
+      (t.history || []).forEach(h => {
+        allActivity.push({ task: t.name, who: h.who, event: h.event, when: h.when });
+      });
+    });
+    allActivity.sort((a, b) => {
+      const order = ['just now','20 min ago','30 min ago','1 hour ago','2 hours ago','3 hours ago','5 hours ago','1 day ago','2 days ago','3 days ago','4 days ago','5 days ago','6 days ago','7 days ago','yesterday'];
+      return (order.indexOf(a.when) === -1 ? 99 : order.indexOf(a.when)) - (order.indexOf(b.when) === -1 ? 99 : order.indexOf(b.when));
+    });
+    allActivity.slice(0, 15).forEach(a => {
+      const item = document.createElement('div');
+      item.className = 'px-4 py-2.5 text-xs';
+      item.innerHTML = `<div class="text-slate-800"><b>${SB.escapeHtml(a.who)}</b> ${SB.escapeHtml(a.event)}</div><div class="text-[10px] text-slate-400 mt-0.5">${SB.escapeHtml(a.task)} &middot; ${SB.escapeHtml(a.when)}</div>`;
+      feed.appendChild(item);
+    });
+    if (!allActivity.length) feed.innerHTML = '<div class="px-4 py-6 text-xs text-slate-400 text-center">No activity yet</div>';
+
+    // Skills summary
+    const skillsEl = document.getElementById('skills-summary');
+    SBData.skillDomains.forEach(d => {
+      const count = SBData.getSkillsByDomain(d.id).length;
+      const bar = document.createElement('div');
+      bar.className = 'flex items-center gap-2';
+      bar.innerHTML = `<span class="text-xs text-slate-600 w-20 truncate">${SB.escapeHtml(d.name)}</span><div class="flex-1 h-1.5 rounded-full bg-slate-100"><div class="h-1.5 rounded-full bg-indigo-400" style="width:${Math.min(count * 25, 100)}%"></div></div><span class="text-[10px] text-slate-500 w-4 text-right">${count}</span>`;
+      skillsEl.appendChild(bar);
+    });
+    document.getElementById('skills-total').textContent = SBData.skillsLibrary.length;
+    document.getElementById('domains-total').textContent = SBData.skillDomains.length;
   </script>
 </body>
 </html>

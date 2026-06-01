@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Super Admin - Skill Bench</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css?v=3">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="max-w-7xl">
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Platform Overview</h1>
+        <p class="text-sm text-slate-500 mt-1">System-wide metrics and health monitoring</p>
+      </div>
+      <div class="text-xs text-slate-500 flex items-center gap-1.5">
+        <span class="live-dot"></span> System healthy
+      </div>
+    </div>
+
+    <!-- Platform stats -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-[10px] text-slate-500 uppercase font-medium tracking-wider">Total users</div>
+        <div id="stat-users" class="text-2xl font-bold mt-1">-</div>
+        <div class="text-[10px] text-emerald-600 mt-1">+2 this month</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-[10px] text-slate-500 uppercase font-medium tracking-wider">Active users (7d)</div>
+        <div id="stat-active" class="text-2xl font-bold mt-1">-</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-[10px] text-slate-500 uppercase font-medium tracking-wider">Total tasks</div>
+        <div id="stat-tasks" class="text-2xl font-bold mt-1">-</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-lg p-4">
+        <div class="text-[10px] text-slate-500 uppercase font-medium tracking-wider">Published</div>
+        <div id="stat-published" class="text-2xl font-bold text-emerald-700 mt-1">-</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_20rem] gap-4">
+      <div class="space-y-4">
+        <!-- Role distribution -->
+        <div class="bg-white border border-slate-200 rounded-lg p-5">
+          <div class="font-semibold text-sm mb-4">Role distribution</div>
+          <div class="space-y-3" id="role-dist"></div>
+        </div>
+
+        <!-- Pipeline status -->
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <div class="px-5 py-3 border-b border-slate-200 font-semibold text-sm">Pipeline breakdown</div>
+          <div class="grid grid-cols-7 text-center text-xs divide-x divide-slate-100" id="pipeline-bars">
+          </div>
+        </div>
+
+        <!-- Recent users -->
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+            <div class="font-semibold text-sm">Recent users</div>
+            <a href="people.html" class="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Manage all &rarr;</a>
+          </div>
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="text-left px-4 py-2.5">User</th><th class="text-left px-4 py-2.5">Role</th><th class="text-left px-4 py-2.5">Status</th><th class="text-left px-4 py-2.5">Joined</th></tr></thead>
+            <tbody id="users-rows" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right sidebar -->
+      <div class="space-y-4">
+        <div class="bg-white border border-slate-200 rounded-lg p-4">
+          <div class="font-semibold text-sm mb-3">System info</div>
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between"><span class="text-slate-600">Platform</span><span class="font-medium">Skill Bench v4</span></div>
+            <div class="flex items-center justify-between"><span class="text-slate-600">Organization</span><span class="font-medium">my-org</span></div>
+            <div class="flex items-center justify-between"><span class="text-slate-600">Plan</span><span class="font-medium text-indigo-700">Enterprise</span></div>
+            <div class="flex items-center justify-between"><span class="text-slate-600">Active roles</span><span class="font-medium">7 defined</span></div>
+            <div class="flex items-center justify-between"><span class="text-slate-600">Skills domains</span><span id="sys-domains" class="font-medium">-</span></div>
+            <div class="flex items-center justify-between"><span class="text-slate-600">Total skills</span><span id="sys-skills" class="font-medium">-</span></div>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg p-4">
+          <div class="font-semibold text-sm mb-3">Quick actions</div>
+          <div class="space-y-2">
+            <a href="people.html" class="block w-full text-left px-3 py-2 rounded-md border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors text-xs font-medium text-slate-700">Add new user</a>
+            <a href="skills.html" class="block w-full text-left px-3 py-2 rounded-md border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors text-xs font-medium text-slate-700">Manage skills catalog</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js?v=3"></script>
+  <script src="../assets/script.js?v=3"></script>
+  <script>
+    if (!SB.requireAuth()) throw 'auth';
+    SB.setRole('superAdmin');
+    SB.renderNav();
+
+    const tasks = SBData.tasks;
+    const users = SBData.allUsers;
+
+    document.getElementById('stat-users').textContent = users.length;
+    document.getElementById('stat-active').textContent = users.filter(u => u.status === 'active').length;
+    document.getElementById('stat-tasks').textContent = tasks.length;
+    document.getElementById('stat-published').textContent = tasks.filter(t => t.status === 'published' || t.status === 'approved').length;
+    document.getElementById('sys-domains').textContent = SBData.skillDomains.length;
+    document.getElementById('sys-skills').textContent = SBData.skillsLibrary.length;
+
+    // Role distribution
+    const roleCounts = {};
+    users.forEach(u => { roleCounts[u.role] = (roleCounts[u.role] || 0) + 1; });
+    const distEl = document.getElementById('role-dist');
+    Object.entries(SBData.ROLES).forEach(([key, r]) => {
+      const count = roleCounts[r.label] || 0;
+      const pct = Math.round((count / users.length) * 100);
+      distEl.innerHTML += `<div class="flex items-center gap-3"><span class="text-xs text-slate-600 w-28 truncate">${r.label}</span><div class="flex-1 h-2 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-indigo-400 transition-all" style="width:${pct}%"></div></div><span class="text-xs text-slate-500 w-8 text-right">${count}</span></div>`;
+    });
+
+    // Pipeline
+    const states = ['prompter-draft','domain-review','with-tester','in-review','changes-requested','approved','published'];
+    const pipeEl = document.getElementById('pipeline-bars');
+    states.forEach(s => {
+      const st = SBData.STATUS[s];
+      const count = tasks.filter(t => t.status === s).length;
+      pipeEl.innerHTML += `<div class="py-4 px-2"><div class="text-lg font-bold">${count}</div><div class="text-[10px] text-slate-500 mt-1">${st.label}</div></div>`;
+    });
+
+    // Users table
+    const tbody = document.getElementById('users-rows');
+    users.slice(0, 8).forEach(u => {
+      const roleInfo = Object.values(SBData.ROLES).find(r => r.label === u.role) || {};
+      const rc = roleInfo.color || 'bg-slate-100 text-slate-700';
+      const statusCls = u.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500';
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-50';
+      tr.innerHTML = `
+        <td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="avatar" style="width:1.5rem;height:1.5rem;font-size:0.55rem">${u.initials}</div><div><div class="text-xs font-medium">${SB.escapeHtml(u.name)}</div><div class="text-[10px] text-slate-500">${SB.escapeHtml(u.email)}</div></div></div></td>
+        <td class="px-4 py-2.5"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${rc}">${SB.escapeHtml(u.role)}</span></td>
+        <td class="px-4 py-2.5"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${statusCls}">${u.status}</span></td>
+        <td class="px-4 py-2.5 text-xs text-slate-500">${u.joinedAt || '—'}</td>`;
+      tbody.appendChild(tr);
+    });
+  </script>
+</body>
+</html>
