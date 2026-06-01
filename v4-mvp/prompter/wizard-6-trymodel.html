@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Try Model - Prompter - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="mx-auto max-w-5xl px-6 py-6">
+    <div class="flex justify-between mb-4 text-sm text-slate-500">
+      <span><a href="dashboard.html" class="hover:text-slate-900">My Tasks</a> / New task</span>
+      <a id="save-exit" href="dashboard.html">Save &amp; Exit</a>
+    </div>
+    <div id="wizard-stepper" class="mb-8 stepper-prompter"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[14rem_1fr] gap-6">
+      <aside class="bg-white border border-slate-200 rounded-lg p-4 h-fit text-sm text-slate-600">
+        <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Step 6 — Try model</div>
+        <p>Run a mock model response against your verifiers before submitting for domain review.</p>
+        <p class="mt-2 text-xs text-slate-500">Results are simulated in this prototype — use them to sanity-check your verifier plan.</p>
+      </aside>
+
+      <section class="bg-white border border-slate-200 rounded-lg p-6">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold">Test verifiers with a model</h2>
+            <p class="text-sm text-slate-500 mt-1">Send your prompt to a model and check whether your verifiers pass on the response.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="model-select" class="text-xs text-slate-500">Model</label>
+            <select id="model-select" class="text-sm border border-slate-200 rounded-md px-3 py-1.5 bg-white">
+              <option>Claude Sonnet 4.5</option>
+              <option>GPT-5</option>
+              <option>Gemini 2.5 Pro</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="state-idle" class="mt-6">
+          <button id="run-model" class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium text-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Run Model
+          </button>
+          <p id="no-verifiers" class="hidden mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+            Add verifiers in the previous step before running the model.
+          </p>
+        </div>
+
+        <div id="state-running" class="mt-6 hidden">
+          <div class="border rounded-lg p-4">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="live-dot"></span>
+              <b>Running</b>
+              <span id="run-model-name" class="text-xs text-slate-500"></span>
+              <span id="run-elapsed" class="ml-auto text-xs font-mono text-slate-500"></span>
+            </div>
+            <div class="progress-bar"><div id="run-bar" style="width:0%"></div></div>
+            <ul id="run-stages" class="mt-3 text-sm space-y-2 text-slate-700"></ul>
+          </div>
+        </div>
+
+        <div id="state-results" class="mt-6 hidden space-y-4">
+          <div id="banner-pass" class="hidden border border-emerald-200 bg-emerald-50 rounded-lg p-4">
+            <div class="font-semibold text-emerald-900">All verifiers passed</div>
+            <p class="text-sm text-emerald-800 mt-1">Your verifier plan looks solid. You can proceed to submit for domain review.</p>
+          </div>
+          <div id="banner-fail" class="hidden border border-amber-200 bg-amber-50 rounded-lg p-4">
+            <div class="font-semibold text-amber-900">Some verifiers failed</div>
+            <p class="text-sm text-amber-800 mt-1">Adjust your verifiers or prompt, then run again before submitting.</p>
+          </div>
+
+          <div>
+            <div class="text-sm font-medium text-slate-900 mb-2">Verifier results</div>
+            <ul id="verifier-results" class="space-y-2"></ul>
+          </div>
+
+          <button id="run-again" class="text-sm border border-slate-200 px-3 py-2 rounded-md bg-white hover:bg-slate-50">Run Again</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="mt-8 flex justify-between">
+      <a id="back" href="wizard-5-solution.html" class="text-sm text-slate-600">&larr; Back</a>
+      <a id="next" href="wizard-7-submit.html" class="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md">Next: Submit &rarr;</a>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('prompter');
+    SB.renderNav();
+    SB.renderWizardStepper(6, 'prompter');
+
+    const t = SB.getWizardTaskFromSession();
+    function wHref(page) {
+      const id = SB.getWizardTaskId();
+      return page + (id ? '?id=' + encodeURIComponent(id) : '');
+    }
+    document.getElementById('back').href = wHref('wizard-5-solution.html');
+    document.getElementById('next').href = wHref('wizard-7-submit.html');
+
+    const idle = document.getElementById('state-idle');
+    const running = document.getElementById('state-running');
+    const results = document.getElementById('state-results');
+    const bannerPass = document.getElementById('banner-pass');
+    const bannerFail = document.getElementById('banner-fail');
+    const verifierResults = document.getElementById('verifier-results');
+    const noVerifiers = document.getElementById('no-verifiers');
+    const hasVerifiers = (t.verifiers || []).length > 0;
+
+    if (!hasVerifiers) {
+      noVerifiers.classList.remove('hidden');
+      document.getElementById('run-model').disabled = true;
+      document.getElementById('run-model').classList.add('opacity-50', 'cursor-not-allowed');
+    }
+
+    function verifierLabel(type) {
+      const vt = SBData.VERIFIER_TYPES.find(v => v.id === type);
+      return vt ? vt.label : type;
+    }
+
+    function show(state) {
+      idle.classList.toggle('hidden', state !== 'idle');
+      running.classList.toggle('hidden', state !== 'running');
+      results.classList.toggle('hidden', state !== 'results');
+    }
+
+    function renderResults(data) {
+      verifierResults.innerHTML = '';
+      (data.results || []).forEach(r => {
+        const li = document.createElement('li');
+        li.className = 'flex items-start gap-3 border border-slate-200 rounded-md px-3 py-2.5 bg-slate-50';
+        const badge = r.passed
+          ? '<span class="shrink-0 text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">PASS</span>'
+          : '<span class="shrink-0 text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-red-100 text-red-800">FAIL</span>';
+        li.innerHTML = badge + `
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-medium text-slate-500">${SB.escapeHtml(verifierLabel(r.type))}</div>
+            <div class="text-sm text-slate-800 mt-0.5">${SB.escapeHtml(r.description || '')}</div>
+          </div>`;
+        verifierResults.appendChild(li);
+      });
+      bannerPass.classList.toggle('hidden', !data.allPassed);
+      bannerFail.classList.toggle('hidden', data.allPassed);
+      show('results');
+    }
+
+    function runModel() {
+      if (!hasVerifiers) {
+        SB.toast('Add verifiers before running the model.', 'warning');
+        return;
+      }
+      show('running');
+      document.getElementById('run-model-name').textContent = document.getElementById('model-select').value;
+      const stagesEl = document.getElementById('run-stages');
+      const bar = document.getElementById('run-bar');
+      stagesEl.innerHTML = '';
+      bar.style.width = '0%';
+      const started = Date.now();
+      const timer = setInterval(() => {
+        document.getElementById('run-elapsed').textContent = ((Date.now() - started) / 1000).toFixed(1) + 's';
+      }, 100);
+
+      SB.runMockModel({
+        verifiers: t.verifiers,
+        onProgress(p) {
+          bar.style.width = p.percent + '%';
+          if (!stagesEl.children[p.stageIndex]) {
+            const li = document.createElement('li');
+            li.className = 'flex items-center gap-2';
+            li.innerHTML = '<span class="live-dot"></span>' + SB.escapeHtml(p.stage);
+            stagesEl.appendChild(li);
+          }
+        },
+        onComplete(data) {
+          clearInterval(timer);
+          renderResults(data);
+        },
+      });
+    }
+
+    document.getElementById('run-model').addEventListener('click', runModel);
+    document.getElementById('run-again').addEventListener('click', runModel);
+    document.getElementById('save-exit').addEventListener('click', () => SB.saveWizardTaskToSession(t));
+  </script>
+</body>
+</html>

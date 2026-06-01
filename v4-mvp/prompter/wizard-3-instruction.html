@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Problem - Prompter - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .md-preview h1 { font-size: 1.25rem; font-weight: 700; margin: 0.5rem 0; }
+    .md-preview h2 { font-size: 1.125rem; font-weight: 600; margin: 0.5rem 0; }
+    .md-preview p  { margin: 0.5rem 0; line-height: 1.6; }
+    .md-preview ol { padding-left: 1.5rem; list-style: decimal; margin: 0.5rem 0; }
+    .md-preview ul { padding-left: 1.5rem; list-style: disc; margin: 0.5rem 0; }
+    .md-preview code:not(pre code) { background: #f1f5f9; padding: 0 0.25rem; border-radius: 0.25rem; font-size: 0.85em; }
+    .md-preview pre { background: #0f172a; color: #e2e8f0; padding: 0.75rem 1rem; border-radius: 0.5rem; overflow-x: auto; font-size: 0.8125rem; margin: 0.75rem 0; }
+    .md-preview strong { font-weight: 600; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="mx-auto max-w-6xl px-6 py-6">
+    <div class="flex justify-between mb-4 text-sm text-slate-500">
+      <span><a href="dashboard.html" class="hover:text-slate-900">My Tasks</a> / New task</span>
+      <a href="dashboard.html" class="hover:text-slate-900">Save &amp; Exit</a>
+    </div>
+    <div id="wizard-stepper" class="mb-8 stepper-prompter"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-[14rem_1fr] gap-6">
+      <aside class="bg-white border border-slate-200 rounded-lg p-4 h-fit text-sm text-slate-600">
+        <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Step 3 — Problem</div>
+        <p>Write what the AI agent should do in plain Markdown. This becomes <code class="bg-slate-100 px-1 rounded text-xs">instruction.md</code>.</p>
+        <ul class="mt-3 list-disc pl-4 space-y-1">
+          <li>Describe <b>done</b> — file paths, formats, expected output.</li>
+          <li>Keep grading criteria for the Verifiers step.</li>
+          <li>Use code blocks for exact-output expectations.</li>
+        </ul>
+      </aside>
+      <section class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-semibold">Problem statement</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Markdown editor with live preview.</p>
+          </div>
+          <label class="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-slate-200 rounded-md bg-white hover:bg-slate-50 cursor-pointer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-500"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            Import file
+            <input id="import-file" type="file" accept=".md,.txt,.markdown" class="hidden">
+          </label>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
+          <div class="flex flex-col">
+            <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 font-medium uppercase tracking-wide">Editor</div>
+            <textarea id="md-editor"
+                      class="flex-1 min-h-[28rem] p-4 font-mono text-sm bg-white border-0 resize-none focus:outline-none"
+                      placeholder="# Task title&#10;&#10;Describe what the agent should build..."></textarea>
+          </div>
+          <div class="flex flex-col">
+            <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 font-medium uppercase tracking-wide">Preview</div>
+            <div id="md-preview" class="md-preview flex-1 min-h-[28rem] p-4 text-sm text-slate-700 scroll-y"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="mt-8 flex justify-between">
+      <a id="back" href="wizard-2-skills.html" class="text-sm text-slate-600 hover:text-slate-900">Back</a>
+      <a id="next" href="wizard-4-verifiers.html"
+         class="inline-flex items-center gap-2 px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md font-medium">
+        Next: Verifiers
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('prompter');
+    SB.renderNav();
+    SB.renderWizardStepper(3, 'prompter');
+
+    function wizHref(path) {
+      const id = SB.getWizardTaskId();
+      return path + (id ? '?id=' + encodeURIComponent(id) : '');
+    }
+
+    document.getElementById('back').href = wizHref('wizard-2-skills.html');
+    document.getElementById('next').href = wizHref('wizard-4-verifiers.html');
+
+    function renderMd(md) {
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const lines = (md || '').split('\n');
+      let out = '';
+      let inCode = false;
+      let codeBuf = [];
+      let listType = null;
+      let para = [];
+      function flushPara() {
+        if (para.length) {
+          let t = para.join(' ');
+          t = t.replace(/`([^`]+)`/g, (m, x) => '<code>' + esc(x) + '</code>');
+          t = t.replace(/\*\*([^*]+)\*\*/g, (m, x) => '<strong>' + x + '</strong>');
+          out += '<p>' + t + '</p>';
+          para = [];
+        }
+      }
+      function flushList() {
+        if (listType) { out += '</' + listType + '>'; listType = null; }
+      }
+      for (const raw of lines) {
+        const line = raw;
+        if (inCode) {
+          if (line.startsWith('```')) {
+            out += '<pre><code>' + esc(codeBuf.join('\n')) + '</code></pre>';
+            inCode = false;
+            codeBuf = [];
+          } else {
+            codeBuf.push(line);
+          }
+          continue;
+        }
+        if (line.startsWith('```')) { flushPara(); flushList(); inCode = true; continue; }
+        if (/^#\s+/.test(line)) { flushPara(); flushList(); out += '<h1>' + esc(line.replace(/^#\s+/, '')) + '</h1>'; continue; }
+        if (/^##\s+/.test(line)) { flushPara(); flushList(); out += '<h2>' + esc(line.replace(/^##\s+/, '')) + '</h2>'; continue; }
+        if (/^\d+\.\s+/.test(line)) {
+          flushPara();
+          if (listType !== 'ol') { flushList(); out += '<ol>'; listType = 'ol'; }
+          let t = esc(line.replace(/^\d+\.\s+/, ''));
+          t = t.replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+          out += '<li>' + t + '</li>';
+          continue;
+        }
+        if (/^[-*]\s+/.test(line)) {
+          flushPara();
+          if (listType !== 'ul') { flushList(); out += '<ul>'; listType = 'ul'; }
+          let t = esc(line.replace(/^[-*]\s+/, ''));
+          t = t.replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+          out += '<li>' + t + '</li>';
+          continue;
+        }
+        if (line.trim() === '') { flushPara(); flushList(); continue; }
+        para.push(esc(line));
+      }
+      flushPara();
+      flushList();
+      return out || '<p class="text-slate-400 italic">Start typing to see a preview...</p>';
+    }
+
+    const t = SB.getWizardTaskFromSession();
+    const editor = document.getElementById('md-editor');
+    const preview = document.getElementById('md-preview');
+
+    editor.value = t.instructionMd || '';
+
+    function persist() {
+      t.instructionMd = editor.value;
+      SB.saveWizardTaskToSession(t);
+    }
+
+    function updatePreview() {
+      preview.innerHTML = renderMd(editor.value);
+    }
+
+    editor.addEventListener('input', () => { persist(); updatePreview(); });
+    updatePreview();
+
+    document.getElementById('import-file').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        editor.value = reader.result;
+        persist();
+        updatePreview();
+        SB.toast('Imported ' + file.name, 'success');
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    document.getElementById('next').addEventListener('click', () => { persist(); updatePreview(); });
+  </script>
+</body>
+</html>

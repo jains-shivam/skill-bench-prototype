@@ -51,7 +51,7 @@
   <script src="../assets/data.js"></script>
   <script src="../assets/script.js"></script>
   <script>
-    SB.setRole('trainer');
+    SB.setRole('prompter');
     SB.renderNav();
     const id = new URLSearchParams(location.search).get('id');
     const t = id ? SBData.getTaskById(id) : SBData.tasks[0];
@@ -60,14 +60,15 @@
     document.getElementById('t-desc').textContent = t.description;
     const st = SBData.STATUS[t.status];
     const statusEl = document.getElementById('t-status');
-    statusEl.className = 'pill ' + st.cls;
-    statusEl.textContent = st.label;
+    statusEl.className = 'pill ' + (st ? st.cls : '');
+    statusEl.textContent = st ? st.label : t.status;
     const meta = [`Domain <b>${SB.escapeHtml(t.domain)}</b>`, `Updated ${SB.escapeHtml(t.updatedAt)}`];
     if (t.tester) meta.push(`Tester <b>${SB.escapeHtml(t.tester.name)}</b>`);
     if (t.oraclePassed) meta.push(`Oracle <b class="text-emerald-700">PASS</b>`);
     document.getElementById('t-meta').innerHTML = meta.join(' &middot; ');
-    SB.renderHandoffBanner(document.getElementById('handoff-banner'), t, 'trainer');
-    if (t.status === 'trainer-draft' || (t.status === 'changes-requested' && t.changesTarget === 'trainer')) {
+    const bannerEl = document.getElementById('handoff-banner');
+    bannerEl.innerHTML = '';
+    if (t.status === 'prompter-draft' || (t.status === 'changes-requested' && t.changesTarget === 'prompter')) {
       const btn = document.getElementById('action-btn');
       btn.href = 'wizard-1-brief.html?id=' + t.id;
       btn.textContent = 'Continue editing \u2192';

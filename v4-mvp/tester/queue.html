@@ -12,13 +12,15 @@
   <div id="app-nav"></div>
   <main class="mx-auto max-w-7xl px-6 py-8">
     <h1 class="text-2xl font-bold">Test queue</h1>
-    <p class="text-sm text-slate-500 mt-1">Pick up tasks from domain experts. You handle environment, solution, tests, and Oracle.</p>
+    <p class="text-sm text-slate-500 mt-1">Pick up tasks from prompters (domain-reviewed). You handle environment, solution, tests, and Oracle.</p>
     <div class="flex flex-wrap gap-1 mt-3 mb-5 text-xs text-slate-500">
-      <span class="px-2 py-1 rounded bg-slate-100">Trainer writes plain language</span>
+      <span class="px-2 py-1 rounded bg-indigo-100 text-indigo-700">Prompter</span>
+      <span>&rarr;</span>
+      <span class="px-2 py-1 rounded bg-violet-100 text-violet-700">Domain Reviewer</span>
       <span>&rarr;</span>
       <span class="px-2 py-1 rounded bg-emerald-100 text-emerald-700 font-medium">You: Tester</span>
       <span>&rarr;</span>
-      <span class="px-2 py-1 rounded bg-slate-100">Reviewer</span>
+      <span class="px-2 py-1 rounded bg-amber-100 text-amber-700">Tech Reviewer</span>
     </div>
     <div class="tab-bar mb-4">
       <button data-tab="available" class="active">Available <span id="cnt-avail" class="text-xs bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
@@ -30,7 +32,7 @@
         <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase">
           <tr>
             <th class="text-left px-4 py-3">Task</th>
-            <th class="text-left px-4 py-3">Trainer</th>
+            <th class="text-left px-4 py-3">Prompter</th>
             <th class="text-left px-4 py-3">Domain</th>
             <th class="text-left px-4 py-3">Submitted</th>
             <th class="px-2 py-3"></th>
@@ -44,7 +46,7 @@
       </div>
     </div>
     <div class="mt-10 border border-emerald-100 bg-emerald-50/50 rounded-lg p-4 text-sm text-slate-700">
-      <b>Tip:</b> Read the trainer&apos;s <code class="text-xs bg-white px-1 rounded">criteria.md</code> on the left when writing <code class="text-xs bg-white px-1 rounded">test.sh</code>. Pick an environment template unless the task truly needs a custom stack.
+      <b>Tip:</b> Read the prompter's verifiers and golden solution on the Context page. Convert verifiers into <code class="text-xs bg-white px-1 rounded">test.sh</code> assertions. Pick a template unless the task truly needs a custom stack.
     </div>
   </main>
   <div id="toast-container"></div>
@@ -82,7 +84,7 @@
             <div class="font-medium font-mono">${SB.escapeHtml(t.name)}</div>
             <div class="text-xs text-slate-500">${SB.escapeHtml(t.description)}</div>
           </td>
-          <td class="px-4 py-3">${SB.escapeHtml(t.trainer.name)}</td>
+          <td class="px-4 py-3">${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</td>
           <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-slate-100">${SB.escapeHtml(t.domain)}</span></td>
           <td class="px-4 py-3 text-slate-500">${SB.escapeHtml(t.updatedAt)}</td>
           <td class="px-2 py-3 text-right">${cta}</td>`;
@@ -94,7 +96,7 @@
           } else {
             SB.setWizardTaskId(t.id);
           }
-          location.href = 'wizard-1-environment.html?id=' + t.id;
+          location.href = 'wizard-1-context.html?id=' + t.id;
         });
         tbody.appendChild(tr);
       });

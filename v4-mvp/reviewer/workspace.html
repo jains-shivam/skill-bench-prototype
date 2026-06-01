@@ -23,6 +23,43 @@
       </div>
       <div id="action-bar" class="flex flex-wrap gap-2 items-start"></div>
     </header>
+
+    <!-- Solution first, then criteria, then harbor -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-200 bg-emerald-50">
+          <div class="flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-emerald-600"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            <span class="font-semibold text-sm text-emerald-900">Solution (solve.sh)</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 ml-auto">Tester's implementation</span>
+          </div>
+        </div>
+        <pre id="sec-solution" class="p-4 text-xs font-mono whitespace-pre-wrap text-slate-700 max-h-[24rem] overflow-y-auto scroll-y"></pre>
+      </div>
+      <div class="space-y-4">
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-200 bg-amber-50">
+            <div class="flex items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-amber-600"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              <span class="font-semibold text-sm text-amber-900">Golden Solution (Prompter)</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 ml-auto">Reference</span>
+            </div>
+          </div>
+          <pre id="sec-golden" class="p-4 text-xs whitespace-pre-wrap text-slate-700 max-h-[14rem] overflow-y-auto scroll-y"></pre>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-200 bg-indigo-50">
+            <div class="flex items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-indigo-600"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              <span class="font-semibold text-sm text-indigo-900">Verifiers</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ml-auto" id="verifier-count"></span>
+            </div>
+          </div>
+          <div id="sec-verifiers" class="p-4 text-xs space-y-2 max-h-[12rem] overflow-y-auto scroll-y"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_22rem] gap-4">
       <div class="bg-white border border-slate-200 rounded-lg p-5">
         <div class="font-semibold mb-3">Harbor folder</div>
@@ -50,6 +87,7 @@
     SB.renderNav();
     const id = new URLSearchParams(location.search).get('id');
     const t = id ? SBData.getTaskById(id) : SBData.tasks.find(x => x.status === 'in-review');
+    if (!t) { document.querySelector('main').innerHTML = '<p class="p-12 text-slate-500 text-center">No task found.</p>'; }
     if (!t.comments) t.comments = [];
     if (!t.history) t.history = [];
 
@@ -59,18 +97,30 @@
       document.getElementById('t-desc').textContent = t.description;
       const st = SBData.STATUS[t.status];
       const statusEl = document.getElementById('t-status');
-      statusEl.className = 'pill ' + st.cls;
-      statusEl.textContent = st.label;
+      statusEl.className = 'pill ' + (st ? st.cls : '');
+      statusEl.textContent = st ? st.label : t.status;
       document.getElementById('t-meta').innerHTML = [
-        `Trainer: <b>${SB.escapeHtml(t.trainer.name)}</b>`,
+        `Prompter: <b>${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</b>`,
         t.tester ? `Tester: <b>${SB.escapeHtml(t.tester.name)}</b>` : '',
-        t.oraclePassed ? `Oracle: <b class="text-emerald-700">PASS</b>` : `Oracle: <span class="text-slate-400">not run</span>`,
+        t.oraclePassed ? `Oracle: <b class="text-emerald-700">PASS (1.0)</b>` : `Oracle: <span class="text-slate-400">not run</span>`,
         `Domain: <b>${SB.escapeHtml(t.domain)}</b>`,
       ].filter(Boolean).join(' &middot; ');
+
+      document.getElementById('sec-solution').textContent = t.solveSh || '(No solve.sh written yet)';
+      document.getElementById('sec-golden').textContent = t.goldenSolution || '(No golden solution)';
+
+      const verifiers = t.verifiers || [];
+      document.getElementById('verifier-count').textContent = verifiers.length + ' defined';
+      document.getElementById('sec-verifiers').innerHTML = verifiers.length ?
+        verifiers.map(v => {
+          const vt = (SBData.VERIFIER_TYPES.find(x => x.id === v.type) || {}).label || v.type;
+          return `<div class="flex items-start gap-2"><span class="px-1.5 py-0.5 rounded bg-slate-100 text-[10px] font-medium text-slate-600 shrink-0">${SB.escapeHtml(vt)}</span><span class="text-slate-700">${SB.escapeHtml(v.description)}</span></div>`;
+        }).join('') : '<p class="text-slate-400 italic">No verifiers.</p>';
+
       renderActions();
       renderComments();
       renderHistory();
-      SB.renderHarborPreview('harbor-preview', t);
+      SB.renderHarborPreview('harbor-preview', t, { initial: 'solution/solve.sh' });
     }
 
     function renderActions() {
@@ -124,11 +174,10 @@
     }
 
     function approve() {
-      const now = 'just now';
       t.status = 'published';
-      t.updatedAt = now;
-      t.history.push({ when: now, who: SBData.users.reviewer.name, event: 'Approved + published to Harbor registry' });
-      SB.toast('Task published.', 'success');
+      t.updatedAt = 'just now';
+      t.history.push({ when: 'just now', who: SBData.users.reviewer.name, event: 'Approved + published to Harbor registry' });
+      SB.toast('Task published!', 'success');
       refresh();
     }
 

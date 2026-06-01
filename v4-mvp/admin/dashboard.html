@@ -12,12 +12,13 @@
   <div id="app-nav"></div>
   <main class="mx-auto max-w-7xl px-6 py-8">
     <h1 class="text-2xl font-bold">Admin dashboard</h1>
-    <p class="text-sm text-slate-500 mt-1">Observability for the relay MVP: trainers submit plain language, testers convert, reviewers publish.</p>
-    <div class="grid grid-cols-2 md:grid-cols-6 gap-3 mt-6 mb-6">
+    <p class="text-sm text-slate-500 mt-1">Observability: Prompters → Domain Review → Testers → Tech Review → Published.</p>
+    <div class="grid grid-cols-2 md:grid-cols-7 gap-3 mt-6 mb-6">
       <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Total</div><div id="kpi-total" class="text-2xl font-semibold">-</div></div>
       <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Draft</div><div id="kpi-draft" class="text-2xl font-semibold">-</div></div>
+      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Domain review</div><div id="kpi-domain" class="text-2xl font-semibold text-violet-700">-</div></div>
       <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">With tester</div><div id="kpi-tester" class="text-2xl font-semibold text-blue-700">-</div></div>
-      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">In review</div><div id="kpi-review" class="text-2xl font-semibold text-amber-700">-</div></div>
+      <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Tech review</div><div id="kpi-review" class="text-2xl font-semibold text-amber-700">-</div></div>
       <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Changes</div><div id="kpi-changes" class="text-2xl font-semibold text-orange-700">-</div></div>
       <div class="bg-white border rounded-lg p-4"><div class="text-xs text-slate-500 uppercase">Published</div><div id="kpi-published" class="text-2xl font-semibold text-emerald-700">-</div></div>
     </div>
@@ -32,7 +33,7 @@
       <div class="bg-white border rounded-lg overflow-hidden">
         <div class="px-5 py-3 border-b font-semibold">Recent tasks</div>
         <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="text-left px-4 py-2">Task</th><th class="text-left px-4 py-2">Status</th><th class="text-left px-4 py-2">Trainer</th></tr></thead>
+          <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="text-left px-4 py-2">Task</th><th class="text-left px-4 py-2">Status</th><th class="text-left px-4 py-2">Prompter</th></tr></thead>
           <tbody id="task-rows" class="divide-y"></tbody>
         </table>
       </div>
@@ -72,11 +73,12 @@
     SB.renderNav();
     const tasks = SBData.tasks;
     document.getElementById('kpi-total').textContent = tasks.length;
-    document.getElementById('kpi-draft').textContent = tasks.filter(t => t.status === 'trainer-draft').length;
+    document.getElementById('kpi-draft').textContent = tasks.filter(t => t.status === 'prompter-draft').length;
+    document.getElementById('kpi-domain').textContent = tasks.filter(t => t.status === 'domain-review').length;
     document.getElementById('kpi-tester').textContent = tasks.filter(t => t.status === 'with-tester').length;
     document.getElementById('kpi-review').textContent = tasks.filter(t => t.status === 'in-review').length;
     document.getElementById('kpi-changes').textContent = tasks.filter(t => t.status === 'changes-requested').length;
-    document.getElementById('kpi-published').textContent = tasks.filter(t => t.status === 'published').length;
+    document.getElementById('kpi-published').textContent = tasks.filter(t => t.status === 'published' || t.status === 'approved').length;
     const users = document.getElementById('users-rows');
     SBData.allUsers.forEach(u => {
       const tr = document.createElement('tr');
@@ -91,7 +93,7 @@
       const tr = document.createElement('tr');
       tr.innerHTML = `<td class="px-4 py-2 font-mono text-xs">${SB.escapeHtml(t.name)}</td>
         <td class="px-4 py-2"><span class="pill ${st.cls}">${st.label}</span></td>
-        <td class="px-4 py-2">${SB.escapeHtml(t.trainer.name)}</td>`;
+        <td class="px-4 py-2">${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</td>`;
       trows.appendChild(tr);
     });
     const tplRows = document.getElementById('tpl-rows');

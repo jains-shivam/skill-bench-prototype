@@ -16,14 +16,14 @@
       <a href="queue.html">Save &amp; Exit</a>
     </div>
     <div id="wizard-stepper" class="mb-6 stepper-tester"></div>
-    <div id="handoff-banner" class="mb-4"></div>
+    <!-- Context shown in step 1 -->
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4">
-      <!-- Left: Trainer context -->
+      <!-- Left: Prompter context -->
       <div class="space-y-3">
         <div class="bg-amber-50 border border-amber-200 rounded-lg overflow-hidden">
           <div class="px-4 py-2.5 border-b border-amber-200 flex items-center gap-2">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-amber-600"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-            <span class="text-sm font-semibold text-amber-900">Trainer's Golden Solution</span>
+            <span class="text-sm font-semibold text-amber-900">Prompter's Golden Solution</span>
             <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-800 ml-auto">Reference</span>
           </div>
           <pre id="ctx-golden" class="p-4 text-xs whitespace-pre-wrap text-slate-700 max-h-[22rem] overflow-y-auto scroll-y"></pre>
@@ -35,7 +35,7 @@
           <pre id="ctx-instr" class="p-4 text-xs whitespace-pre-wrap text-slate-600 max-h-[14rem] overflow-y-auto scroll-y"></pre>
         </div>
         <div class="bg-white border border-slate-200 rounded-lg p-4">
-          <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Attachments from trainer</div>
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Attachments from prompter</div>
           <div id="ctx-attach" class="space-y-1 text-xs"></div>
         </div>
       </div>
@@ -53,17 +53,17 @@
           </label>
         </div>
         <textarea id="f-solve" class="w-full px-4 py-3 text-sm font-mono border-0 flex-1 min-h-[28rem] resize-none"
-          placeholder="#!/usr/bin/env bash&#10;set -euo pipefail&#10;&#10;# Convert the trainer's golden solution into an executable script.&#10;# This script must produce the expected outputs when run in the container."></textarea>
+          placeholder="#!/usr/bin/env bash&#10;set -euo pipefail&#10;&#10;# Convert the prompter's golden solution into an executable script.&#10;# This script must produce the expected outputs when run in the container."></textarea>
         <div class="px-4 py-2 border-t border-slate-100 bg-slate-50 text-xs text-slate-500 flex justify-between">
-          <span>Convert the trainer's golden solution (left) into an executable bash script</span>
+          <span>Convert the prompter's golden solution (left) into an executable bash script</span>
           <span id="line-count">0 lines</span>
         </div>
       </section>
     </div>
     <div class="mt-6"><div id="harbor-preview"></div></div>
     <div class="mt-8 flex justify-between">
-      <a href="wizard-1-environment.html" class="text-sm text-slate-600">&larr; Back</a>
-      <a id="next" href="wizard-3-tests.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md">Next: Tests &rarr;</a>
+      <a href="wizard-2-environment.html" class="text-sm text-slate-600">&larr; Back: Environment</a>
+      <a id="next" href="wizard-4-tests.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md">Next: Tests &rarr;</a>
     </div>
   </main>
   <div id="toast-container"></div>
@@ -72,12 +72,12 @@
   <script>
     SB.setRole('tester');
     SB.renderNav();
-    SB.renderWizardStepper(2, 'tester');
+    SB.renderWizardStepper(3, 'tester');
     const t = SB.getWizardTaskFromSession();
     document.getElementById('task-name').textContent = t.name;
-    SB.renderHandoffBanner(document.getElementById('handoff-banner'), t, 'tester');
+    // Context shown in step 1; left panel has golden solution
     document.getElementById('ctx-instr').textContent = t.instructionMd || '';
-    document.getElementById('ctx-golden').textContent = t.goldenSolution || '(No golden solution provided by trainer)';
+    document.getElementById('ctx-golden').textContent = t.goldenSolution || '(No golden solution provided by prompter)';
     const attachEl = document.getElementById('ctx-attach');
     if (!t.attachments || !t.attachments.length) {
       attachEl.innerHTML = '<span class="text-slate-400 italic">No attachments</span>';
@@ -90,7 +90,7 @@
         </div>`).join('');
     }
 
-    const STARTER_TEMPLATE = '#!/usr/bin/env bash\nset -euo pipefail\ncd /app\n\n# TODO: Convert the trainer\'s golden solution into executable commands.\n# The script should produce the expected output files.\n\n';
+    const STARTER_TEMPLATE = '#!/usr/bin/env bash\nset -euo pipefail\ncd /app\n\n# TODO: Convert the prompter\'s golden solution into executable commands.\n# The script should produce the expected output files.\n\n';
     const ta = document.getElementById('f-solve');
     ta.value = t.solveSh || STARTER_TEMPLATE;
 

@@ -1,110 +1,93 @@
-/* Skill Bench MVP - mock data (relay model).
-   Trainer = domain expert (plain language only).
-   Tester  = software developer (env + solution + tests + Oracle).
-   Reviewer = quality gate. Admin = observability + template catalog. */
-
-window.SBData = (function () {
+/* Skill Bench MVP - Data layer (client-side mock).
+   5 roles: Prompter, Domain Expert Reviewer, Tester, Technical Reviewer, Admin
+   7-state lifecycle: prompter-draft → domain-review → with-tester → in-review → changes-requested → approved → published */
+const SBData = (function () {
+  'use strict';
 
   const users = {
-    trainer:  { id: 'u1', name: 'Jane Doe',     email: 'jane@my-org.com',  role: 'Trainer',  initials: 'JD' },
-    tester:   { id: 'u2', name: 'Tara Wu',      email: 'tara@my-org.com',  role: 'Tester',   initials: 'TW' },
-    reviewer: { id: 'u3', name: 'Bob Smith',    email: 'bob@my-org.com',   role: 'Reviewer', initials: 'BS' },
-    admin:    { id: 'u4', name: 'Dave Patel',   email: 'dave@my-org.com',  role: 'Admin',    initials: 'DP' },
+    prompter:       { id: 'u1', name: 'Jane Doe',   email: 'jane@my-org.com',  role: 'Prompter',        initials: 'JD' },
+    domainReviewer: { id: 'u2', name: 'Raj Mehta',  email: 'raj@my-org.com',   role: 'Domain Reviewer', initials: 'RM' },
+    tester:         { id: 'u3', name: 'Tara Wu',    email: 'tara@my-org.com',  role: 'Tester',          initials: 'TW' },
+    reviewer:       { id: 'u4', name: 'Bob Smith',  email: 'bob@my-org.com',   role: 'Tech Reviewer',   initials: 'BS' },
+    admin:          { id: 'u5', name: 'Dave Patel', email: 'dave@my-org.com',  role: 'Admin',           initials: 'DP' },
   };
 
   const allUsers = [
-    { ...users.admin,    lastSeen: 'just now',  tasksCount: 0, role: 'Admin' },
-    { ...users.reviewer, lastSeen: '5 min ago', tasksCount: 0, role: 'Reviewer' },
-    { ...users.tester,   lastSeen: '2 min ago', tasksCount: 8, role: 'Tester' },
-    { ...users.trainer,  lastSeen: '1 min ago', tasksCount: 6, role: 'Trainer' },
-    { id: 'u5', name: 'Aisha Khan',  email: 'aisha@my-org.com', role: 'Trainer', initials: 'AK', lastSeen: 'yesterday', tasksCount: 3 },
-    { id: 'u6', name: 'Marco Silva', email: 'marco@my-org.com', role: 'Tester',  initials: 'MS', lastSeen: '3 hours ago', tasksCount: 5 },
+    { ...users.admin,          lastSeen: 'just now',    tasksCount: 0 },
+    { ...users.prompter,       lastSeen: '1 min ago',   tasksCount: 6 },
+    { ...users.domainReviewer, lastSeen: '5 min ago',   tasksCount: 0 },
+    { ...users.tester,         lastSeen: '2 min ago',   tasksCount: 8 },
+    { ...users.reviewer,       lastSeen: '10 min ago',  tasksCount: 0 },
+    { id: 'u6', name: 'Aisha Khan',  email: 'aisha@my-org.com', role: 'Prompter',   initials: 'AK', lastSeen: 'yesterday', tasksCount: 3 },
+    { id: 'u7', name: 'Marco Silva', email: 'marco@my-org.com', role: 'Tester',     initials: 'MS', lastSeen: '3 hours ago', tasksCount: 5 },
   ];
 
-  /* Environment templates - curated by Admin; Tester picks one (default path). */
+  /* ───── Skill domains + library ───── */
+  const skillDomains = [
+    { id: 'python',  name: 'Python',       color: 'bg-indigo-100 text-indigo-700',   desc: 'Python language patterns, idioms, standard library.' },
+    { id: 'data',    name: 'Data & ML',    color: 'bg-emerald-100 text-emerald-700', desc: 'pandas, numpy, spark, ML pipelines.' },
+    { id: 'web',     name: 'Web',          color: 'bg-amber-100 text-amber-700',     desc: 'FastAPI, Flask, REST, frontend frameworks.' },
+    { id: 'devops',  name: 'DevOps',       color: 'bg-purple-100 text-purple-700',   desc: 'Docker, CI/CD, deploy, cloud CLIs.' },
+    { id: 'shell',   name: 'Shell / CLI',  color: 'bg-orange-100 text-orange-700',   desc: 'Bash scripting, CLI tooling.' },
+    { id: 'finance', name: 'Finance',      color: 'bg-blue-100 text-blue-700',       desc: 'Financial analysis, EBITDA, statements.' },
+    { id: 'legal',   name: 'Legal',        color: 'bg-rose-100 text-rose-700',       desc: 'Contract review, compliance, NDA analysis.' },
+    { id: 'general', name: 'General',      color: 'bg-slate-100 text-slate-700',     desc: 'Cross-domain conventions, formatting.' },
+  ];
+
+  const skillsLibrary = [
+    { id: 'parse-csv-safely',      domain: 'data',    name: 'Parse CSV safely',             desc: 'Robustly parse a CSV file with pandas, handling encoding errors.', tags: ['python','pandas','io'] },
+    { id: 'format-json-output',    domain: 'python',  name: 'Format JSON output',           desc: 'Always emit JSON with deterministic key order and 2-space indent.', tags: ['python','json','output'] },
+    { id: 'sort-keys-determinism', domain: 'python',  name: 'Deterministic output',         desc: 'Sort dict keys so test assertions are stable across runs.', tags: ['python','testing'] },
+    { id: 'pandas-merge-safe',     domain: 'data',    name: 'Safe DataFrame merge',         desc: 'Validate column overlap before merge, handle NaN explicitly.', tags: ['python','pandas'] },
+    { id: 'rest-api-error-codes',  domain: 'web',     name: 'REST error handling',          desc: 'Return correct HTTP status codes and structured error body.', tags: ['api','http'] },
+    { id: 'docker-minimal-image',  domain: 'devops',  name: 'Minimal Docker image',         desc: 'Use multi-stage builds, pin versions, no unnecessary layers.', tags: ['docker','optimization'] },
+    { id: 'bash-strict-mode',      domain: 'shell',   name: 'Bash strict mode',             desc: 'Always start with set -euo pipefail for reliable scripts.', tags: ['bash','safety'] },
+    { id: 'ebitda-calculation',    domain: 'finance', name: 'EBITDA extraction',            desc: 'Parse EBITDA from financial filings with tolerance handling.', tags: ['finance','parsing'] },
+    { id: 'nda-clause-check',      domain: 'legal',   name: 'NDA clause validation',        desc: 'Check for non-compete, confidentiality, and term clauses.', tags: ['legal','nlp'] },
+    { id: 'output-file-check',     domain: 'general', name: 'Output file verification',     desc: 'Ensure output file exists, is valid format, non-empty.', tags: ['testing','io'] },
+    { id: 'numpy-vectorize',       domain: 'data',    name: 'Vectorized numpy ops',         desc: 'Prefer vectorized operations over Python loops for performance.', tags: ['python','numpy'] },
+    { id: 'flask-blueprints',      domain: 'web',     name: 'Flask blueprint structure',    desc: 'Organize Flask apps with blueprints for modularity.', tags: ['python','flask'] },
+  ];
+
+  /* ───── Environment templates (tester picks one) ───── */
   const templates = [
-    {
-      id: 'python-3.12-pytest',
-      name: 'Python 3.12 + pytest',
-      desc: 'Standard Python sandbox with pytest. Good for single-file scripts and small projects.',
-      tags: ['python', 'pytest'],
-      resources: { cpus: 1, memoryGB: 2, storageGB: 10, internet: true, gpu: false },
-      dockerfile: `FROM python:3.12-slim
-WORKDIR /app
-RUN pip install --no-cache-dir pytest==8.4
-ENV PYTHONUNBUFFERED=1
-`,
-    },
-    {
-      id: 'python-3.12-pandas',
-      name: 'Python 3.12 + pandas',
-      desc: 'Data analysis stack: pandas, numpy, pytest. For CSV/JSON transform tasks.',
-      tags: ['python', 'pandas', 'data'],
-      resources: { cpus: 2, memoryGB: 4, storageGB: 10, internet: true, gpu: false },
-      dockerfile: `FROM python:3.12-slim
-WORKDIR /app
-RUN pip install --no-cache-dir pandas==2.2 numpy==1.26 pytest==8.4
-ENV PYTHONUNBUFFERED=1
-`,
-    },
-    {
-      id: 'node-20-jest',
-      name: 'Node 20 + Jest',
-      desc: 'Node.js LTS with Jest. For JavaScript/TypeScript CLI or small services.',
-      tags: ['node', 'javascript', 'jest'],
-      resources: { cpus: 1, memoryGB: 2, storageGB: 10, internet: true, gpu: false },
-      dockerfile: `FROM node:20-bookworm-slim
-WORKDIR /app
-RUN npm install -g jest@29
-ENV NODE_ENV=development
-`,
-    },
-    {
-      id: 'bash-cli',
-      name: 'Bash / CLI',
-      desc: 'Minimal Ubuntu with bash and coreutils. For shell scripting tasks.',
-      tags: ['bash', 'shell', 'cli'],
-      resources: { cpus: 1, memoryGB: 1, storageGB: 5, internet: false, gpu: false },
-      dockerfile: `FROM debian:12-slim
-WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends bash coreutils grep sed awk && rm -rf /var/lib/apt/lists/*
-`,
-    },
-    {
-      id: 'playwright-browser',
-      name: 'Playwright (browser)',
-      desc: 'Headless Chromium via Playwright + Python. For web automation tasks.',
-      tags: ['python', 'playwright', 'browser'],
-      resources: { cpus: 2, memoryGB: 4, storageGB: 15, internet: true, gpu: false },
-      dockerfile: `FROM mcr.microsoft.com/playwright/python:v1.45.0-jammy
-WORKDIR /app
-RUN pip install --no-cache-dir pytest==8.4
-ENV PYTHONUNBUFFERED=1
-`,
-    },
-    {
-      id: 'ml-gpu',
-      name: 'Python ML (GPU)',
-      desc: 'CUDA runtime with PyTorch. For heavier ML tasks (use sparingly).',
-      tags: ['python', 'ml', 'gpu', 'pytorch'],
-      resources: { cpus: 4, memoryGB: 16, storageGB: 50, internet: true, gpu: true },
-      dockerfile: `FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
-RUN apt-get update && apt-get install -y --no-install-recommends python3.11 python3-pip && rm -rf /var/lib/apt/lists/*
-WORKDIR /app
-RUN pip install --no-cache-dir torch==2.4.0 pytest==8.4 --index-url https://download.pytorch.org/whl/cu124
-`,
-    },
+    { id: 'python-3.12-pytest',  name: 'Python 3.12 + pytest', desc: 'Lean Python with pytest and standard lib.', tags: ['python','pytest'], resources: { cpus: 1, memoryGB: 2, storageGB: 10, gpu: false, internet: true },
+      dockerfile: 'FROM python:3.12-slim\nWORKDIR /app\nRUN pip install pytest\n' },
+    { id: 'python-3.12-pandas',  name: 'Python 3.12 + pandas', desc: 'Data-science stack: pandas, numpy, scipy.', tags: ['python','pandas','numpy'], resources: { cpus: 2, memoryGB: 4, storageGB: 10, gpu: false, internet: true },
+      dockerfile: 'FROM python:3.12-slim\nWORKDIR /app\nRUN pip install pandas numpy scipy\n' },
+    { id: 'node-20-jest',        name: 'Node 20 + Jest',       desc: 'JavaScript / TypeScript with Jest.', tags: ['node','jest','typescript'], resources: { cpus: 1, memoryGB: 2, storageGB: 10, gpu: false, internet: true },
+      dockerfile: 'FROM node:20-slim\nWORKDIR /app\nRUN npm i -g jest ts-node typescript\n' },
+    { id: 'rust-1.78',           name: 'Rust 1.78',            desc: 'Systems programming with cargo test.', tags: ['rust','cargo'], resources: { cpus: 2, memoryGB: 4, storageGB: 15, gpu: false, internet: true },
+      dockerfile: 'FROM rust:1.78-slim\nWORKDIR /app\n' },
+    { id: 'ubuntu-ml-gpu',       name: 'Ubuntu + ML (GPU)',    desc: 'PyTorch 2.x on CUDA for ML tasks.', tags: ['python','pytorch','gpu'], resources: { cpus: 4, memoryGB: 16, storageGB: 40, gpu: true, internet: true },
+      dockerfile: 'FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime\nWORKDIR /app\nRUN pip install transformers datasets\n' },
+    { id: 'go-1.22',             name: 'Go 1.22',              desc: 'Go with standard testing package.', tags: ['go','testing'], resources: { cpus: 1, memoryGB: 2, storageGB: 10, gpu: false, internet: true },
+      dockerfile: 'FROM golang:1.22-alpine\nWORKDIR /app\n' },
   ];
 
+  /* ───── Lifecycle states ───── */
   const STATUS = {
-    'trainer-draft':     { label: 'Draft',             cls: 'pill-draft',     owner: 'trainer' },
+    'prompter-draft':    { label: 'Draft',             cls: 'pill-draft',     owner: 'prompter' },
+    'domain-review':     { label: 'Domain review',     cls: 'pill-review',    owner: 'domainReviewer' },
     'with-tester':       { label: 'With tester',       cls: 'pill-running',   owner: 'tester' },
-    'in-review':         { label: 'In review',         cls: 'pill-review',    owner: 'reviewer' },
+    'in-review':         { label: 'Tech review',       cls: 'pill-techreview', owner: 'reviewer' },
     'changes-requested': { label: 'Changes requested', cls: 'pill-changes',   owner: null },
     'approved':          { label: 'Approved',          cls: 'pill-approved',  owner: 'admin' },
     'published':         { label: 'Published',         cls: 'pill-published', owner: null },
   };
 
+  /* ───── Verifier types ───── */
+  const VERIFIER_TYPES = [
+    { id: 'file_exists',      label: 'File must exist',         placeholder: 'e.g. /app/results.json' },
+    { id: 'file_contains',    label: 'File contains text',      placeholder: 'e.g. /app/output.txt contains "SUCCESS"' },
+    { id: 'json_key_equals',  label: 'JSON key equals',         placeholder: 'e.g. /app/results.json → word_count == 42' },
+    { id: 'command_output',   label: 'Command output matches',  placeholder: 'e.g. python validate.py exits with code 0' },
+    { id: 'csv_cell_equals',  label: 'CSV cell equals',         placeholder: 'e.g. output.csv row 1, col "total" == 100' },
+    { id: 'llm_judge',        label: 'LLM / agent judge',       placeholder: 'e.g. Code follows PEP8 style guidelines' },
+    { id: 'freeform',         label: 'Free-form note',          placeholder: 'Any other verification requirement' },
+  ];
+
+  /* ───── Sample data ───── */
   const SAMPLE_INSTRUCTION = `# Text Statistics Pipeline
 
 Create two files in \`/app\`:
@@ -124,18 +107,15 @@ Create two files in \`/app\`:
 The file \`sample.txt\` is already in \`/app\` for you to analyze.
 `;
 
-  const SAMPLE_CRITERIA = `# Acceptance criteria (plain language)
+  const SAMPLE_VERIFIERS = [
+    { type: 'file_exists',     description: '/app/results.json must exist after running the solution' },
+    { type: 'json_key_equals', description: '/app/results.json → "word_count" must equal 42' },
+    { type: 'json_key_equals', description: '/app/results.json → "most_common" must equal "the"' },
+    { type: 'file_exists',     description: '/app/textstats.py must exist with word_count and most_common functions' },
+    { type: 'command_output',  description: 'python /app/analyze.py must exit with code 0' },
+  ];
 
-_Authored by the Trainer. The Tester compiles these into tests/test.sh._
-
-1. **Output file exists** - After the agent runs, \`/app/results.json\` must exist.
-2. **word_count** - The JSON field \`word_count\` must be an integer equal to 42 for the bundled sample.txt.
-3. **most_common** - The JSON field \`most_common\` must be the string \`"the"\` for the bundled sample.txt.
-4. **Code structure** - \`/app/textstats.py\` must define both \`word_count\` and \`most_common\` functions.
-5. **Exit code** - Running the analysis must exit with code 0.
-`;
-
-  const SAMPLE_GOLDEN_SOLUTION = `# Golden Solution (by Trainer)
+  const SAMPLE_GOLDEN_SOLUTION = `# Golden Solution
 
 ## Approach
 Read \`sample.txt\`, split into words, count total words, then find the most frequent word using a dictionary/counter.
@@ -213,24 +193,26 @@ print("OK")
 PY
 `;
 
+  /* ───── Tasks ───── */
   const tasks = [
     {
       id: 't1',
       name: 'my-org/text-stats-pipeline',
       description: 'Build a Python pipeline that analyzes text and emits JSON.',
-      domain: 'data-analysis',
+      domain: 'data',
       difficulty: 'medium',
       status: 'published',
-      trainer: users.trainer,
+      prompter: users.prompter,
+      domainReviewer: users.domainReviewer,
       tester: users.tester,
       templateId: 'python-3.12-pandas',
       updatedAt: '2 days ago',
       instructionMd: SAMPLE_INSTRUCTION,
-      criteriaMd: SAMPLE_CRITERIA,
+      verifiers: SAMPLE_VERIFIERS,
       goldenSolution: SAMPLE_GOLDEN_SOLUTION,
+      selectedSkills: ['parse-csv-safely', 'format-json-output'],
       attachments: [
         { name: 'sample.txt', kind: 'data', size: '12 KB', content: 'The quick brown fox jumps over the lazy dog. The dog slept.\n' },
-        { name: 'expected-output.json', kind: 'example', size: '0.1 KB', content: '{"word_count": 42, "most_common": "the"}\n' },
       ],
       dockerfile: templates[1].dockerfile + 'COPY sample.txt /app/\n',
       solveSh: SAMPLE_SOLVE_SH,
@@ -238,10 +220,11 @@ PY
       oraclePassed: true,
       oracleReward: 1.0,
       history: [
-        { when: '5 days ago', who: 'Jane Doe', event: 'Created draft' },
-        { when: '4 days ago', who: 'Jane Doe', event: 'Submitted to tester pool' },
-        { when: '4 days ago', who: 'Tara Wu', event: 'Picked up from queue' },
-        { when: '3 days ago', who: 'Tara Wu', event: 'Submitted for review (Oracle PASS)' },
+        { when: '7 days ago', who: 'Jane Doe', event: 'Created draft' },
+        { when: '6 days ago', who: 'Jane Doe', event: 'Submitted for domain review' },
+        { when: '5 days ago', who: 'Raj Mehta', event: 'Domain review approved' },
+        { when: '4 days ago', who: 'Tara Wu', event: 'Picked up from tester queue' },
+        { when: '3 days ago', who: 'Tara Wu', event: 'Submitted for tech review (Oracle PASS)' },
         { when: '2 days ago', who: 'Bob Smith', event: 'Approved + published' },
       ],
       comments: [],
@@ -253,24 +236,30 @@ PY
       domain: 'finance',
       difficulty: 'hard',
       status: 'with-tester',
-      trainer: { id: 'u5', name: 'Aisha Khan', email: 'aisha@my-org.com', role: 'Trainer', initials: 'AK' },
+      prompter: { id: 'u6', name: 'Aisha Khan', email: 'aisha@my-org.com', role: 'Prompter', initials: 'AK' },
+      domainReviewer: users.domainReviewer,
       tester: null,
       templateId: null,
       updatedAt: '1 hour ago',
       instructionMd: '# EBITDA extraction\n\nRead `/app/filing_snippet.txt` (an excerpt from a 10-K). Write `/app/output.json` with a single key `ebitda_millions` (number) representing EBITDA in millions USD for FY2024.',
-      criteriaMd: '# Acceptance criteria\n\n1. `output.json` exists and is valid JSON.\n2. `ebitda_millions` equals 145.2 (within 0.1 tolerance).\n3. Solution must not hard-code the answer without reading the filing file.',
-      goldenSolution: '# Golden Solution\n\n## Approach\nParse the filing text, find the line containing "EBITDA" near "FY2024", extract the numeric value.\n\n## Expected output\n```json\n{"ebitda_millions": 145.2}\n```\n\n## Hints\n- Use regex to find dollar amounts near EBITDA mentions\n- Convert "$145.2 million" format to numeric 145.2\n',
+      verifiers: [
+        { type: 'file_exists', description: '/app/output.json must exist and be valid JSON' },
+        { type: 'json_key_equals', description: '/app/output.json → ebitda_millions equals 145.2 (within 0.1 tolerance)' },
+        { type: 'freeform', description: 'Solution must not hard-code the answer without reading the filing file' },
+      ],
+      goldenSolution: '# Golden Solution\n\n## Approach\nParse the filing text, find the line containing "EBITDA" near "FY2024", extract the numeric value.\n\n## Expected output\n```json\n{"ebitda_millions": 145.2}\n```\n',
+      selectedSkills: ['ebitda-calculation'],
       attachments: [
         { name: 'filing_snippet.txt', kind: 'data', size: '4 KB', content: '... FY2024 EBITDA was $145.2 million ...\n' },
-        { name: 'rough-approach.txt', kind: 'hint', size: '0.5 KB', content: 'Look for "EBITDA" near FY2024 in the snippet. Convert millions.' },
       ],
       dockerfile: '',
       solveSh: '',
       testSh: '',
       oraclePassed: false,
       history: [
-        { when: '3 hours ago', who: 'Aisha Khan', event: 'Created draft' },
-        { when: '1 hour ago',  who: 'Aisha Khan', event: 'Submitted to tester pool' },
+        { when: '5 hours ago', who: 'Aisha Khan', event: 'Created draft' },
+        { when: '3 hours ago', who: 'Aisha Khan', event: 'Submitted for domain review' },
+        { when: '2 hours ago', who: 'Raj Mehta', event: 'Domain review approved' },
       ],
       comments: [],
     },
@@ -278,16 +267,22 @@ PY
       id: 't3',
       name: 'my-org/csv-validator',
       description: 'Validate the schema of a CSV file.',
-      domain: 'data-analysis',
+      domain: 'data',
       difficulty: 'medium',
       status: 'in-review',
-      trainer: users.trainer,
+      prompter: users.prompter,
+      domainReviewer: users.domainReviewer,
       tester: users.tester,
       templateId: 'python-3.12-pandas',
       updatedAt: '1 hour ago',
       instructionMd: '# CSV Validator\n\nWrite `/app/validate.py` that reads `/app/sample.csv` and verifies columns are: id, name, age, email. Exit 0 on valid, 1 otherwise.',
-      criteriaMd: '# Acceptance criteria\n\n1. validate.py exists.\n2. Exits 0 on the bundled sample.csv.\n3. Exits non-zero if a required column is missing.',
-      goldenSolution: '# Golden Solution\n\n```python\nimport pandas as pd, sys\ndf = pd.read_csv("/app/sample.csv")\nrequired = ["id", "name", "age", "email"]\nif list(df.columns) == required:\n    print("Valid")\n    sys.exit(0)\nelse:\n    print("Invalid columns")\n    sys.exit(1)\n```\n',
+      verifiers: [
+        { type: 'file_exists', description: '/app/validate.py must exist' },
+        { type: 'command_output', description: 'python /app/validate.py exits with code 0 on bundled sample.csv' },
+        { type: 'command_output', description: 'Exits non-zero if a required column is missing' },
+      ],
+      goldenSolution: '# Golden Solution\n\n```python\nimport pandas as pd, sys\ndf = pd.read_csv("/app/sample.csv")\nrequired = ["id", "name", "age", "email"]\nif list(df.columns) == required:\n    sys.exit(0)\nelse:\n    sys.exit(1)\n```\n',
+      selectedSkills: ['parse-csv-safely', 'output-file-check'],
       attachments: [{ name: 'sample.csv', kind: 'data', size: '2 KB', content: 'id,name,age,email\n1,Alice,30,a@x.com\n' }],
       dockerfile: templates[1].dockerfile + 'COPY sample.csv /app/\n',
       solveSh: '#!/usr/bin/env bash\nset -euo pipefail\ncat > /app/validate.py <<\'PY\'\nimport pandas as pd, sys\ndf = pd.read_csv("/app/sample.csv")\nassert list(df.columns) == ["id","name","age","email"]\nprint("OK")\nPY\npython /app/validate.py\n',
@@ -295,9 +290,10 @@ PY
       oraclePassed: true,
       oracleReward: 1.0,
       history: [
-        { when: '1 day ago', who: 'Jane Doe', event: 'Submitted to tester pool' },
+        { when: '2 days ago', who: 'Jane Doe', event: 'Submitted for domain review' },
+        { when: '1 day ago', who: 'Raj Mehta', event: 'Domain review approved' },
         { when: '5 hours ago', who: 'Tara Wu', event: 'Picked up' },
-        { when: '1 hour ago', who: 'Tara Wu', event: 'Submitted for review' },
+        { when: '1 hour ago', who: 'Tara Wu', event: 'Submitted for tech review' },
       ],
       comments: [
         { author: users.reviewer, when: '20 min ago', body: 'Could you add a row-count check in test.sh?' },
@@ -307,17 +303,24 @@ PY
       id: 't4',
       name: 'my-org/regex-builder',
       description: 'Write a regex that matches a set of given inputs.',
-      domain: 'programming',
+      domain: 'python',
       difficulty: 'easy',
       status: 'changes-requested',
       changesTarget: 'tester',
-      trainer: users.trainer,
+      prompter: users.prompter,
+      domainReviewer: users.domainReviewer,
       tester: users.tester,
       templateId: 'python-3.12-pytest',
       updatedAt: '3 hours ago',
       instructionMd: '# Regex Builder\n\nWrite `/app/match.py` with `match(s: str) -> bool` that returns True only for emails ending in `@my-org.com`.',
-      criteriaMd: '# Acceptance criteria\n\n1. match.py defines match(s).\n2. Returns True for valid emails, False otherwise.\n3. Rejects strings with consecutive dots before @.',
-      goldenSolution: '# Golden Solution\n\n```python\nimport re\npattern = r"^[\\w]+(\\.[\\w]+)*@my-org\\.com$"\ndef match(s: str) -> bool:\n    return bool(re.match(pattern, s))\n```\n\nKey: no consecutive dots allowed, only @my-org.com domain.\n',
+      verifiers: [
+        { type: 'file_exists', description: '/app/match.py must define match(s) function' },
+        { type: 'command_output', description: 'Returns True for valid @my-org.com emails' },
+        { type: 'command_output', description: 'Returns False for other domains' },
+        { type: 'freeform', description: 'Rejects strings with consecutive dots before @' },
+      ],
+      goldenSolution: '# Golden Solution\n\n```python\nimport re\npattern = r"^[\\w]+(\\.[\\w]+)*@my-org\\.com$"\ndef match(s: str) -> bool:\n    return bool(re.match(pattern, s))\n```\n',
+      selectedSkills: [],
       attachments: [],
       dockerfile: templates[0].dockerfile,
       solveSh: '#!/usr/bin/env bash\nset -euo pipefail\ncat > /app/match.py <<\'PY\'\nimport re\n_pat = re.compile(r"^[\\w.+-]+@my-org\\.com$")\ndef match(s: str) -> bool:\n    return bool(_pat.match(s))\nPY\n',
@@ -325,7 +328,7 @@ PY
       oraclePassed: true,
       oracleReward: 1.0,
       history: [
-        { when: '2 days ago', who: 'Tara Wu', event: 'Submitted for review' },
+        { when: '2 days ago', who: 'Tara Wu', event: 'Submitted for tech review' },
         { when: '3 hours ago', who: 'Bob Smith', event: 'Requested changes (tester)' },
       ],
       comments: [
@@ -336,16 +339,23 @@ PY
       id: 't5',
       name: 'my-org/marketing-copy-tone',
       description: 'Rewrite product copy to match brand tone guidelines.',
-      domain: 'marketing',
+      domain: 'general',
       difficulty: 'easy',
-      status: 'trainer-draft',
-      trainer: users.trainer,
+      status: 'domain-review',
+      prompter: users.prompter,
+      domainReviewer: null,
       tester: null,
       templateId: null,
-      updatedAt: 'just now',
+      updatedAt: '30 min ago',
       instructionMd: '# Brand tone rewrite\n\nRead `/app/draft.txt` and write `/app/rewritten.txt` following the tone guide in `/app/brand-guide.md`.',
-      criteriaMd: '# Acceptance criteria\n\n1. rewritten.txt exists.\n2. No exclamation marks.\n3. Uses "you" not "the user".\n4. Under 120 words.',
-      goldenSolution: '# Golden Solution\n\nExpected rewritten.txt:\n```\nOur product helps you get more done in less time. You will find it intuitive and reliable.\n```\n\nKey rules applied:\n- Removed all exclamation marks\n- Changed "Users" to "you"\n- Kept under 120 words\n- Friendly, concise tone\n',
+      verifiers: [
+        { type: 'file_exists', description: '/app/rewritten.txt must exist' },
+        { type: 'llm_judge', description: 'No exclamation marks in the output' },
+        { type: 'llm_judge', description: 'Uses "you" not "the user"' },
+        { type: 'freeform', description: 'Under 120 words' },
+      ],
+      goldenSolution: '# Golden Solution\n\nExpected rewritten.txt:\n```\nOur product helps you get more done in less time. You will find it intuitive and reliable.\n```\n\nKey rules: no exclamation marks, "you" not "the user", under 120 words.\n',
+      selectedSkills: ['output-file-check'],
       attachments: [
         { name: 'draft.txt', kind: 'data', size: '1 KB', content: 'Our product is great!!! Users will love it.\n' },
         { name: 'brand-guide.md', kind: 'data', size: '2 KB', content: '# Tone\n- Friendly, concise\n- No exclamation marks\n' },
@@ -354,45 +364,52 @@ PY
       solveSh: '',
       testSh: '',
       oraclePassed: false,
-      history: [{ when: 'just now', who: 'Jane Doe', event: 'Created draft' }],
+      history: [
+        { when: '1 hour ago', who: 'Jane Doe', event: 'Created draft' },
+        { when: '30 min ago', who: 'Jane Doe', event: 'Submitted for domain review' },
+      ],
       comments: [],
     },
     {
       id: 't6',
       name: 'my-org/sort-implementations',
       description: 'Implement quicksort and mergesort with unit tests.',
-      domain: 'programming',
+      domain: 'python',
       difficulty: 'medium',
-      status: 'approved',
-      trainer: users.trainer,
-      tester: users.tester,
-      templateId: 'python-3.12-pytest',
-      updatedAt: 'yesterday',
+      status: 'prompter-draft',
+      prompter: users.prompter,
+      domainReviewer: null,
+      tester: null,
+      templateId: null,
+      updatedAt: 'just now',
       instructionMd: '# Sorting algorithms\n\nImplement quicksort and mergesort in `/app/sorts.py`. Provide pytest tests in `/app/test_sorts.py`.',
-      criteriaMd: '# Acceptance criteria\n\n1. Both algorithms implemented.\n2. pytest passes.\n3. Handles empty list.',
-      goldenSolution: '# Golden Solution\n\n```python\ndef quicksort(arr):\n    if len(arr) <= 1: return arr\n    pivot = arr[len(arr)//2]\n    left = [x for x in arr if x < pivot]\n    mid = [x for x in arr if x == pivot]\n    right = [x for x in arr if x > pivot]\n    return quicksort(left) + mid + quicksort(right)\n\ndef mergesort(arr):\n    if len(arr) <= 1: return arr\n    m = len(arr)//2\n    l, r = mergesort(arr[:m]), mergesort(arr[m:])\n    res = []\n    i = j = 0\n    while i < len(l) and j < len(r):\n        if l[i] <= r[j]: res.append(l[i]); i += 1\n        else: res.append(r[j]); j += 1\n    return res + l[i:] + r[j:]\n```\n',
-      attachments: [],
-      dockerfile: templates[0].dockerfile,
-      solveSh: '#!/usr/bin/env bash\nset -euo pipefail\necho "ok"\n',
-      testSh: '#!/usr/bin/env bash\nset -euo pipefail\nbash /app/solve.sh\n',
-      oraclePassed: true,
-      oracleReward: 1.0,
-      history: [
-        { when: '3 days ago', who: 'Bob Smith', event: 'Approved' },
+      verifiers: [
+        { type: 'file_exists', description: '/app/sorts.py must exist' },
+        { type: 'command_output', description: 'pytest /app/test_sorts.py passes' },
+        { type: 'freeform', description: 'Handles empty list edge case' },
       ],
+      goldenSolution: '# Golden Solution\n\n```python\ndef quicksort(arr):\n    if len(arr) <= 1: return arr\n    pivot = arr[len(arr)//2]\n    left = [x for x in arr if x < pivot]\n    mid = [x for x in arr if x == pivot]\n    right = [x for x in arr if x > pivot]\n    return quicksort(left) + mid + quicksort(right)\n```\n',
+      selectedSkills: ['sort-keys-determinism'],
+      attachments: [],
+      dockerfile: '',
+      solveSh: '',
+      testSh: '',
+      oraclePassed: false,
+      history: [{ when: 'just now', who: 'Jane Doe', event: 'Created draft' }],
       comments: [],
     },
   ];
 
-  /* In-progress authoring session (trainer or tester wizards read/write this). */
+  /* ───── Wizard task (in-progress authoring session) ───── */
   const wizardTask = {
     name: 'my-org/text-stats-pipeline',
     description: 'Build a Python pipeline that analyzes text and emits JSON.',
-    domain: 'data-analysis',
+    domain: 'data',
     difficulty: 'medium',
     instructionMd: SAMPLE_INSTRUCTION,
-    criteriaMd: SAMPLE_CRITERIA,
+    verifiers: SAMPLE_VERIFIERS,
     goldenSolution: SAMPLE_GOLDEN_SOLUTION,
+    selectedSkills: ['parse-csv-safely', 'format-json-output'],
     attachments: [
       { name: 'sample.txt', kind: 'data', size: '12 KB', content: 'The quick brown fox jumps over the lazy dog.\n' },
     ],
@@ -403,9 +420,10 @@ PY
     oraclePassed: false,
   };
 
-  function getTemplate(id) {
-    return templates.find(t => t.id === id) || null;
-  }
+  /* ───── Helpers ───── */
+  function getTemplate(id) { return templates.find(t => t.id === id) || null; }
+  function getTaskById(id) { return tasks.find(t => t.id === id) || null; }
+  function getSkillsByDomain(domainId) { return skillsLibrary.filter(s => s.domain === domainId); }
 
   function resolveDockerfile(t) {
     if (t.dockerfile) return t.dockerfile;
@@ -413,22 +431,48 @@ PY
     return tpl ? tpl.dockerfile : '# (no environment yet)\n';
   }
 
-  function tomlEscape(s) {
-    return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  function harborFiles(t) {
+    const out = [
+      { type: 'file', path: 'task.toml', label: 'task.toml', content: makeTaskToml(t), language: 'toml', owner: 'shared' },
+      { type: 'file', path: 'instruction.md', label: 'instruction.md', content: t.instructionMd || '', language: 'markdown', owner: 'prompter' },
+      { type: 'dir', path: 'environment', label: 'environment/' },
+      { type: 'file', path: 'environment/Dockerfile', label: 'Dockerfile', content: resolveDockerfile(t), language: 'docker', owner: 'tester' },
+    ];
+    if (t.attachments && t.attachments.length) {
+      out.push({ type: 'dir', path: 'inputs', label: 'inputs/' });
+      for (const a of t.attachments) {
+        out.push({ type: 'file', path: 'inputs/' + a.name, label: a.name, content: a.content || '', language: 'text', owner: 'prompter' });
+      }
+    }
+    out.push({ type: 'dir', path: 'tests', label: 'tests/' });
+    out.push({ type: 'file', path: 'tests/verifiers.md', label: 'verifiers.md', content: renderVerifiersMd(t), language: 'markdown', owner: 'prompter' });
+    out.push({ type: 'file', path: 'tests/test.sh', label: 'test.sh', content: t.testSh || '#!/usr/bin/env bash\n# (tester compiles verifiers into this)\nexit 1\n', language: 'bash', owner: 'tester' });
+    out.push({ type: 'dir', path: 'solution', label: 'solution/' });
+    out.push({ type: 'file', path: 'solution/golden.md', label: 'golden.md', content: t.goldenSolution || '', language: 'markdown', owner: 'prompter' });
+    out.push({ type: 'file', path: 'solution/solve.sh', label: 'solve.sh', content: t.solveSh || '#!/usr/bin/env bash\n# (tester converts golden solution)\nexit 1\n', language: 'bash', owner: 'tester' });
+    return out;
+  }
+
+  function renderVerifiersMd(t) {
+    if (!t.verifiers || !t.verifiers.length) return '# Verifiers\n\n_No verifiers defined._\n';
+    let md = '# Verifiers\n\n';
+    t.verifiers.forEach((v, i) => {
+      const typeLabel = (VERIFIER_TYPES.find(vt => vt.id === v.type) || {}).label || v.type;
+      md += `${i + 1}. **[${typeLabel}]** ${v.description}\n`;
+    });
+    return md;
   }
 
   function makeTaskToml(t) {
-    const oracleStatus = t.oraclePassed ? 'passed' : 'pending';
-    const oracleReward = t.oracleReward != null ? t.oracleReward.toFixed(2) : '0.00';
     const tpl = getTemplate(t.templateId);
     const res = tpl ? tpl.resources : { cpus: 1, memoryGB: 2, storageGB: 10, internet: true };
     return `[package]
-name        = "${tomlEscape(t.name || '')}"
+name        = "${(t.name || '').replace(/"/g, '\\"')}"
 version     = "1.0"
-description = "${tomlEscape(t.description || '')}"
-domain      = "${tomlEscape(t.domain || '')}"
+description = "${(t.description || '').replace(/"/g, '\\"')}"
+domain      = "${t.domain || ''}"
 difficulty  = "${t.difficulty || 'medium'}"
-author      = "${t.trainer ? t.trainer.email : ''}"
+author      = "${t.prompter ? t.prompter.email : ''}"
 tester      = "${t.tester ? t.tester.email : ''}"
 
 [verifier]
@@ -446,82 +490,14 @@ storage_gb = ${res.storageGB}
 gpu        = ${tpl && tpl.resources.gpu ? 'true' : 'false'}
 
 [oracle]
-status      = "${oracleStatus}"
-last_reward = ${oracleReward}
+status      = "${t.oraclePassed ? 'passed' : 'pending'}"
+last_reward = ${t.oracleReward != null ? t.oracleReward.toFixed(2) : '0.00'}
 `;
   }
 
-  function harborFiles(t) {
-    const out = [
-      { type: 'file', path: 'task.toml', label: 'task.toml', content: makeTaskToml(t), language: 'toml', owner: 'shared' },
-      { type: 'file', path: 'instruction.md', label: 'instruction.md', content: t.instructionMd || '', language: 'markdown', owner: 'trainer' },
-      { type: 'dir', path: 'environment', label: 'environment/' },
-      { type: 'file', path: 'environment/Dockerfile', label: 'Dockerfile', content: resolveDockerfile(t), language: 'docker', owner: 'tester' },
-    ];
-    if (t.attachments && t.attachments.length) {
-      out.push({ type: 'dir', path: 'inputs', label: 'inputs/' });
-      for (const a of t.attachments) {
-        out.push({
-          type: 'file',
-          path: 'inputs/' + a.name,
-          label: a.name,
-          content: a.content || '',
-          language: a.name.endsWith('.md') ? 'markdown' : a.name.endsWith('.json') ? 'json' : 'text',
-          owner: 'trainer',
-        });
-      }
-    }
-    out.push({ type: 'dir', path: 'tests', label: 'tests/' });
-    out.push({
-      type: 'file',
-      path: 'tests/criteria.md',
-      label: 'criteria.md',
-      content: t.criteriaMd || '# Acceptance criteria\n\n_No criteria yet._\n',
-      language: 'markdown',
-      owner: 'trainer',
-    });
-    out.push({
-      type: 'file',
-      path: 'tests/test.sh',
-      label: 'test.sh',
-      content: t.testSh || '#!/usr/bin/env bash\n# (tester will compile criteria into this file)\nexit 1\n',
-      language: 'bash',
-      owner: 'tester',
-    });
-    out.push({ type: 'dir', path: 'solution', label: 'solution/' });
-    out.push({
-      type: 'file',
-      path: 'solution/golden.md',
-      label: 'golden.md',
-      content: t.goldenSolution || '# Golden Solution\n\n_Trainer will provide the reference answer here._\n',
-      language: 'markdown',
-      owner: 'trainer',
-    });
-    out.push({
-      type: 'file',
-      path: 'solution/solve.sh',
-      label: 'solve.sh',
-      content: t.solveSh || '#!/usr/bin/env bash\n# (tester converts golden solution into executable script)\nexit 1\n',
-      language: 'bash',
-      owner: 'tester',
-    });
-    return out;
-  }
-
-  function getTaskById(id) {
-    return tasks.find(t => t.id === id) || null;
-  }
-
   return {
-    users,
-    allUsers,
-    templates,
-    STATUS,
-    tasks,
-    wizardTask,
-    harborFiles,
-    getTemplate,
-    resolveDockerfile,
-    getTaskById,
+    users, allUsers, skillDomains, skillsLibrary, templates, STATUS, VERIFIER_TYPES,
+    tasks, wizardTask, harborFiles, renderVerifiersMd, makeTaskToml,
+    getTemplate, resolveDockerfile, getTaskById, getSkillsByDomain,
   };
 })();

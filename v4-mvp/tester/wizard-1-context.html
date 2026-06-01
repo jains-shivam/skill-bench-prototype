@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Context - Tester - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="mx-auto max-w-6xl px-6 py-6">
+    <div class="flex justify-between mb-4 text-sm text-slate-500">
+      <span><a href="queue.html" class="hover:text-slate-900">Test queue</a> / <span id="task-name" class="font-mono text-slate-900"></span></span>
+      <a href="queue.html">Save &amp; Exit</a>
+    </div>
+    <div id="wizard-stepper" class="mb-6 stepper-tester"></div>
+
+    <header class="bg-white border border-slate-200 rounded-lg p-5 mb-4">
+      <div class="flex flex-wrap justify-between gap-4 items-start">
+        <div>
+          <h1 id="t-title" class="text-xl font-semibold font-mono"></h1>
+          <p id="t-desc" class="text-sm text-slate-500 mt-1"></p>
+          <div id="t-meta" class="text-xs text-slate-500 mt-2 flex flex-wrap gap-2"></div>
+          <div id="skills-tags" class="mt-3 flex flex-wrap gap-1.5"></div>
+        </div>
+        <button id="pickup-btn" type="button" class="hidden px-4 py-2 text-sm font-medium rounded-md bg-emerald-600 hover:bg-emerald-700 text-white">
+          Pick up task
+        </button>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      <section class="bg-white border border-slate-200 rounded-lg p-5 lg:col-span-2">
+        <h2 class="font-semibold mb-3">Instruction</h2>
+        <pre id="instruction-md" class="text-sm text-slate-700 whitespace-pre-wrap font-mono bg-slate-50 border border-slate-100 rounded-md p-4 max-h-96 overflow-y-auto scroll-y"></pre>
+      </section>
+
+      <section class="bg-white border border-slate-200 rounded-lg p-5">
+        <h2 class="font-semibold mb-3">Verifiers</h2>
+        <ul id="verifiers-list" class="space-y-3 text-sm"></ul>
+      </section>
+
+      <section class="bg-amber-50 border border-amber-200 rounded-lg p-5">
+        <h2 class="font-semibold mb-3 text-amber-900">Golden solution</h2>
+        <pre id="golden-solution" class="text-sm text-amber-950 whitespace-pre-wrap font-mono bg-white/60 border border-amber-100 rounded-md p-4 max-h-80 overflow-y-auto scroll-y"></pre>
+      </section>
+
+      <section class="bg-white border border-slate-200 rounded-lg p-5 lg:col-span-2">
+        <h2 class="font-semibold mb-3">Attachments</h2>
+        <ul id="attachments-list" class="text-sm space-y-2"></ul>
+      </section>
+    </div>
+
+    <div class="mt-8 flex justify-between items-center">
+      <a href="queue.html" class="text-sm text-slate-600 hover:text-slate-900">Back to queue</a>
+      <a id="next" href="wizard-2-environment.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md font-medium">Next: Environment &rarr;</a>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('tester');
+    SB.renderNav();
+    SB.renderWizardStepper(1, 'tester');
+
+    const id = new URLSearchParams(location.search).get('id') || SB.getWizardTaskId();
+    if (id) SB.setWizardTaskId(id);
+    const t = SB.getWizardTaskFromSession();
+    if (id && SBData.getTaskById(id)) {
+      Object.assign(t, JSON.parse(JSON.stringify(SBData.getTaskById(id))));
+      SB.saveWizardTaskToSession(t);
+    }
+
+    function verifierTypeLabel(typeId) {
+      const vt = SBData.VERIFIER_TYPES.find(x => x.id === typeId);
+      return vt ? vt.label : typeId;
+    }
+
+    document.getElementById('task-name').textContent = t.name || 'Task';
+    document.getElementById('t-title').textContent = t.name || 'Untitled task';
+    document.getElementById('t-desc').textContent = t.description || '';
+    document.getElementById('t-meta').innerHTML = [
+      `<span class="px-2 py-0.5 rounded bg-slate-100">Domain: <b>${SB.escapeHtml(t.domain || '—')}</b></span>`,
+      `<span class="px-2 py-0.5 rounded bg-slate-100">Difficulty: <b>${SB.escapeHtml(t.difficulty || 'medium')}</b></span>`,
+      t.prompter ? `<span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">Prompter: ${SB.escapeHtml(t.prompter.name)}</span>` : '',
+    ].filter(Boolean).join(' ');
+
+    document.getElementById('instruction-md').textContent = t.instructionMd || '(No instruction provided)';
+    document.getElementById('golden-solution').textContent = t.goldenSolution || '(No golden solution provided)';
+
+    const verifiers = t.verifiers || [];
+    const verList = document.getElementById('verifiers-list');
+    if (!verifiers.length) {
+      verList.innerHTML = '<li class="text-xs text-slate-400 italic">No verifiers defined.</li>';
+    } else {
+      verList.innerHTML = verifiers.map(v => {
+        const label = verifierTypeLabel(v.type);
+        return `<li class="border border-slate-100 rounded-md p-3">
+          <span class="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">${SB.escapeHtml(label)}</span>
+          <div class="mt-2 text-slate-700">${SB.escapeHtml(v.description)}</div>
+        </li>`;
+      }).join('');
+    }
+
+    const attachments = t.attachments || [];
+    const attList = document.getElementById('attachments-list');
+    if (!attachments.length) {
+      attList.innerHTML = '<li class="text-xs text-slate-400 italic">No attachments.</li>';
+    } else {
+      attList.innerHTML = attachments.map(a => `
+        <li class="flex items-center gap-2 border border-slate-100 rounded-md px-3 py-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-400 shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          <span class="font-mono text-sm">${SB.escapeHtml(a.name)}</span>
+          <span class="text-xs text-slate-400 ml-auto">${SB.escapeHtml(a.kind || 'file')} · ${SB.escapeHtml(a.size || '—')}</span>
+        </li>`).join('');
+    }
+
+    const skillIds = t.selectedSkills || [];
+    const skillsMount = document.getElementById('skills-tags');
+    if (!skillIds.length) {
+      skillsMount.innerHTML = '<span class="text-xs text-slate-400 italic">No skills tagged</span>';
+    } else {
+      skillsMount.innerHTML = skillIds.map(sid => {
+        const sk = SBData.skillsLibrary.find(s => s.id === sid);
+        if (!sk) return '';
+        const dom = SBData.skillDomains.find(d => d.id === sk.domain);
+        const cls = dom ? dom.color : 'bg-slate-100 text-slate-700';
+        return `<span class="text-xs px-2 py-0.5 rounded ${cls}">${SB.escapeHtml(sk.name)}</span>`;
+      }).join('');
+    }
+
+    const pickupBtn = document.getElementById('pickup-btn');
+    if (!t.tester) {
+      pickupBtn.classList.remove('hidden');
+      pickupBtn.onclick = () => {
+        SB.pickUpTask(t.id);
+        t.tester = SBData.users.tester;
+        SB.saveWizardTaskToSession(t);
+        pickupBtn.classList.add('hidden');
+        SB.toast('Task picked up.', 'success');
+      };
+    }
+
+    const nextHref = 'wizard-2-environment.html' + (id ? '?id=' + encodeURIComponent(id) : '');
+    document.getElementById('next').href = nextHref;
+  </script>
+</body>
+</html>

@@ -17,7 +17,7 @@
     </div>
     <div id="wizard-stepper" class="mb-6 stepper-tester"></div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <!-- Left: Trainer references -->
+      <!-- Left: Prompter references -->
       <div class="space-y-3">
         <section class="bg-white border border-slate-200 rounded-lg overflow-hidden">
           <div class="px-4 py-2.5 border-b border-indigo-100 bg-indigo-50 flex items-center gap-2">
@@ -36,7 +36,7 @@
           <pre id="ctx-golden" class="p-4 text-xs whitespace-pre-wrap text-slate-700 max-h-[14rem] overflow-y-auto scroll-y"></pre>
         </section>
         <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800">
-          <strong>Your job:</strong> Convert the plain-language criteria (above) into automated assertions in <code class="bg-white px-1 rounded">test.sh</code>. Run solve.sh first, then verify the outputs match what the trainer described.
+          <strong>Your job:</strong> Convert the verifiers (above) into automated assertions in <code class="bg-white px-1 rounded">test.sh</code>. Run solve.sh first, then verify the outputs match what the prompter described.
         </div>
       </div>
       <!-- Right: Test editor -->
@@ -62,8 +62,8 @@
     </div>
     <div class="mt-6"><div id="harbor-preview"></div></div>
     <div class="mt-8 flex justify-between">
-      <a href="wizard-2-solution.html" class="text-sm text-slate-600">&larr; Back</a>
-      <a id="next" href="wizard-4-oracle.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md">Next: Oracle &rarr;</a>
+      <a href="wizard-3-solution.html" class="text-sm text-slate-600">&larr; Back: Solution</a>
+      <a id="next" href="wizard-5-oracle.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md">Next: Oracle &rarr;</a>
     </div>
   </main>
   <div id="toast-container"></div>
@@ -72,13 +72,13 @@
   <script>
     SB.setRole('tester');
     SB.renderNav();
-    SB.renderWizardStepper(3, 'tester');
+    SB.renderWizardStepper(4, 'tester');
     const t = SB.getWizardTaskFromSession();
     document.getElementById('task-name').textContent = t.name;
-    document.getElementById('ctx-criteria').textContent = t.criteriaMd || '(No criteria provided)';
+    document.getElementById('ctx-criteria').textContent = SBData.renderVerifiersMd ? SBData.renderVerifiersMd(t) : '(No verifiers defined)';
     document.getElementById('ctx-golden').textContent = t.goldenSolution || '(No golden solution provided)';
 
-    const STARTER_TEMPLATE = '#!/usr/bin/env bash\nset -euo pipefail\n\n# Step 1: Run the golden solution\nbash /app/solve.sh\n\n# Step 2: Verify outputs match trainer criteria\n# TODO: Add assertions based on the criteria on the left\n\necho "All checks passed"\nexit 0\n';
+    const STARTER_TEMPLATE = '#!/usr/bin/env bash\nset -euo pipefail\n\n# Step 1: Run the golden solution\nbash /app/solve.sh\n\n# Step 2: Verify outputs match prompter verifiers\n# TODO: Add assertions based on the verifiers on the left\n\necho "All checks passed"\nexit 0\n';
     const ta = document.getElementById('f-tests');
     ta.value = t.testSh || STARTER_TEMPLATE;
 

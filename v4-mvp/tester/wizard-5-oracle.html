@@ -15,19 +15,31 @@
       <span><a href="queue.html">Test queue</a> / <span class="font-mono text-slate-900" id="task-name"></span></span>
       <a href="queue.html">Save &amp; Exit</a>
     </div>
-    <div id="wizard-stepper" class="mb-8 stepper-tester"></div>
+    <div id="wizard-stepper" class="mb-6 stepper-tester"></div>
+
     <div class="grid grid-cols-1 lg:grid-cols-[18rem_1fr] gap-6">
-      <aside class="bg-white border border-slate-200 rounded-lg p-5 text-sm">
-        <div class="text-xs font-semibold uppercase text-slate-500 mb-3">Summary</div>
-        <dl id="summary" class="space-y-2 text-sm"></dl>
+      <aside class="space-y-4">
+        <div class="bg-white border border-slate-200 rounded-lg p-5 text-sm">
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-3">Summary</div>
+          <dl id="summary" class="space-y-2 text-sm"></dl>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg p-5 text-sm">
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-3">Alignment check</div>
+          <p class="text-xs text-slate-500 mb-3">Pre-check: does the golden solution align with verifiers?</p>
+          <button id="align-check-btn" class="w-full px-3 py-2 text-xs bg-violet-600 text-white rounded-md font-medium hover:bg-violet-700">Run alignment eval</button>
+          <div id="align-results" class="mt-3 space-y-2 hidden"></div>
+        </div>
       </aside>
+
       <section class="bg-white border border-slate-200 rounded-lg p-6">
         <h2 class="text-lg font-semibold">Run Oracle test</h2>
         <p class="text-sm text-slate-500 mt-1">Runs solution + verifier in Daytona. <b>Must PASS (reward 1.0)</b> before you can submit to the reviewer.</p>
+
         <div id="state-idle" class="mt-6 flex gap-3 flex-wrap">
           <button id="run-pass" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-medium">Run Oracle Test</button>
-          <button id="run-fail" class="px-3 py-2.5 text-sm border rounded-md bg-white">Demo: simulate FAIL</button>
+          <button id="run-fail" class="px-3 py-2.5 text-sm border rounded-md bg-white text-slate-600">Demo: simulate FAIL</button>
         </div>
+
         <div id="state-running" class="mt-6 hidden">
           <div class="border rounded-lg p-4">
             <div class="flex items-center gap-2 mb-3"><span class="live-dot"></span><b>Running</b><span id="run-elapsed" class="ml-auto text-xs font-mono"></span></div>
@@ -35,26 +47,41 @@
             <ul id="run-stages" class="mt-3 text-sm space-y-2"></ul>
           </div>
         </div>
+
         <div id="state-pass" class="mt-6 hidden">
           <div class="border border-emerald-200 bg-emerald-50 rounded-lg p-5">
-            <div class="font-semibold text-emerald-900">Oracle PASSED &middot; reward 1.00</div>
-            <p class="text-sm text-emerald-800 mt-1">Submit to reviewer.</p>
+            <div class="font-semibold text-emerald-900 text-lg">Oracle PASSED &middot; reward 1.00</div>
+            <p class="text-sm text-emerald-800 mt-1">Your implementation is correct. Submit to Technical Reviewer.</p>
           </div>
           <div class="mt-4 flex gap-3">
             <button id="run-again" class="text-sm border px-3 py-2 rounded-md">Run again</button>
-            <button id="submit" class="ml-auto px-4 py-2 text-sm bg-emerald-600 text-white rounded-md font-medium">Submit for review</button>
+            <button id="submit" class="ml-auto px-5 py-2.5 text-sm bg-emerald-600 text-white rounded-md font-medium hover:bg-emerald-700">Submit for tech review</button>
           </div>
         </div>
+
         <div id="state-fail" class="mt-6 hidden">
           <div class="border border-red-200 bg-red-50 rounded-lg p-5">
             <div class="font-semibold text-red-900">Oracle FAILED</div>
             <p class="text-sm text-red-800 mt-1">Fix solution or tests, then run again.</p>
           </div>
-          <div class="mt-4"><a href="wizard-3-tests.html" class="text-sm border px-3 py-2 rounded-md bg-white">Back to Tests</a></div>
+          <div class="mt-4 flex gap-3">
+            <a href="wizard-4-tests.html" class="text-sm border px-3 py-2 rounded-md bg-white">Back to Tests</a>
+            <button onclick="start(false)" class="text-sm border px-3 py-2 rounded-md bg-white">Retry</button>
+          </div>
         </div>
       </section>
     </div>
-    <div class="mt-6"><div id="harbor-preview"></div></div>
+
+    <div class="mt-6">
+      <div class="bg-white border border-slate-200 rounded-lg p-5">
+        <div class="font-semibold text-sm mb-3">Harbor preview</div>
+        <div id="harbor-preview"></div>
+      </div>
+    </div>
+    <div class="mt-6 flex justify-between">
+      <a href="wizard-4-tests.html" class="text-sm text-slate-600">&larr; Back: Tests</a>
+      <span class="text-xs text-slate-400">Submit becomes available after Oracle passes</span>
+    </div>
   </main>
   <div id="toast-container"></div>
   <script src="../assets/data.js"></script>
@@ -62,21 +89,54 @@
   <script>
     SB.setRole('tester');
     SB.renderNav();
-    SB.renderWizardStepper(4, 'tester');
+    SB.renderWizardStepper(5, 'tester');
     const t = SB.getWizardTaskFromSession();
     document.getElementById('task-name').textContent = t.name;
+
     const tpl = t.templateId ? SBData.getTemplate(t.templateId) : null;
     const solutionLines = (t.solveSh || '').split('\n').length;
     const testLines = (t.testSh || '').split('\n').length;
     document.getElementById('summary').innerHTML = `
       <div class="flex justify-between"><span class="text-slate-500">Task</span><span class="font-mono text-xs truncate max-w-[10rem]">${SB.escapeHtml(t.name)}</span></div>
-      <div class="flex justify-between"><span class="text-slate-500">Trainer</span><span>${SB.escapeHtml(t.trainer ? t.trainer.name : '—')}</span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Prompter</span><span>${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</span></div>
       <div class="flex justify-between"><span class="text-slate-500">Domain</span><span>${SB.escapeHtml(t.domain || '—')}</span></div>
       <div class="flex justify-between"><span class="text-slate-500">Template</span><span>${tpl ? SB.escapeHtml(tpl.name) : 'Custom'}</span></div>
       <div class="flex justify-between"><span class="text-slate-500">solve.sh</span><span>${solutionLines} lines</span></div>
       <div class="flex justify-between"><span class="text-slate-500">test.sh</span><span>${testLines} lines</span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Verifiers</span><span>${(t.verifiers || []).length} defined</span></div>
       <div class="flex justify-between"><span class="text-slate-500">Attachments</span><span>${(t.attachments || []).length} file(s)</span></div>`;
+
     SB.renderHarborPreview('harbor-preview', t, { initial: 'task.toml' });
+
+    // Alignment eval
+    document.getElementById('align-check-btn').addEventListener('click', function() {
+      const btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Checking...';
+      const resultsEl = document.getElementById('align-results');
+      resultsEl.classList.remove('hidden');
+      resultsEl.innerHTML = '<div class="text-xs text-slate-500">Running alignment check...</div>';
+      setTimeout(() => {
+        const verifiers = t.verifiers || [];
+        const results = verifiers.map(v => ({
+          ...v,
+          aligned: Math.random() > 0.1,
+        }));
+        const allAligned = results.every(r => r.aligned);
+        resultsEl.innerHTML = results.map(r => `
+          <div class="flex items-start gap-2 text-xs">
+            <span class="${r.aligned ? 'text-emerald-600' : 'text-red-600'} font-bold mt-0.5">${r.aligned ? '✓' : '✗'}</span>
+            <span class="${r.aligned ? 'text-slate-700' : 'text-red-700'}">${SB.escapeHtml(r.description)}</span>
+          </div>`).join('') + `
+          <div class="mt-2 pt-2 border-t border-slate-100 text-xs font-medium ${allAligned ? 'text-emerald-700' : 'text-amber-700'}">
+            ${allAligned ? '✓ Golden solution aligns with all verifiers' : '⚠ Some verifiers may not match golden solution'}
+          </div>`;
+        btn.disabled = false;
+        btn.textContent = 'Run again';
+      }, 1200);
+    });
+
+    // Oracle
     const idle = document.getElementById('state-idle');
     const running = document.getElementById('state-running');
     const pass = document.getElementById('state-pass');
@@ -120,7 +180,7 @@
     document.getElementById('submit').onclick = () => {
       if (!t.oraclePassed) { SB.toast('Oracle must pass first.', 'warning'); return; }
       SB.submitTesterToReview(t);
-      SB.toast('Submitted for review.', 'success');
+      SB.toast('Submitted for tech review!', 'success');
       setTimeout(() => { location.href = 'queue.html'; }, 700);
     };
   </script>

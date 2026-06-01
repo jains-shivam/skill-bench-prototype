@@ -16,7 +16,7 @@
       <a href="queue.html">Save &amp; Exit</a>
     </div>
     <div id="wizard-stepper" class="mb-6 stepper-tester"></div>
-    <div id="handoff-banner" class="mb-4"></div>
+    <!-- Context shown in step 1 -->
     <div class="bg-violet-50 border border-violet-100 rounded-lg p-3 mb-4 text-sm text-slate-700">
       <b class="text-violet-900">Sandboxed in Daytona.</b> Pick a template for 90% of tasks. Use Custom Dockerfile only when nothing fits.
     </div>
@@ -46,8 +46,8 @@
       <div id="harbor-preview"></div>
     </div>
     <div class="mt-8 flex justify-between">
-      <a href="queue.html" class="text-sm text-slate-600">Back to queue</a>
-      <a id="next" href="wizard-2-solution.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md">Next: Solution &rarr;</a>
+      <a href="wizard-1-context.html" class="text-sm text-slate-600">&larr; Back: Context</a>
+      <a id="next" href="wizard-3-solution.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md">Next: Solution &rarr;</a>
     </div>
   </main>
   <div id="toast-container"></div>
@@ -56,14 +56,14 @@
   <script>
     SB.setRole('tester');
     SB.renderNav();
-    SB.renderWizardStepper(1, 'tester');
+    SB.renderWizardStepper(2, 'tester');
     const id = new URLSearchParams(location.search).get('id') || SB.getWizardTaskId();
     if (id) SB.setWizardTaskId(id);
     const t = SB.getWizardTaskFromSession();
     if (id && SBData.getTaskById(id)) Object.assign(t, JSON.parse(JSON.stringify(SBData.getTaskById(id))));
     SB.saveWizardTaskToSession(t);
     document.getElementById('task-name').textContent = t.name;
-    SB.renderHandoffBanner(document.getElementById('handoff-banner'), t, 'tester');
+    // No handoff banner needed - context page already shows it
     const df = document.getElementById('f-dockerfile');
     df.value = t.dockerfile || '';
     function applyTemplate(tplId) {

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Domain review queue - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="mx-auto max-w-7xl px-6 py-8">
+    <div class="flex items-center gap-3 mb-1">
+      <h1 class="text-2xl font-bold">Domain review queue</h1>
+      <span id="count-badge" class="text-xs bg-violet-100 text-violet-700 rounded-full px-2 py-0.5 font-medium">0</span>
+    </div>
+    <p class="text-sm text-slate-500 mt-1">Review problem statements, verifiers, and golden solutions from Prompters before tasks enter the tester pool.</p>
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden mt-6">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase">
+          <tr>
+            <th class="text-left px-4 py-3">Task</th>
+            <th class="text-left px-4 py-3">Prompter</th>
+            <th class="text-left px-4 py-3">Domain</th>
+            <th class="text-left px-4 py-3">Submitted</th>
+            <th class="px-2 py-3"></th>
+          </tr>
+        </thead>
+        <tbody id="rows" class="divide-y divide-slate-100"></tbody>
+      </table>
+      <div id="empty" class="hidden py-16 text-center text-slate-500 text-sm">
+        <svg class="mx-auto w-12 h-12 text-slate-300 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <p class="font-medium text-slate-700">No tasks pending domain review</p>
+      </div>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('domainReviewer');
+    SB.renderNav();
+
+    function render() {
+      const list = SBData.tasks.filter(t => t.status === 'domain-review');
+      document.getElementById('count-badge').textContent = list.length;
+      const tbody = document.getElementById('rows');
+      tbody.innerHTML = '';
+      document.getElementById('empty').classList.toggle('hidden', list.length > 0);
+      list.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 cursor-pointer';
+        tr.innerHTML = `
+          <td class="px-4 py-3">
+            <div class="font-medium font-mono text-slate-900">${SB.escapeHtml(t.name)}</div>
+            <div class="text-xs text-slate-500 mt-0.5">${SB.escapeHtml(t.description)}</div>
+          </td>
+          <td class="px-4 py-3">${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</td>
+          <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-slate-100">${SB.escapeHtml(t.domain || '—')}</span></td>
+          <td class="px-4 py-3 text-slate-500">${SB.escapeHtml(t.updatedAt)}</td>
+          <td class="px-2 py-3 text-right text-xs text-violet-600 font-medium">Review &rarr;</td>`;
+        tr.onclick = () => { location.href = 'workspace.html?id=' + encodeURIComponent(t.id); };
+        tbody.appendChild(tr);
+      });
+    }
+    render();
+  </script>
+</body>
+</html>

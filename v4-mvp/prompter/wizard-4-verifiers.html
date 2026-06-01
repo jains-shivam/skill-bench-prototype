@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verifiers - Prompter - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="mx-auto max-w-5xl px-6 py-6">
+    <div class="flex justify-between mb-4 text-sm text-slate-500">
+      <span><a href="dashboard.html" class="hover:text-slate-900">My Tasks</a> / New task</span>
+      <a href="dashboard.html" class="hover:text-slate-900">Save &amp; Exit</a>
+    </div>
+    <div id="wizard-stepper" class="mb-8 stepper-prompter"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-[14rem_1fr] gap-6">
+      <aside class="bg-white border border-slate-200 rounded-lg p-4 h-fit text-sm text-slate-600">
+        <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Step 4 — Verifiers</div>
+        <p>Define how the agent's work should be checked. Each verifier becomes a row in <code class="bg-slate-100 px-1 rounded text-xs">tests/verifiers.md</code>.</p>
+        <ul class="mt-3 list-disc pl-4 space-y-1">
+          <li>Be specific — paths, keys, exit codes.</li>
+          <li>A Tester compiles these into executable graders.</li>
+          <li>Use <b>AI Suggest</b> for a starting set you can edit.</li>
+        </ul>
+      </aside>
+      <section class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-semibold">Acceptance verifiers</h2>
+            <p class="text-sm text-slate-500 mt-0.5"><span id="verifier-count">0</span> verifier(s) defined</p>
+          </div>
+          <button id="ai-suggest" type="button"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-indigo-200 bg-indigo-50 text-indigo-700 rounded-md hover:bg-indigo-100">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+            AI Suggest
+          </button>
+        </div>
+
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Add verifier</div>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <select id="v-type"
+                    class="sm:w-52 px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200"></select>
+            <input id="v-desc" type="text" placeholder="Describe what must be true..."
+                   class="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <button id="v-add" type="button"
+                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md whitespace-nowrap">
+              Add
+            </button>
+          </div>
+        </div>
+
+        <div id="verifier-list" class="divide-y divide-slate-100"></div>
+        <div id="verifier-empty" class="hidden px-6 py-12 text-center text-sm text-slate-500">
+          <p class="font-medium text-slate-700">No verifiers yet</p>
+          <p class="mt-1">Add one above or click <b>AI Suggest</b> for sample checks.</p>
+        </div>
+      </section>
+    </div>
+    <div class="mt-8 flex justify-between">
+      <a id="back" href="wizard-3-instruction.html" class="text-sm text-slate-600 hover:text-slate-900">Back</a>
+      <a id="next" href="wizard-5-solution.html"
+         class="inline-flex items-center gap-2 px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md font-medium">
+        Next: Solution
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/script.js"></script>
+  <script>
+    SB.setRole('prompter');
+    SB.renderNav();
+    SB.renderWizardStepper(4, 'prompter');
+
+    function wizHref(path) {
+      const id = SB.getWizardTaskId();
+      return path + (id ? '?id=' + encodeURIComponent(id) : '');
+    }
+
+    document.getElementById('back').href = wizHref('wizard-3-instruction.html');
+    document.getElementById('next').href = wizHref('wizard-5-solution.html');
+
+    const TYPE_BADGE = {
+      file_exists:     'bg-blue-100 text-blue-700',
+      file_contains:   'bg-blue-100 text-blue-700',
+      json_key_equals: 'bg-amber-100 text-amber-700',
+      command_output:  'bg-emerald-100 text-emerald-700',
+      csv_cell_equals: 'bg-amber-100 text-amber-700',
+      llm_judge:       'bg-purple-100 text-purple-700',
+      freeform:        'bg-slate-100 text-slate-700',
+    };
+
+    const AI_SAMPLES = [
+      { type: 'file_exists', description: '/app/results.json must exist after running the solution' },
+      { type: 'json_key_equals', description: '/app/results.json → "word_count" must equal 42' },
+      { type: 'command_output', description: 'python /app/analyze.py must exit with code 0' },
+    ];
+
+    const t = SB.getWizardTaskFromSession();
+    if (!Array.isArray(t.verifiers)) t.verifiers = [];
+
+    const typeSelect = document.getElementById('v-type');
+    const descInput = document.getElementById('v-desc');
+    SBData.VERIFIER_TYPES.forEach(vt => {
+      const opt = document.createElement('option');
+      opt.value = vt.id;
+      opt.textContent = vt.label;
+      opt.dataset.placeholder = vt.placeholder;
+      typeSelect.appendChild(opt);
+    });
+    descInput.placeholder = SBData.VERIFIER_TYPES[0].placeholder;
+
+    typeSelect.addEventListener('change', () => {
+      const vt = SBData.VERIFIER_TYPES.find(x => x.id === typeSelect.value);
+      if (vt) descInput.placeholder = vt.placeholder;
+    });
+
+    function typeLabel(id) {
+      const vt = SBData.VERIFIER_TYPES.find(x => x.id === id);
+      return vt ? vt.label : id;
+    }
+
+    function persist() {
+      SB.saveWizardTaskToSession(t);
+    }
+
+    function renderList() {
+      const list = document.getElementById('verifier-list');
+      const empty = document.getElementById('verifier-empty');
+      document.getElementById('verifier-count').textContent = t.verifiers.length;
+      list.innerHTML = '';
+      empty.classList.toggle('hidden', t.verifiers.length > 0);
+
+      t.verifiers.forEach((v, i) => {
+        const row = document.createElement('div');
+        row.className = 'px-6 py-4 flex items-start gap-3 hover:bg-slate-50/80';
+        const badgeCls = TYPE_BADGE[v.type] || TYPE_BADGE.freeform;
+        row.innerHTML = `
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2 mb-1">
+              <span class="text-xs font-medium px-2 py-0.5 rounded ${badgeCls}">${SB.escapeHtml(typeLabel(v.type))}</span>
+            </div>
+            <p class="text-sm text-slate-700">${SB.escapeHtml(v.description)}</p>
+          </div>
+          <button type="button" data-rm="${i}" title="Remove verifier"
+                  class="shrink-0 text-slate-400 hover:text-red-600 p-1 rounded hover:bg-red-50">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>`;
+        list.appendChild(row);
+      });
+
+      list.querySelectorAll('[data-rm]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          t.verifiers.splice(Number(btn.dataset.rm), 1);
+          persist();
+          renderList();
+        });
+      });
+    }
+
+    function addVerifier() {
+      const type = typeSelect.value;
+      const description = descInput.value.trim();
+      if (!description) {
+        SB.toast('Enter a description for the verifier.', 'warning');
+        descInput.focus();
+        return;
+      }
+      t.verifiers.push({ type, description });
+      descInput.value = '';
+      persist();
+      renderList();
+    }
+
+    document.getElementById('v-add').addEventListener('click', addVerifier);
+    descInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); addVerifier(); }
+    });
+
+    document.getElementById('ai-suggest').addEventListener('click', () => {
+      const btn = document.getElementById('ai-suggest');
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 animate-spin"><path d="M21 12a9 9 0 1 1-3-6.7"/></svg> Suggesting...';
+      setTimeout(() => {
+        AI_SAMPLES.forEach(s => t.verifiers.push({ ...s }));
+        persist();
+        renderList();
+        btn.disabled = false;
+        btn.innerHTML = original;
+        SB.toast('Added 3 suggested verifiers.', 'success');
+      }, 1000);
+    });
+
+    renderList();
+    document.getElementById('next').addEventListener('click', persist);
+  </script>
+</body>
+</html>

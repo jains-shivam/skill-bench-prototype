@@ -12,7 +12,7 @@
   <div id="app-nav"></div>
   <main class="mx-auto max-w-7xl px-6 py-8">
     <h1 class="text-2xl font-bold">Review queue</h1>
-    <p class="text-sm text-slate-500 mt-1">Tasks where the Tester ran Oracle PASS. Approve to publish, or request changes back to Trainer or Tester.</p>
+    <p class="text-sm text-slate-500 mt-1">Tasks where the Tester ran Oracle PASS. Approve to publish, or request changes back to Prompter or Tester.</p>
     <div class="tab-bar mb-4 mt-5">
       <button data-tab="pending" class="active">Pending <span id="cnt-pending" class="text-xs bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
       <button data-tab="changes">Awaiting fixes <span id="cnt-changes" class="text-xs bg-orange-100 text-orange-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
@@ -23,7 +23,7 @@
         <thead class="bg-slate-50 text-xs font-medium text-slate-500 uppercase">
           <tr>
             <th class="text-left px-4 py-3">Task</th>
-            <th class="text-left px-4 py-3">Trainer</th>
+            <th class="text-left px-4 py-3">Prompter</th>
             <th class="text-left px-4 py-3">Tester</th>
             <th class="text-left px-4 py-3">Oracle</th>
             <th class="text-left px-4 py-3">Status</th>
@@ -66,7 +66,7 @@
         tr.className = 'hover:bg-slate-50 cursor-pointer';
         tr.innerHTML = `
           <td class="px-4 py-3"><div class="font-mono font-medium">${SB.escapeHtml(t.name)}</div><div class="text-xs text-slate-500">${SB.escapeHtml(t.description)}</div></td>
-          <td class="px-4 py-3">${SB.escapeHtml(t.trainer.name)}</td>
+          <td class="px-4 py-3">${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</td>
           <td class="px-4 py-3">${t.tester ? SB.escapeHtml(t.tester.name) : '—'}</td>
           <td class="px-4 py-3">${oracle}</td>
           <td class="px-4 py-3"><span class="pill ${st.cls}">${st.label}</span>${t.changesTarget ? `<div class="text-[10px] text-slate-500 mt-0.5">→ ${t.changesTarget}</div>` : ''}</td>
