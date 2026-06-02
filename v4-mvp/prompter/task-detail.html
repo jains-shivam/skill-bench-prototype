@@ -6,38 +6,102 @@
   <title>Task - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
   <main class="max-w-7xl">
-    <div class="text-sm text-slate-500 mb-3"><a href="dashboard.html">My Tasks</a> / <span id="bc-name" class="font-mono text-slate-900"></span></div>
+    <div class="text-sm text-slate-500 mb-3"><a href="dashboard.html" class="hover:text-slate-900">My Tasks</a> / <span id="bc-name" class="font-mono text-slate-900"></span></div>
+
+    <!-- Header: a Prompter-friendly summary, not the raw Harbor task.toml -->
     <header class="bg-white border border-slate-200 rounded-lg p-5 mb-4">
       <div class="flex flex-wrap justify-between gap-3">
         <div>
-          <div class="flex items-center gap-3">
-            <h1 id="t-name" class="text-xl font-semibold font-mono"></h1>
+          <div class="flex items-center gap-3 flex-wrap">
+            <h1 id="t-name" class="text-xl font-semibold"></h1>
             <span id="t-status" class="pill"></span>
           </div>
           <p id="t-desc" class="text-sm text-slate-500 mt-1"></p>
           <div id="t-meta" class="text-xs text-slate-500 mt-2"></div>
         </div>
-        <a id="action-btn" href="#" class="hidden px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md font-medium"></a>
+        <a id="action-btn" href="#" class="hidden self-start px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium"></a>
       </div>
+      <!-- "What happens next" makes the workflow stage obvious to a first-time user -->
+      <div id="next-step" class="mt-3 text-sm rounded-md px-3 py-2 hidden"></div>
     </header>
-    <div id="handoff-banner" class="mb-4"></div>
-    <div class="grid grid-cols-1 lg:grid-cols-[1fr_22rem] gap-4">
-      <div class="bg-white border border-slate-200 rounded-lg p-5">
-        <div class="font-semibold mb-3">Harbor folder</div>
-        <div id="harbor-preview"></div>
+
+    <!-- Rework notice: surfaced prominently when the task was sent back to the Prompter -->
+    <div id="rework-banner" class="mb-4 hidden">
+      <div class="border border-amber-300 bg-amber-50 rounded-lg p-4">
+        <div class="flex items-center gap-2 text-amber-900 font-semibold text-sm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 9v4m0 4h.01M10.3 3.86l-8.48 14.7A1 1 0 0 0 2.69 20h18.62a1 1 0 0 0 .87-1.44l-8.48-14.7a1 1 0 0 0-1.74 0z"/></svg>
+          Changes requested — this task is back with you
+        </div>
+        <p id="rework-reason" class="text-sm text-amber-900 mt-2"></p>
+        <p id="rework-by" class="text-xs text-amber-700 mt-1"></p>
       </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_22rem] gap-4">
+      <!-- Main column: structured, readable task content -->
+      <div class="space-y-4">
+        <section class="bg-white border border-slate-200 rounded-lg p-5">
+          <h2 class="font-semibold mb-3 flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+            Prompt requirements
+          </h2>
+          <pre id="sec-instruction" class="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 border border-slate-100 rounded-md p-4 max-h-[28rem] overflow-y-auto scroll-y"></pre>
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-lg p-5">
+          <h2 class="font-semibold mb-3 flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-400"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Inputs &amp; context
+          </h2>
+          <ul id="sec-attachments" class="text-sm space-y-2"></ul>
+        </section>
+
+        <section class="bg-amber-50 border border-amber-200 rounded-lg p-5">
+          <h2 class="font-semibold mb-3 text-amber-900 flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-amber-600"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            Golden solution
+          </h2>
+          <pre id="sec-golden" class="text-sm text-amber-950 whitespace-pre-wrap bg-white/60 border border-amber-100 rounded-md p-4 max-h-[24rem] overflow-y-auto scroll-y"></pre>
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-lg p-5">
+          <h2 class="font-semibold mb-3 flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-400"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Verifier status
+          </h2>
+          <ul id="sec-verifiers" class="space-y-3 text-sm"></ul>
+        </section>
+
+        <!-- Raw Harbor format is hidden by default behind an advanced disclosure.
+             Prompters work in plain language; this is only for debugging/export. -->
+        <details class="bg-white border border-slate-200 rounded-lg p-5">
+          <summary class="font-semibold cursor-pointer select-none flex items-center gap-2 text-slate-700">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-400"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            Advanced: Raw Harbor format
+            <span class="text-xs font-normal text-slate-400">(for export / debugging)</span>
+          </summary>
+          <div id="harbor-preview" class="mt-4"></div>
+        </details>
+      </div>
+
+      <!-- Sidebar: at-a-glance facts + feedback + timeline -->
       <aside class="space-y-4">
+        <div class="bg-white border border-slate-200 rounded-lg p-5">
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Domain &amp; skills</div>
+          <div id="t-domain" class="text-sm font-medium mb-2"></div>
+          <div id="skills-tags" class="flex flex-wrap gap-1.5"></div>
+        </div>
         <div id="tester-card" class="bg-white border border-slate-200 rounded-lg p-5 hidden">
           <div class="text-xs font-semibold uppercase text-emerald-700 mb-2">Tester contribution</div>
           <dl id="tester-meta" class="text-sm space-y-1"></dl>
         </div>
         <div id="comments-card" class="bg-white border border-slate-200 rounded-lg p-5 hidden">
-          <div class="font-semibold mb-3">Reviewer comments</div>
+          <div class="font-semibold mb-3">Review &amp; feedback</div>
           <div id="comments-list" class="space-y-3 text-sm"></div>
         </div>
         <div class="bg-white border border-slate-200 rounded-lg p-5">
@@ -48,11 +112,10 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('prompter');
+    if (!SB.requireRole('prompter')) throw 'auth';
     SB.renderNav();
     (function() {
     const id = new URLSearchParams(location.search).get('id');
@@ -61,33 +124,100 @@
       document.querySelector('main').innerHTML = '<p class="p-12 text-slate-500 text-center">Task not found. <a href="dashboard.html" class="text-indigo-600 hover:underline">Back to tasks</a></p>';
       return;
     }
+
     document.getElementById('bc-name').textContent = t.name;
     document.getElementById('t-name').textContent = t.name;
-    document.getElementById('t-desc').textContent = t.description;
+    document.getElementById('t-desc').textContent = t.description || '';
     const st = SBData.STATUS[t.status];
     const statusEl = document.getElementById('t-status');
     statusEl.className = 'pill ' + (st ? st.cls : '');
     statusEl.textContent = st ? st.label : t.status;
-    const meta = [`Domain <b>${SB.escapeHtml(t.domain)}</b>`, `Updated ${SB.escapeHtml(t.updatedAt)}`];
+
+    const meta = [
+      `Domain <b>${SB.escapeHtml(SBData.domainLabel(t.domain))}</b>`,
+      `Difficulty <b>${SB.escapeHtml(t.difficulty || 'medium')}</b>`,
+      `Updated ${SB.escapeHtml(t.updatedAt || '—')}`,
+    ];
     if (t.tester) meta.push(`Tester <b>${SB.escapeHtml(t.tester.name)}</b>`);
-    if (t.oraclePassed) meta.push(`Oracle <b class="text-emerald-700">PASS</b>`);
     document.getElementById('t-meta').innerHTML = meta.join(' &middot; ');
-    const bannerEl = document.getElementById('handoff-banner');
-    bannerEl.innerHTML = '';
-    if (t.status === 'prompter-draft' || (t.status === 'changes-requested' && t.changesTarget === 'prompter')) {
+
+    // "What happens next" — orient the Prompter on the current stage.
+    const nextStep = document.getElementById('next-step');
+    const NEXT = {
+      'prompter-draft': ['bg-indigo-50 text-indigo-800', 'This task is a draft. Finish it and submit for domain review.'],
+      'domain-review': ['bg-violet-50 text-violet-800', 'Waiting on a Domain Expert Reviewer to review your task.'],
+      'with-tester': ['bg-emerald-50 text-emerald-800', 'A Tester is building the environment and solution for this task.'],
+      'in-review': ['bg-amber-50 text-amber-800', 'A Task Reviewer is doing the final review before publishing.'],
+      'changes-requested': ['bg-amber-50 text-amber-900', 'Changes were requested — see the notice below.'],
+      'approved': ['bg-emerald-50 text-emerald-800', 'Approved. Publishing to the Harbor registry.'],
+      'published': ['bg-emerald-50 text-emerald-800', 'Published to the Harbor registry. Nothing more to do.'],
+    };
+    if (NEXT[t.status]) { nextStep.className = 'mt-3 text-sm rounded-md px-3 py-2 ' + NEXT[t.status][0]; nextStep.textContent = NEXT[t.status][1]; nextStep.classList.remove('hidden'); }
+
+    // Rework banner + action button (only when the Prompter actually owns the task).
+    const ownsForEdit = t.status === 'prompter-draft' || (t.status === 'changes-requested' && t.changesTarget === 'prompter');
+    if (t.status === 'changes-requested' && t.changesTarget === 'prompter') {
+      document.getElementById('rework-banner').classList.remove('hidden');
+      document.getElementById('rework-reason').textContent = t.reworkReason || 'Please review the reviewer comments and revise.';
+      document.getElementById('rework-by').textContent = (t.reworkRequestedBy ? 'Requested by ' + t.reworkRequestedBy : '') + (t.reworkCount ? ' · rework #' + t.reworkCount : '');
+    }
+    if (ownsForEdit) {
       const btn = document.getElementById('action-btn');
       btn.href = 'wizard-1-brief.html?id=' + t.id;
-      btn.textContent = 'Continue editing \u2192';
+      btn.textContent = t.status === 'prompter-draft' ? 'Continue editing \u2192' : 'Revise task \u2192';
       btn.classList.remove('hidden');
       SB.setWizardTaskId(t.id);
     }
+
+    document.getElementById('sec-instruction').textContent = t.instructionMd || '(No problem statement yet)';
+    document.getElementById('sec-golden').textContent = t.goldenSolution || '(No golden solution yet)';
+    document.getElementById('t-domain').textContent = SBData.domainLabel(t.domain);
+
+    // Inputs & context (attachments the Prompter provided)
+    const attEl = document.getElementById('sec-attachments');
+    const atts = t.attachments || [];
+    attEl.innerHTML = atts.length ? atts.map(a => `
+      <li class="flex items-center gap-2 border border-slate-100 rounded-md px-3 py-2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-400 shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        <span class="font-mono text-sm">${SB.escapeHtml(a.name)}</span>
+        <span class="text-xs text-slate-400 ml-auto">${SB.escapeHtml(a.kind || 'file')} · ${SB.escapeHtml(a.size || '—')}</span>
+      </li>`).join('') : '<li class="text-xs text-slate-400 italic">No input files attached.</li>';
+
+    // Verifier status with category + (mock) validation badges
+    const verEl = document.getElementById('sec-verifiers');
+    const vers = t.verifiers || [];
+    verEl.innerHTML = vers.length ? vers.map(v => {
+      const cat = v.category ? (SBData.VERIFIER_CATEGORIES.find(c => c.id === v.category) || {}) : null;
+      const val = SBData.VERIFIER_VALIDATION[v.validationStatus] || null;
+      const catBadge = cat && cat.label ? `<span class="text-[10px] px-1.5 py-0.5 rounded font-medium ${cat.color}">${SB.escapeHtml(cat.label)}</span>` : '';
+      const valBadge = val ? `<span class="text-[10px] px-1.5 py-0.5 rounded font-medium ${val.color}">${SB.escapeHtml(val.label)}</span>` : '';
+      return `<li class="border border-slate-100 rounded-md p-3">
+        <div class="flex flex-wrap items-center gap-1.5">${catBadge}${valBadge}</div>
+        <div class="mt-2 text-slate-700">${SB.escapeHtml(v.description)}</div>
+      </li>`;
+    }).join('') : '<li class="text-xs text-slate-400 italic">No verifiers defined.</li>';
+
+    // Skills
+    const skillsMount = document.getElementById('skills-tags');
+    const skillIds = t.selectedSkills || [];
+    skillsMount.innerHTML = skillIds.length ? skillIds.map(sid => {
+      const sk = SBData.getSkillById(sid);
+      if (!sk) return '';
+      const dom = SBData.getDomain(SBData.skillDomainIds(sk)[0]);
+      const cls = dom ? dom.color : 'bg-slate-100 text-slate-700';
+      return `<span class="text-xs px-2 py-0.5 rounded ${cls}">${SB.escapeHtml(sk.name)}</span>`;
+    }).join('') : '<span class="text-xs text-slate-400 italic">No skills tagged</span>';
+
     if (t.tester) {
       document.getElementById('tester-card').classList.remove('hidden');
       document.getElementById('tester-meta').innerHTML = `
         <div><b>${SB.escapeHtml(t.tester.name)}</b></div>
-        <div class="text-slate-500">Status: ${t.solveSh ? 'Solution written' : 'In progress'}</div>`;
+        <div class="text-slate-500">Solution: ${t.solveSh ? 'written' : 'in progress'}</div>
+        <div class="text-slate-500">Oracle: ${t.oraclePassed ? '<b class="text-emerald-700">PASS</b>' : 'not run'}</div>`;
     }
+
     SB.renderHarborPreview('harbor-preview', t);
+
     if (t.comments && t.comments.length) {
       document.getElementById('comments-card').classList.remove('hidden');
       const list = document.getElementById('comments-list');
@@ -98,6 +228,7 @@
         list.appendChild(d);
       });
     }
+
     const hist = document.getElementById('history-list');
     (t.history || []).forEach(h => {
       const li = document.createElement('li');

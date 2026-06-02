@@ -6,7 +6,7 @@
   <title>Golden Solution - Prompter - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
   <style>
     .md-preview h1 { font-size: 1.25rem; font-weight: 700; margin: 0.5rem 0; }
     .md-preview h2 { font-size: 1.125rem; font-weight: 600; margin: 0.5rem 0; }
@@ -29,13 +29,16 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-[14rem_1fr] gap-6">
       <aside class="bg-white border border-slate-200 rounded-lg p-4 h-fit text-sm text-slate-600">
-        <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Step 5 — Golden solution</div>
-        <p>Your reference answer. Domain experts and testers use this to validate the task.</p>
+        <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Step 4 — Golden solution</div>
+        <p>Your reference answer. You write this <b>before</b> verifiers so each verifier can be checked against it.</p>
         <ul class="mt-3 list-disc pl-4 space-y-1">
           <li><b>Approach</b> — how you would solve it</li>
           <li><b>Code</b> — reference implementation</li>
           <li><b>Expected output</b> — what success looks like</li>
         </ul>
+        <div class="mt-3 p-2.5 rounded-md bg-indigo-50 text-[12px] text-indigo-800 leading-snug">
+          Next step (Verifiers) validates each check against this solution.
+        </div>
       </aside>
 
       <section class="bg-white border border-slate-200 rounded-lg overflow-hidden">
@@ -66,26 +69,27 @@
     </div>
 
     <div class="mt-8 flex justify-between">
-      <a id="back" href="wizard-4-verifiers.html" class="text-sm text-slate-600">&larr; Back</a>
-      <a id="next" href="wizard-6-trymodel.html" class="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md">Next: Try Model &rarr;</a>
+      <a id="back" href="wizard-3-instruction.html" class="text-sm text-slate-600">&larr; Back</a>
+      <a id="next" href="wizard-5-verifiers.html" class="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md">Next: Verifiers &rarr;</a>
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('prompter');
+    // Step 4 of the Prompter wizard. SOLUTION is authored BEFORE verifiers so the
+    // next step can validate each verifier against this concrete reference.
+    if (!SB.requireRole('prompter')) throw 'auth';
     SB.renderNav();
-    SB.renderWizardStepper(5, 'prompter');
+    SB.renderWizardStepper(4, 'prompter');
 
     const t = SB.getWizardTaskFromSession();
     function wHref(page) {
       const id = SB.getWizardTaskId();
       return page + (id ? '?id=' + encodeURIComponent(id) : '');
     }
-    document.getElementById('back').href = wHref('wizard-4-verifiers.html');
-    document.getElementById('next').href = wHref('wizard-6-trymodel.html');
+    document.getElementById('back').href = wHref('wizard-3-instruction.html');
+    document.getElementById('next').href = wHref('wizard-5-verifiers.html');
 
     function renderMd(md) {
       const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

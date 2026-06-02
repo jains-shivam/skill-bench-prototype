@@ -6,7 +6,7 @@
   <title>People Management - Skill Bench</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
@@ -14,7 +14,7 @@
     <div class="flex items-end justify-between mb-6">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">People</h1>
-        <p class="text-sm text-slate-500 mt-1">Manage team members, assign roles, and control access</p>
+        <p class="text-sm text-slate-500 mt-1">Manage team members and assign roles</p>
       </div>
       <button id="btn-add-user" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
@@ -28,10 +28,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input id="search-input" type="text" placeholder="Search by name or email..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
       </div>
-      <select id="filter-role" class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+      <select id="filter-role" class="px-3 py-2 text-sm border border-slate-300 rounded-lg">
         <option value="">All roles</option>
       </select>
-      <select id="filter-status" class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+      <select id="filter-status" class="px-3 py-2 text-sm border border-slate-300 rounded-lg">
         <option value="">All statuses</option>
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
@@ -49,7 +49,6 @@
             <th class="text-left px-4 py-3">Status</th>
             <th class="text-left px-4 py-3">Last seen</th>
             <th class="text-left px-4 py-3">Tasks</th>
-            <th class="text-left px-4 py-3">Joined</th>
             <th class="text-right px-4 py-3">Actions</th>
           </tr>
         </thead>
@@ -58,60 +57,47 @@
     </div>
   </main>
 
-  <!-- Add/Edit Person Modal -->
+  <!-- Add/Edit Modal -->
   <div id="modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
       <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
         <h3 id="modal-title" class="font-semibold text-lg">Add person</h3>
-        <button id="modal-close" class="text-slate-400 hover:text-slate-600">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <button id="modal-close" class="text-slate-400 hover:text-slate-600"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
-      <form id="person-form" class="px-6 py-5 space-y-4">
+      <div class="px-6 py-5 space-y-4">
         <input type="hidden" id="edit-id" value="">
+        <div><label class="block text-sm font-medium text-slate-700 mb-1">Full name</label><input id="field-name" type="text" required placeholder="e.g. John Doe" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></div>
+        <div><label class="block text-sm font-medium text-slate-700 mb-1">Email</label><input id="field-email" type="email" required placeholder="e.g. john@my-org.com" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Full name</label>
-          <input id="field-name" type="text" required placeholder="e.g. John Doe" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <!-- MULTI-ROLE: a user can hold several roles. Pick all that apply, then
+               choose which one is their primary (default landing) role. -->
+          <label class="block text-sm font-medium text-slate-700 mb-1">Roles <span class="text-slate-400 font-normal">(one or more)</span></label>
+          <div id="field-roles" class="border border-slate-300 rounded-lg p-2 grid grid-cols-1 gap-0.5 max-h-44 overflow-y-auto"></div>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
-          <input id="field-email" type="email" required placeholder="e.g. john@my-org.com" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <label class="block text-sm font-medium text-slate-700 mb-1">Primary role</label>
+          <select id="field-primary" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></select>
+          <p class="text-[11px] text-slate-500 mt-1">Determines the landing page after login.</p>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Role</label>
-          <select id="field-role" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-            <option value="">Select a role...</option>
-          </select>
-          <p id="role-desc" class="text-[11px] text-slate-500 mt-1"></p>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
-          <select id="field-status" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
-      </form>
+        <div><label class="block text-sm font-medium text-slate-700 mb-1">Status</label><select id="field-status" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      </div>
       <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-2">
-        <button id="modal-cancel" type="button" class="px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
-        <button id="modal-save" type="button" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">Save</button>
+        <button id="modal-cancel" class="px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
+        <button id="modal-save" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">Save</button>
       </div>
     </div>
   </div>
-
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('superAdmin');
+    if (!SB.requireRole('superAdmin')) throw 'auth';
     SB.renderNav();
 
     const roleSelect = document.getElementById('filter-role');
-    const roleField = document.getElementById('field-role');
+    // Filter by ROLE KEY (a user matches if they HOLD that role).
     Object.values(SBData.ROLES).forEach(r => {
-      roleSelect.innerHTML += `<option value="${r.label}">${r.label}</option>`;
-      roleField.innerHTML += `<option value="${r.label}">${r.label}</option>`;
+      roleSelect.innerHTML += `<option value="${r.key}">${r.label}</option>`;
     });
 
     const searchInput = document.getElementById('search-input');
@@ -119,134 +105,123 @@
     const filterStatus = document.getElementById('filter-status');
     const tbody = document.getElementById('people-tbody');
     const resultCount = document.getElementById('result-count');
+    const rolesBox = document.getElementById('field-roles');
+    const primarySel = document.getElementById('field-primary');
+
+    function roleBadges(u) {
+      return SBData.userRoleKeys(u).map(rk => {
+        const r = SBData.ROLES[rk] || {};
+        return `<span class="text-[10px] px-2 py-0.5 rounded font-medium ${r.color || 'bg-slate-100 text-slate-700'}">${SB.escapeHtml(r.label || rk)}</span>`;
+      }).join(' ');
+    }
 
     function renderTable() {
       const query = searchInput.value.toLowerCase().trim();
-      const role = filterRole.value;
+      const roleKey = filterRole.value;
       const status = filterStatus.value;
       let filtered = SBData.allUsers.filter(u => {
         if (query && !u.name.toLowerCase().includes(query) && !u.email.toLowerCase().includes(query)) return false;
-        if (role && u.role !== role) return false;
+        if (roleKey && !SBData.userHasRole(u, roleKey)) return false;
         if (status && u.status !== status) return false;
         return true;
       });
-      resultCount.textContent = filtered.length + ' of ' + SBData.allUsers.length + ' users';
+      resultCount.textContent = filtered.length + ' of ' + SBData.allUsers.length;
       tbody.innerHTML = '';
       filtered.forEach(u => {
-        const roleInfo = Object.values(SBData.ROLES).find(r => r.label === u.role) || {};
-        const rc = roleInfo.color || 'bg-slate-100 text-slate-700';
         const statusCls = u.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500';
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
-          <td class="px-4 py-3"><div class="flex items-center gap-2.5"><div class="avatar" style="width:2rem;height:2rem;font-size:0.65rem">${u.initials || '?'}</div><div><div class="text-sm font-medium">${SB.escapeHtml(u.name)}</div><div class="text-[11px] text-slate-500">${SB.escapeHtml(u.email)}</div></div></div></td>
-          <td class="px-4 py-3"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${rc}">${SB.escapeHtml(u.role)}</span></td>
+          <td class="px-4 py-3"><div class="flex items-center gap-2.5"><div class="avatar" style="width:2rem;height:2rem;font-size:0.65rem">${u.initials||'?'}</div><div><div class="text-sm font-medium">${SB.escapeHtml(u.name)}</div><div class="text-[11px] text-slate-500">${SB.escapeHtml(u.email)}</div></div></div></td>
+          <td class="px-4 py-3"><div class="flex flex-wrap gap-1">${roleBadges(u)}</div></td>
           <td class="px-4 py-3"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${statusCls}">${u.status}</span></td>
           <td class="px-4 py-3 text-xs text-slate-500">${u.lastSeen || '—'}</td>
           <td class="px-4 py-3 text-xs">${u.tasksCount || 0}</td>
-          <td class="px-4 py-3 text-xs text-slate-500">${u.joinedAt || '—'}</td>
           <td class="px-4 py-3 text-right">
             <button data-id="${u.id}" class="edit-btn text-xs text-indigo-600 hover:text-indigo-700 font-medium mr-2">Edit</button>
-            <button data-id="${u.id}" class="toggle-btn text-xs ${u.status === 'active' ? 'text-red-600 hover:text-red-700' : 'text-emerald-600 hover:text-emerald-700'} font-medium">${u.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+            <button data-id="${u.id}" class="toggle-btn text-xs ${u.status === 'active' ? 'text-red-600' : 'text-emerald-600'} font-medium">${u.status === 'active' ? 'Deactivate' : 'Activate'}</button>
           </td>`;
         tbody.appendChild(tr);
       });
-      attachRowEvents();
+      document.querySelectorAll('.edit-btn').forEach(b => b.addEventListener('click', () => openEdit(b.dataset.id)));
+      document.querySelectorAll('.toggle-btn').forEach(b => b.addEventListener('click', () => { const u = SBData.allUsers.find(x => x.id === b.dataset.id); if(u){ u.status = u.status==='active'?'inactive':'active'; SB.toast(u.name+' '+(u.status==='active'?'activated':'deactivated'),'success'); renderTable(); } }));
     }
 
-    function attachRowEvents() {
-      document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', () => openEditModal(btn.dataset.id));
+    // Build role checkboxes; keep the primary-role dropdown in sync with checks.
+    function renderRoleCheckboxes(selected) {
+      selected = selected || [];
+      rolesBox.innerHTML = '';
+      Object.values(SBData.ROLES).forEach(r => {
+        const checked = selected.includes(r.key) ? 'checked' : '';
+        const label = document.createElement('label');
+        label.className = 'flex items-start gap-2 text-xs text-slate-700 px-1.5 py-1 rounded hover:bg-slate-50 cursor-pointer';
+        label.innerHTML = `<input type="checkbox" value="${r.key}" ${checked} class="role-cb mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"><span><span class="font-medium">${r.label}</span><span class="block text-[10px] text-slate-400">${SB.escapeHtml(r.desc)}</span></span>`;
+        rolesBox.appendChild(label);
       });
-      document.querySelectorAll('.toggle-btn').forEach(btn => {
-        btn.addEventListener('click', () => toggleStatus(btn.dataset.id));
-      });
+      rolesBox.querySelectorAll('.role-cb').forEach(cb => cb.addEventListener('change', syncPrimary));
+      syncPrimary();
+    }
+    function getCheckedRoles() { return Array.from(rolesBox.querySelectorAll('.role-cb:checked')).map(cb => cb.value); }
+    function syncPrimary() {
+      const checked = getCheckedRoles();
+      const prev = primarySel.value;
+      primarySel.innerHTML = checked.length
+        ? checked.map(rk => `<option value="${rk}">${SBData.roleLabel(rk)}</option>`).join('')
+        : '<option value="">Select roles first</option>';
+      if (checked.includes(prev)) primarySel.value = prev;
     }
 
-    function toggleStatus(id) {
-      const u = SBData.allUsers.find(x => x.id === id);
-      if (!u) return;
-      u.status = u.status === 'active' ? 'inactive' : 'active';
-      SB.toast(u.name + ' ' + (u.status === 'active' ? 'activated' : 'deactivated'), 'success');
-      renderTable();
-    }
-
-    // Modal logic
     const overlay = document.getElementById('modal-overlay');
-    const modalTitle = document.getElementById('modal-title');
-    const editId = document.getElementById('edit-id');
-    const fieldName = document.getElementById('field-name');
-    const fieldEmail = document.getElementById('field-email');
-    const fieldRoleEl = document.getElementById('field-role');
-    const fieldStatus = document.getElementById('field-status');
-    const roleDesc = document.getElementById('role-desc');
-
-    function openModal() {
-      overlay.classList.remove('hidden');
-      overlay.classList.add('flex');
-    }
-    function closeModal() {
-      overlay.classList.add('hidden');
-      overlay.classList.remove('flex');
-    }
-
+    function openModal() { overlay.classList.remove('hidden'); overlay.classList.add('flex'); }
+    function closeModal() { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
     document.getElementById('btn-add-user').addEventListener('click', () => {
-      modalTitle.textContent = 'Add person';
-      editId.value = '';
-      fieldName.value = '';
-      fieldEmail.value = '';
-      fieldRoleEl.value = '';
-      fieldStatus.value = 'active';
-      roleDesc.textContent = '';
+      document.getElementById('modal-title').textContent='Add person';
+      document.getElementById('edit-id').value='';
+      document.getElementById('field-name').value='';
+      document.getElementById('field-email').value='';
+      document.getElementById('field-status').value='active';
+      renderRoleCheckboxes([]);
       openModal();
     });
-
-    function openEditModal(id) {
-      const u = SBData.allUsers.find(x => x.id === id);
-      if (!u) return;
-      modalTitle.textContent = 'Edit person';
-      editId.value = u.id;
-      fieldName.value = u.name;
-      fieldEmail.value = u.email;
-      fieldRoleEl.value = u.role;
-      fieldStatus.value = u.status;
-      updateRoleDesc();
-      openModal();
-    }
-
     document.getElementById('modal-close').addEventListener('click', closeModal);
     document.getElementById('modal-cancel').addEventListener('click', closeModal);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+    overlay.addEventListener('click', e => { if(e.target===overlay) closeModal(); });
 
-    fieldRoleEl.addEventListener('change', updateRoleDesc);
-    function updateRoleDesc() {
-      const r = Object.values(SBData.ROLES).find(x => x.label === fieldRoleEl.value);
-      roleDesc.textContent = r ? r.desc : '';
+    function openEdit(id) {
+      const u = SBData.allUsers.find(x => x.id === id); if(!u) return;
+      document.getElementById('modal-title').textContent='Edit person';
+      document.getElementById('edit-id').value=u.id;
+      document.getElementById('field-name').value=u.name;
+      document.getElementById('field-email').value=u.email;
+      document.getElementById('field-status').value=u.status;
+      const roles = SBData.userRoleKeys(u);
+      renderRoleCheckboxes(roles);
+      primarySel.value = (u.primaryRole && roles.includes(u.primaryRole)) ? u.primaryRole : (roles[0] || '');
+      openModal();
     }
 
     document.getElementById('modal-save').addEventListener('click', () => {
-      const name = fieldName.value.trim();
-      const email = fieldEmail.value.trim();
-      const role = fieldRoleEl.value;
-      if (!name || !email || !role) { SB.toast('Please fill all fields', 'error'); return; }
-
-      if (editId.value) {
-        const u = SBData.allUsers.find(x => x.id === editId.value);
-        if (u) { u.name = name; u.email = email; u.role = role; u.status = fieldStatus.value; u.initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
-        SB.toast('Updated ' + name, 'success');
+      const name = document.getElementById('field-name').value.trim();
+      const email = document.getElementById('field-email').value.trim();
+      const roles = getCheckedRoles();
+      const primary = primarySel.value || roles[0];
+      if (!name || !email || !roles.length) { SB.toast('Enter name, email and at least one role','error'); return; }
+      const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const editId = document.getElementById('edit-id').value;
+      if (editId) {
+        const u = SBData.allUsers.find(x => x.id === editId);
+        if(u){ u.name=name; u.email=email; u.roles=roles; u.primaryRole=primary; u.role=SBData.roleLabel(primary); u.status=document.getElementById('field-status').value; u.initials=initials; }
+        SB.toast('Updated '+name,'success');
       } else {
-        const newId = 'u' + (Date.now() % 10000);
-        SBData.allUsers.push({ id: newId, name, email, role, initials: name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(), lastSeen: 'just now', tasksCount: 0, status: fieldStatus.value, joinedAt: new Date().toISOString().split('T')[0] });
-        SB.toast('Added ' + name + ' as ' + role, 'success');
+        SBData.allUsers.push({ id:'u'+(Date.now()%10000), name, email, roles, primaryRole: primary, role: SBData.roleLabel(primary), initials, lastSeen:'just now', tasksCount:0, status:document.getElementById('field-status').value, joinedAt:new Date().toISOString().split('T')[0] });
+        SB.toast('Added '+name+' ('+roles.map(SBData.roleLabel).join(', ')+')','success');
       }
-      closeModal();
-      renderTable();
+      closeModal(); renderTable();
     });
 
     searchInput.addEventListener('input', renderTable);
     filterRole.addEventListener('change', renderTable);
     filterStatus.addEventListener('change', renderTable);
-
     renderTable();
   </script>
 </body>

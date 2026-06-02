@@ -6,7 +6,7 @@
   <title>My Tasks - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
@@ -35,17 +35,14 @@
       <span class="px-2 py-1 rounded bg-green-100 text-green-700">Published</span>
     </div>
 
+    <!-- Pill tabs group tasks by lifecycle stage. REWORK is intentionally its own
+         tab so tasks the prompter must fix are not buried among in-flight tasks. -->
+    <div id="tabs" class="flex flex-wrap gap-1.5 mb-4"></div>
+
     <div class="bg-white border border-slate-200 rounded-lg p-3 flex flex-wrap gap-2 mb-4">
       <input id="search" type="text" placeholder="Search tasks..." class="flex-1 min-w-[14rem] px-3 py-2 text-sm border border-slate-200 rounded-md">
-      <select id="filter-status" class="text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
-        <option value="">All statuses</option>
-        <option value="prompter-draft">Draft</option>
-        <option value="domain-review">Domain review</option>
-        <option value="with-tester">With tester</option>
-        <option value="in-review">Tech review</option>
-        <option value="changes-requested">Changes requested</option>
-        <option value="approved">Approved</option>
-        <option value="published">Published</option>
+      <select id="filter-domain" class="text-sm border border-slate-200 rounded-md px-3 py-2 bg-white">
+        <option value="">All domains</option>
       </select>
     </div>
 
@@ -80,8 +77,8 @@
           <b>1.</b> Brief &rarr;
           <b>2.</b> Skills &rarr;
           <b>3.</b> Problem statement &rarr;
-          <b>4.</b> Verifiers &rarr;
-          <b>5.</b> Golden solution &rarr;
+          <b>4.</b> Golden solution &rarr;
+          <b>5.</b> Verifiers &rarr;
           <b>6.</b> Try model &rarr;
           <b>7.</b> Submit for domain review.
           After a domain expert approves, a Tester picks up your task and builds the executable package.
@@ -90,11 +87,10 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('prompter');
+    if (!SB.requireRole('prompter')) throw 'auth';
     SB.renderNav();
 
     function getAction(t) {
@@ -115,17 +111,54 @@
 
     const rowsEl = document.getElementById('task-rows');
     const search = document.getElementById('search');
-    const filter = document.getElementById('filter-status');
+    const domainFilter = document.getElementById('filter-domain');
+    const tabsEl = document.getElementById('tabs');
+
+    // Only this prompter's tasks. (PMs see all tasks on their own pages.)
+    const session = SB.getSession();
+    const myId = session ? session.userId : null;
+    const myTasks = SBData.tasks.filter(t => !(t.prompter && myId && t.prompter.id !== myId));
+
+    // Tab definitions: each maps to a predicate over the task's lifecycle status.
+    const TABS = [
+      { id: 'all',       label: 'All',         match: () => true },
+      { id: 'draft',     label: 'Drafts',      match: t => t.status === 'prompter-draft' },
+      { id: 'review',    label: 'In review',   match: t => ['domain-review','with-tester','in-review','approved'].includes(t.status) },
+      { id: 'rework',    label: 'Rework',      match: t => t.status === 'changes-requested' },
+      { id: 'published', label: 'Published',   match: t => t.status === 'published' },
+    ];
+    let activeTab = 'all';
+
+    SBData.skillDomains.forEach(d => {
+      domainFilter.innerHTML += `<option value="${d.id}">${SB.escapeHtml(d.name)}</option>`;
+    });
+
+    function countFor(tabId) {
+      const tab = TABS.find(x => x.id === tabId);
+      return myTasks.filter(tab.match).length;
+    }
+
+    function renderTabs() {
+      tabsEl.innerHTML = TABS.map(tab => {
+        const active = tab.id === activeTab;
+        const isRework = tab.id === 'rework';
+        const cnt = countFor(tab.id);
+        const base = active
+          ? (isRework ? 'bg-amber-600 text-white' : 'bg-indigo-600 text-white')
+          : (isRework && cnt > 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50');
+        return `<button data-tab="${tab.id}" class="px-3 py-1.5 text-xs font-medium rounded-full ${base}">${tab.label}<span class="ml-1 opacity-70">${cnt}</span></button>`;
+      }).join('');
+      tabsEl.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { activeTab = b.dataset.tab; renderTabs(); render(); }));
+    }
 
     function render() {
       const q = search.value.trim().toLowerCase();
-      const f = filter.value;
-      const session = SB.getSession();
-      const myId = session ? session.userId : null;
-      const visible = SBData.tasks.filter(t => {
-        if (t.prompter && myId && t.prompter.id !== myId) return false;
-        if (f && t.status !== f) return false;
-        if (q && !(t.name + ' ' + t.description + ' ' + (t.domain || '')).toLowerCase().includes(q)) return false;
+      const dom = domainFilter.value;
+      const tab = TABS.find(x => x.id === activeTab);
+      const visible = myTasks.filter(t => {
+        if (!tab.match(t)) return false;
+        if (dom && t.domain !== dom) return false;
+        if (q && !(t.name + ' ' + t.description + ' ' + SBData.domainLabel(t.domain)).toLowerCase().includes(q)) return false;
         return true;
       });
       rowsEl.innerHTML = '';
@@ -133,17 +166,19 @@
       visible.forEach(t => {
         const st = SBData.STATUS[t.status] || SBData.STATUS['prompter-draft'];
         const act = getAction(t);
+        const isMyRework = t.status === 'changes-requested' && t.changesTarget === 'prompter';
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
           <td class="px-4 py-3">
             <div class="font-medium text-slate-900 font-mono">${SB.escapeHtml(t.name)}</div>
             <div class="text-xs text-slate-500">${SB.escapeHtml(t.description)}</div>
+            ${isMyRework && t.reworkReason ? `<div class="mt-1 text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-2 py-1">Rework: ${SB.escapeHtml(t.reworkReason)}${t.reworkRequestedBy ? ' — ' + SB.escapeHtml(t.reworkRequestedBy) : ''}</div>` : ''}
           </td>
-          <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-slate-100">${SB.escapeHtml(t.domain || '—')}</span></td>
+          <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-slate-100">${SB.escapeHtml(SBData.domainLabel(t.domain))}</span></td>
           <td class="px-4 py-3">
             <span class="pill ${st.cls}">${st.label}</span>
-            ${t.status === 'changes-requested' && t.changesTarget ? `<div class="text-[10px] text-slate-500 mt-0.5">→ ${SB.escapeHtml(t.changesTarget)}</div>` : ''}
+            ${t.status === 'changes-requested' && t.changesTarget ? `<div class="text-[10px] text-slate-500 mt-0.5">needs: ${SB.escapeHtml(t.changesTarget)}</div>` : ''}
           </td>
           <td class="px-4 py-3 text-slate-500">${SB.escapeHtml(t.updatedAt)}</td>
           <td class="px-2 py-3 text-right">
@@ -154,9 +189,10 @@
       document.getElementById('visible-count').textContent = visible.length;
     }
 
+    renderTabs();
     render();
     search.addEventListener('input', render);
-    filter.addEventListener('change', render);
+    domainFilter.addEventListener('change', render);
   </script>
 </body>
 </html>

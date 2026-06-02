@@ -6,7 +6,7 @@
   <title>Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/style.css?v=3">
+  <link rel="stylesheet" href="assets/style.css?v=4">
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-900">
   <div class="min-h-screen flex flex-col">
@@ -127,11 +127,18 @@
     </main>
     <footer class="px-6 py-4 text-center text-xs text-slate-400">&copy; Skill Bench MVP</footer>
   </div>
-  <script src="assets/data.js?v=3"></script>
-  <script src="assets/script.js?v=3"></script>
+  <script src="assets/data.js?v=4"></script>
+  <script src="assets/script.js?v=4"></script>
   <script>
     if (!SB.isAuthenticated()) { location.href = 'login.html'; }
-    document.querySelectorAll('.role-card').forEach(c => c.addEventListener('click', () => SB.setRole(c.dataset.role)));
+    // Demo role gallery: clicking a card logs in as that role's representative user
+    // so the access guard (requireRole) on the destination page passes. This is a
+    // demo affordance only; production users switch via the sidebar "My roles".
+    document.querySelectorAll('.role-card').forEach(c => c.addEventListener('click', (e) => {
+      e.preventDefault();
+      SB.demoLoginAs(c.dataset.role);
+      location.href = c.getAttribute('href');
+    }));
   </script>
 </body>
 </html>

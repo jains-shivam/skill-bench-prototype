@@ -6,7 +6,7 @@
   <title>Domain review - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
@@ -76,11 +76,10 @@
   </div>
 
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('domainReviewer');
+    if (!SB.requireRole('domainReviewer')) throw 'auth';
     SB.renderNav();
 
     const id = new URLSearchParams(location.search).get('id');
@@ -107,7 +106,7 @@
         mount.innerHTML = ids.map(sid => {
           const sk = SBData.skillsLibrary.find(s => s.id === sid);
           if (!sk) return '';
-          const dom = SBData.skillDomains.find(d => d.id === sk.domain);
+          const dom = SBData.getDomain(SBData.skillDomainIds(sk)[0]);
           const cls = dom ? dom.color : 'bg-slate-100 text-slate-700';
           return `<span class="text-xs px-2 py-0.5 rounded ${cls}">${SB.escapeHtml(sk.name)}</span>`;
         }).join('');
@@ -121,9 +120,14 @@
           return;
         }
         list.innerHTML = verifiers.map(v => {
-          const label = verifierTypeLabel(v.type);
+          // Show optional category + the mock validation result so the reviewer can
+          // judge coverage at a glance (see data.js VERIFIER_CATEGORIES / _VALIDATION).
+          const cat = v.category ? (SBData.VERIFIER_CATEGORIES.find(c => c.id === v.category) || {}) : null;
+          const val = SBData.VERIFIER_VALIDATION[v.validationStatus] || null;
+          const catBadge = cat ? `<span class="text-[10px] px-1.5 py-0.5 rounded font-medium ${cat.color}">${SB.escapeHtml(cat.label)}</span>` : '';
+          const valBadge = val ? `<span class="text-[10px] px-1.5 py-0.5 rounded font-medium ${val.color}">${SB.escapeHtml(val.label)}</span>` : '';
           return `<li class="border border-slate-100 rounded-md p-3">
-            <span class="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-violet-100 text-violet-700">${SB.escapeHtml(label)}</span>
+            <div class="flex flex-wrap items-center gap-1.5">${catBadge}${valBadge}</div>
             <div class="mt-2 text-slate-700">${SB.escapeHtml(v.description)}</div>
           </li>`;
         }).join('');
@@ -150,10 +154,31 @@
 
       function renderActions() {
         const bar = document.getElementById('action-bar');
+        // Permission source of truth (see script.js → taskPermissions). The
+        // Domain Reviewer owns content quality at this stage, so they can EDIT
+        // the Prompter-authored fields inline to fix small issues, instead of
+        // bouncing every typo back. Identity/status/assignees stay locked.
+        const perms = SB.taskPermissions(t, 'domainReviewer');
         if (t.status === 'domain-review') {
           bar.innerHTML = `
+            <button id="btn-edit" type="button" class="px-3 py-1.5 text-sm border border-indigo-200 text-indigo-700 rounded-md hover:bg-indigo-50">Edit task</button>
             <button id="btn-reject" type="button" class="px-3 py-1.5 text-sm border border-slate-200 rounded-md hover:bg-slate-50">Request changes</button>
             <button id="btn-approve" type="button" class="px-3 py-1.5 text-sm rounded-md font-medium bg-emerald-600 hover:bg-emerald-700 text-white">Approve</button>`;
+          document.getElementById('btn-edit').onclick = () => {
+            if (!perms.canEditContent) return;
+            SB.renderEditTaskModal(t, {
+              title: 'Edit task (Domain review)',
+              note: 'You can polish the Prompter\u2019s content before it reaches a Tester. Task name, status and assignees are locked.',
+              // Editable: the Prompter-authored content fields only.
+              fields: ['domain', 'difficulty', 'instructionMd', 'goldenSolution', 'verifiers', 'skills'],
+              onSave: (patch) => {
+                SB.updateTaskFields(t.id, patch, 'Domain Reviewer edited task');
+                Object.assign(t, patch);
+                SB.toast('Task updated.', 'success');
+                refresh();
+              },
+            });
+          };
           document.getElementById('btn-approve').onclick = () => {
             SB.domainReviewerApprove(t.id);
             SB.toast('Domain review approved. Task sent to tester pool.', 'success');
@@ -177,7 +202,7 @@
         statusEl.textContent = st.label;
         document.getElementById('t-meta').innerHTML = [
           `Prompter: <b>${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</b>`,
-          `Domain: <b>${SB.escapeHtml(t.domain || '—')}</b>`,
+          `Domain: <b>${SB.escapeHtml(SBData.domainLabel(t.domain))}</b>`,
           `Difficulty: <b>${SB.escapeHtml(t.difficulty || '—')}</b>`,
         ].join(' &middot; ');
         document.getElementById('instruction-md').textContent = t.instructionMd || '(empty)';

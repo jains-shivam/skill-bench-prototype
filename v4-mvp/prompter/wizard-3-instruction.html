@@ -6,7 +6,7 @@
   <title>Problem - Prompter - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
   <style>
     .md-preview h1 { font-size: 1.25rem; font-weight: 700; margin: 0.5rem 0; }
     .md-preview h2 { font-size: 1.125rem; font-weight: 600; margin: 0.5rem 0; }
@@ -64,19 +64,18 @@
     </div>
     <div class="mt-8 flex justify-between">
       <a id="back" href="wizard-2-skills.html" class="text-sm text-slate-600 hover:text-slate-900">Back</a>
-      <a id="next" href="wizard-4-verifiers.html"
+      <a id="next" href="wizard-4-solution.html"
          class="inline-flex items-center gap-2 px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md font-medium">
-        Next: Verifiers
+        Next: Solution
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
       </a>
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('prompter');
+    if (!SB.requireRole('prompter')) throw 'auth';
     SB.renderNav();
     SB.renderWizardStepper(3, 'prompter');
 
@@ -86,7 +85,7 @@
     }
 
     document.getElementById('back').href = wizHref('wizard-2-skills.html');
-    document.getElementById('next').href = wizHref('wizard-4-verifiers.html');
+    document.getElementById('next').href = wizHref('wizard-4-solution.html');
 
     function renderMd(md) {
       const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

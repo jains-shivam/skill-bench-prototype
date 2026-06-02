@@ -6,7 +6,7 @@
   <title>Context - Tester - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
@@ -25,9 +25,17 @@
           <div id="t-meta" class="text-xs text-slate-500 mt-2 flex flex-wrap gap-2"></div>
           <div id="skills-tags" class="mt-3 flex flex-wrap gap-1.5"></div>
         </div>
-        <button id="pickup-btn" type="button" class="hidden px-4 py-2 text-sm font-medium rounded-md bg-emerald-600 hover:bg-emerald-700 text-white">
-          Pick up task
-        </button>
+        <div class="flex flex-col items-end gap-2">
+          <button id="pickup-btn" type="button" class="hidden px-4 py-2 text-sm font-medium rounded-md bg-emerald-600 hover:bg-emerald-700 text-white">
+            Pick up task
+          </button>
+          <!-- Tester actions: minor fixes inline, or send the spec back if broken.
+               Shown only once the task is picked up (the tester owns it). -->
+          <div id="tester-actions" class="hidden flex gap-2">
+            <button id="edit-btn" type="button" class="px-3 py-1.5 text-sm border border-slate-200 rounded-md hover:bg-slate-50">Edit (minor)</button>
+            <button id="sendback-btn" type="button" class="px-3 py-1.5 text-sm border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50">Send back</button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -59,11 +67,10 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('tester');
+    if (!SB.requireRole('tester')) throw 'auth';
     SB.renderNav();
     SB.renderWizardStepper(1, 'tester');
 
@@ -84,7 +91,7 @@
     document.getElementById('t-title').textContent = t.name || 'Untitled task';
     document.getElementById('t-desc').textContent = t.description || '';
     document.getElementById('t-meta').innerHTML = [
-      `<span class="px-2 py-0.5 rounded bg-slate-100">Domain: <b>${SB.escapeHtml(t.domain || '—')}</b></span>`,
+      `<span class="px-2 py-0.5 rounded bg-slate-100">Domain: <b>${SB.escapeHtml(SBData.domainLabel(t.domain))}</b></span>`,
       `<span class="px-2 py-0.5 rounded bg-slate-100">Difficulty: <b>${SB.escapeHtml(t.difficulty || 'medium')}</b></span>`,
       t.prompter ? `<span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">Prompter: ${SB.escapeHtml(t.prompter.name)}</span>` : '',
     ].filter(Boolean).join(' ');
@@ -97,10 +104,15 @@
     if (!verifiers.length) {
       verList.innerHTML = '<li class="text-xs text-slate-400 italic">No verifiers defined.</li>';
     } else {
+      // Render with the shared category + (mock) validation badge model so the
+      // tester sees the same verifier state as reviewers do.
       verList.innerHTML = verifiers.map(v => {
-        const label = verifierTypeLabel(v.type);
+        const cat = v.category ? (SBData.VERIFIER_CATEGORIES.find(c => c.id === v.category) || {}) : null;
+        const val = SBData.VERIFIER_VALIDATION[v.validationStatus] || null;
+        const catBadge = cat && cat.label ? `<span class="text-[10px] px-1.5 py-0.5 rounded font-medium ${cat.color}">${SB.escapeHtml(cat.label)}</span>` : '';
+        const valBadge = val ? `<span class="text-[10px] px-1.5 py-0.5 rounded font-medium ${val.color}">${SB.escapeHtml(val.label)}</span>` : '';
         return `<li class="border border-slate-100 rounded-md p-3">
-          <span class="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">${SB.escapeHtml(label)}</span>
+          <div class="flex flex-wrap items-center gap-1.5">${catBadge}${valBadge}</div>
           <div class="mt-2 text-slate-700">${SB.escapeHtml(v.description)}</div>
         </li>`;
       }).join('');
@@ -127,23 +139,52 @@
       skillsMount.innerHTML = skillIds.map(sid => {
         const sk = SBData.skillsLibrary.find(s => s.id === sid);
         if (!sk) return '';
-        const dom = SBData.skillDomains.find(d => d.id === sk.domain);
+        const dom = SBData.getDomain(SBData.skillDomainIds(sk)[0]);
         const cls = dom ? dom.color : 'bg-slate-100 text-slate-700';
         return `<span class="text-xs px-2 py-0.5 rounded ${cls}">${SB.escapeHtml(sk.name)}</span>`;
       }).join('');
     }
 
     const pickupBtn = document.getElementById('pickup-btn');
-    if (!t.tester) {
-      pickupBtn.classList.remove('hidden');
-      pickupBtn.onclick = () => {
-        SB.pickUpTask(t.id);
-        t.tester = SBData.users.tester;
-        SB.saveWizardTaskToSession(t);
-        pickupBtn.classList.add('hidden');
-        SB.toast('Task picked up.', 'success');
-      };
+    const testerActions = document.getElementById('tester-actions');
+    function showActionsIfOwned() {
+      if (t.tester) { testerActions.classList.remove('hidden'); pickupBtn.classList.add('hidden'); }
+      else { testerActions.classList.add('hidden'); pickupBtn.classList.remove('hidden'); }
     }
+    showActionsIfOwned();
+    pickupBtn.onclick = () => {
+      SB.pickUpTask(t.id);
+      t.tester = SBData.users.tester;
+      SB.saveWizardTaskToSession(t);
+      SB.toast('Task picked up.', 'success');
+      showActionsIfOwned();
+    };
+
+    // Minor inline fixes only — testers fix small spec text issues here; for
+    // substantive problems they use "Send back" instead (see taskPermissions).
+    document.getElementById('edit-btn').onclick = () => {
+      SB.renderEditTaskModal(t, {
+        title: 'Edit task (minor fixes)',
+        note: 'Use this for small wording/typo fixes only. If the golden solution or verifiers are fundamentally wrong, use "Send back" instead.',
+        fields: ['instructionMd', 'verifiers'],
+        onSave: (patch) => {
+          Object.assign(t, patch);
+          if (t.id && SBData.getTaskById(t.id)) SB.updateTaskFields(t.id, patch, 'Tester made a minor fix');
+          SB.saveWizardTaskToSession(t);
+          SB.toast('Saved.', 'success');
+          location.reload();
+        },
+      });
+    };
+
+    // Send the task back to the author when the spec itself is broken.
+    document.getElementById('sendback-btn').onclick = () => {
+      SB.renderSendBackModal(t, ({ target, outcome, reason }) => {
+        SB.testerSendBack(t, { target, outcome, reason });
+        SB.toast('Task sent back to ' + (target === 'prompter' ? 'Prompter' : 'Domain Reviewer') + '.', 'success');
+        setTimeout(() => { location.href = 'queue.html'; }, 700);
+      });
+    };
 
     const nextHref = 'wizard-3-solution.html' + (id ? '?id=' + encodeURIComponent(id) : '');
     document.getElementById('next').href = nextHref;

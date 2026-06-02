@@ -6,7 +6,7 @@
   <title>Test queue - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
@@ -22,13 +22,17 @@
       <span>&rarr;</span>
       <span class="px-2 py-1 rounded bg-amber-100 text-amber-700">Task Reviewer</span>
     </div>
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
       <div class="tab-bar">
         <button data-tab="available" class="active">Available <span id="cnt-avail" class="text-xs bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
-        <button data-tab="mine">My tasks <span id="cnt-mine" class="text-xs bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
+        <button data-tab="mine">In progress <span id="cnt-mine" class="text-xs bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
+        <button data-tab="rework">Rework <span id="cnt-rework" class="text-xs bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
         <button data-tab="submitted">Submitted <span id="cnt-sub" class="text-xs bg-slate-100 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
       </div>
-      <input id="search" type="text" placeholder="Search..." class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg w-48 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400">
+      <div class="flex items-center gap-2">
+        <select id="filter-domain" class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-200"><option value="">All domains</option></select>
+        <input id="search" type="text" placeholder="Search..." class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg w-48 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400">
+      </div>
     </div>
     <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
       <table class="w-full text-sm">
@@ -53,29 +57,39 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('tester');
+    if (!SB.requireRole('tester')) throw 'auth';
     SB.renderNav();
-    const me = SBData.users.tester;
+    // Use the logged-in user (multi-role aware), falling back to the canonical tester.
+    const me = SBData.allUsers.find(u => u.id === (SB.getSession() || {}).userId) || SBData.users.tester;
+    // Tabs: Available (unclaimed) | In progress (claimed, active) | Rework (claimed,
+    // tester-targeted changes) | Submitted (sent on for review). Rework is split out
+    // so the tester immediately sees what was bounced back to them.
     const FILTERS = {
       available: t => t.status === 'with-tester' && !t.tester,
-      mine: t => t.tester && t.tester.id === me.id && (t.status === 'with-tester' || t.status === 'changes-requested'),
+      mine:      t => t.tester && t.tester.id === me.id && t.status === 'with-tester',
+      rework:    t => t.tester && t.tester.id === me.id && t.status === 'changes-requested' && t.changesTarget === 'tester',
       submitted: t => t.tester && t.tester.id === me.id && ['in-review','approved','published'].includes(t.status),
     };
+    const domainSel = document.getElementById('filter-domain');
+    SBData.skillDomains.forEach(d => { domainSel.innerHTML += '<option value="' + d.id + '">' + SB.escapeHtml(d.name) + '</option>'; });
+
     function counts() {
       document.getElementById('cnt-avail').textContent = SBData.tasks.filter(FILTERS.available).length;
       document.getElementById('cnt-mine').textContent = SBData.tasks.filter(FILTERS.mine).length;
+      document.getElementById('cnt-rework').textContent = SBData.tasks.filter(FILTERS.rework).length;
       document.getElementById('cnt-sub').textContent = SBData.tasks.filter(FILTERS.submitted).length;
     }
     counts();
     function render(tab) {
       var q = (document.getElementById('search').value || '').trim().toLowerCase();
+      var dom = domainSel.value;
       const list = SBData.tasks.filter(function(t) {
         if (!FILTERS[tab](t)) return false;
-        if (q && !(t.name + ' ' + t.description + ' ' + (t.domain || '')).toLowerCase().includes(q)) return false;
+        if (dom && t.domain !== dom) return false;
+        if (q && !(t.name + ' ' + t.description + ' ' + SBData.domainLabel(t.domain)).toLowerCase().includes(q)) return false;
         return true;
       });
       const tbody = document.getElementById('rows');
@@ -87,14 +101,17 @@
         let cta = '';
         if (tab === 'available') cta = '<span class="text-xs font-medium text-emerald-600">Pick up &rarr;</span>';
         else if (tab === 'mine') cta = '<span class="text-xs font-medium text-indigo-600">Continue &rarr;</span>';
+        else if (tab === 'rework') cta = '<span class="text-xs font-medium text-amber-600">Fix &rarr;</span>';
         else cta = '<span class="text-xs text-slate-500">View &rarr;</span>';
+        const reworkNote = (tab === 'rework' && t.reworkReason) ? `<div class="mt-1 text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-2 py-1">Rework: ${SB.escapeHtml(t.reworkReason)}${t.reworkRequestedBy ? ' — ' + SB.escapeHtml(t.reworkRequestedBy) : ''}</div>` : '';
         tr.innerHTML = `
           <td class="px-4 py-3">
             <div class="font-medium font-mono">${SB.escapeHtml(t.name)}</div>
             <div class="text-xs text-slate-500">${SB.escapeHtml(t.description)}</div>
+            ${reworkNote}
           </td>
           <td class="px-4 py-3">${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</td>
-          <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-slate-100">${SB.escapeHtml(t.domain)}</span></td>
+          <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-slate-100">${SB.escapeHtml(SBData.domainLabel(t.domain))}</span></td>
           <td class="px-4 py-3 text-slate-500">${SB.escapeHtml(t.updatedAt)}</td>
           <td class="px-2 py-3 text-right">${cta}</td>`;
         tr.style.cursor = 'pointer';
@@ -121,6 +138,7 @@
       });
     });
     document.getElementById('search').addEventListener('input', function() { render(activeTab); });
+    domainSel.addEventListener('change', function() { render(activeTab); });
   </script>
 </body>
 </html>

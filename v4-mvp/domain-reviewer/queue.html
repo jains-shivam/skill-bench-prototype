@@ -6,7 +6,7 @@
   <title>Domain review queue - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
@@ -16,7 +16,8 @@
       <span id="count-badge" class="text-xs bg-violet-100 text-violet-700 rounded-full px-2 py-0.5 font-medium">0</span>
     </div>
     <p class="text-sm text-slate-500 mt-1">Review problem statements, verifiers, and golden solutions from Prompters before tasks enter the tester pool.</p>
-    <div class="flex items-center gap-3 mt-5 mb-4">
+    <div id="tabs" class="flex flex-wrap gap-1.5 mt-5 mb-3"></div>
+    <div class="flex items-center gap-3 mb-4">
       <input id="search" type="text" placeholder="Search tasks..." class="px-3 py-2 text-sm border border-slate-300 rounded-lg w-64 focus:ring-2 focus:ring-violet-200 focus:border-violet-400">
       <select id="filter-domain" class="px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-violet-200">
         <option value="">All domains</option>
@@ -42,26 +43,50 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('domainReviewer');
+    if (!SB.requireRole('domainReviewer')) throw 'auth';
     SB.renderNav();
 
     var search = document.getElementById('search');
     var domainSel = document.getElementById('filter-domain');
+    var tabsEl = document.getElementById('tabs');
     SBData.skillDomains.forEach(function(d) {
       domainSel.innerHTML += '<option value="' + d.id + '">' + SB.escapeHtml(d.name) + '</option>';
     });
 
+    // Pending = awaiting this reviewer's decision. Rework = tasks this reviewer
+    // returned to the prompter for changes (kept separate so the active queue
+    // stays focused on actionable items).
+    var TABS = [
+      { id: 'pending', label: 'Pending review', match: function(t) { return t.status === 'domain-review'; } },
+      { id: 'rework',  label: 'Returned for rework', match: function(t) { return t.status === 'changes-requested' && t.changesTarget === 'prompter'; } },
+    ];
+    var activeTab = 'pending';
+
+    function countFor(id) { var tab = TABS.find(function(x){return x.id===id;}); return SBData.tasks.filter(tab.match).length; }
+
+    function renderTabs() {
+      tabsEl.innerHTML = TABS.map(function(tab) {
+        var active = tab.id === activeTab;
+        var isRework = tab.id === 'rework';
+        var cnt = countFor(tab.id);
+        var cls = active ? (isRework ? 'bg-amber-600 text-white' : 'bg-violet-600 text-white')
+                         : (isRework && cnt > 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50');
+        return '<button data-tab="' + tab.id + '" class="px-3 py-1.5 text-xs font-medium rounded-full ' + cls + '">' + tab.label + '<span class="ml-1 opacity-70">' + cnt + '</span></button>';
+      }).join('');
+      tabsEl.querySelectorAll('[data-tab]').forEach(function(b) { b.addEventListener('click', function() { activeTab = b.dataset.tab; renderTabs(); render(); }); });
+    }
+
     function render() {
       var q = search.value.trim().toLowerCase();
       var dom = domainSel.value;
+      var tab = TABS.find(function(x){return x.id===activeTab;});
       var list = SBData.tasks.filter(function(t) {
-        if (t.status !== 'domain-review') return false;
+        if (!tab.match(t)) return false;
         if (dom && t.domain !== dom) return false;
-        if (q && !(t.name + ' ' + t.description + ' ' + (t.domain || '')).toLowerCase().includes(q)) return false;
+        if (q && !(t.name + ' ' + t.description + ' ' + SBData.domainLabel(t.domain)).toLowerCase().includes(q)) return false;
         return true;
       });
       document.getElementById('count-badge').textContent = list.length;
@@ -69,19 +94,22 @@
       tbody.innerHTML = '';
       document.getElementById('empty').classList.toggle('hidden', list.length > 0);
       list.forEach(function(t) {
+        var isRework = activeTab === 'rework';
+        var reworkNote = (isRework && t.reworkReason) ? '<div class="mt-1 text-[11px] text-amber-700">Sent back: ' + SB.escapeHtml(t.reworkReason) + '</div>' : '';
         var tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 cursor-pointer';
-        tr.innerHTML = '<td class="px-4 py-3"><div class="font-medium font-mono text-slate-900">' + SB.escapeHtml(t.name) + '</div><div class="text-xs text-slate-500 mt-0.5">' + SB.escapeHtml(t.description) + '</div></td>' +
+        tr.innerHTML = '<td class="px-4 py-3"><div class="font-medium font-mono text-slate-900">' + SB.escapeHtml(t.name) + '</div><div class="text-xs text-slate-500 mt-0.5">' + SB.escapeHtml(t.description) + '</div>' + reworkNote + '</td>' +
           '<td class="px-4 py-3">' + SB.escapeHtml(t.prompter ? t.prompter.name : '—') + '</td>' +
-          '<td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-slate-100">' + SB.escapeHtml(t.domain || '—') + '</span></td>' +
+          '<td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded bg-slate-100">' + SB.escapeHtml(SBData.domainLabel(t.domain)) + '</span></td>' +
           '<td class="px-4 py-3 text-slate-500">' + SB.escapeHtml(t.updatedAt) + '</td>' +
-          '<td class="px-2 py-3 text-right text-xs text-violet-600 font-medium">Review &rarr;</td>';
+          '<td class="px-2 py-3 text-right text-xs text-violet-600 font-medium">' + (isRework ? 'View' : 'Review') + ' &rarr;</td>';
         tr.onclick = function() { location.href = 'workspace.html?id=' + encodeURIComponent(t.id); };
         tbody.appendChild(tr);
       });
     }
     search.addEventListener('input', render);
     domainSel.addEventListener('change', render);
+    renderTabs();
     render();
   </script>
 </body>

@@ -3,63 +3,85 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Skills - Skill Bench</title>
+  <title>Skills Catalog - Skill Bench</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
   <main class="max-w-7xl">
     <div class="flex items-end justify-between mb-6">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight">Skills catalog</h1>
-        <p class="text-sm text-slate-500 mt-1">Manage skills used for task tagging</p>
+        <h1 class="text-2xl font-bold tracking-tight">Skills Catalog</h1>
+        <p class="text-sm text-slate-500 mt-1">Manage skill domains and individual skills used in task tagging</p>
       </div>
       <div class="flex items-center gap-2">
-        <label class="px-3 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg flex items-center gap-1.5 cursor-pointer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-          Import
-          <input id="skills-file-upload" type="file" accept=".csv,.json,.txt" class="hidden">
-        </label>
-        <button onclick="openSkillModal()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">+ Add skill</button>
+        <button id="btn-add-skill" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>
+          Add skill
+        </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-[14rem_1fr] gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-4">
+      <!-- Domains panel -->
       <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-200 font-semibold text-sm flex items-center justify-between">
-          <span>Domains</span>
-          <button onclick="openDomainModal()" class="text-indigo-600 hover:text-indigo-700 text-xs font-medium">+ Add</button>
+        <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+          <span class="font-semibold text-sm">Domains</span>
+          <button id="btn-add-domain" class="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-0.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><path d="M12 5v14M5 12h14"/></svg>
+            Add
+          </button>
         </div>
         <div id="domains-list" class="divide-y divide-slate-100"></div>
       </div>
+
+      <!-- Skills panel -->
       <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
-        <div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+        <div class="px-5 py-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
           <div class="font-semibold text-sm" id="skills-title">All skills</div>
           <div class="flex items-center gap-3">
-            <input type="text" id="skill-search" placeholder="Search skills..." class="px-3 py-1.5 text-xs border border-slate-300 rounded-lg w-40 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            <div class="relative">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="skill-search" type="text" placeholder="Search skills..." class="pl-8 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-44">
+            </div>
             <span class="text-xs text-slate-500" id="skills-count"></span>
           </div>
         </div>
         <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="text-left px-4 py-2.5">Skill</th><th class="text-left px-4 py-2.5">Domain</th><th class="text-left px-4 py-2.5">Tags</th><th class="text-right px-4 py-2.5">Actions</th></tr></thead>
+          <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+            <tr><th class="text-left px-4 py-2.5">Skill</th><th class="text-left px-4 py-2.5">Domains</th><th class="text-left px-4 py-2.5">Tags</th><th class="text-right px-4 py-2.5">Actions</th></tr>
+          </thead>
           <tbody id="skills-tbody" class="divide-y divide-slate-100"></tbody>
         </table>
-        <div id="empty-skills" class="hidden p-8 text-center text-sm text-slate-500">No skills found.</div>
       </div>
     </div>
   </main>
 
   <!-- Domain Modal -->
-  <div id="domain-modal" class="modal-overlay" hidden>
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-      <h3 id="domain-modal-title" class="text-lg font-semibold mb-4">Add domain</h3>
-      <div class="space-y-3">
-        <div><label class="block text-xs font-medium text-slate-600 mb-1">Domain ID (key)</label><input id="dm-id" type="text" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg" placeholder="e.g. machine-learning"></div>
-        <div><label class="block text-xs font-medium text-slate-600 mb-1">Name</label><input id="dm-name" type="text" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg" placeholder="e.g. Machine Learning"></div>
-        <div><label class="block text-xs font-medium text-slate-600 mb-1">Color</label>
-          <select id="dm-color" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+  <div id="domain-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h3 id="domain-modal-title" class="font-semibold text-lg">Add domain</h3>
+        <button id="domain-modal-close" class="text-slate-400 hover:text-slate-600">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="domain-form" class="px-6 py-5 space-y-4">
+        <input type="hidden" id="domain-edit-id" value="">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">ID / key</label>
+          <input id="domain-field-id" type="text" required placeholder="e.g. python" pattern="[a-z0-9-]+" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono">
+          <p class="text-[11px] text-slate-500 mt-1">Lowercase letters, numbers, and hyphens only</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+          <input id="domain-field-name" type="text" required placeholder="e.g. Python" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Color</label>
+          <select id="domain-field-color" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
             <option value="bg-indigo-100 text-indigo-700">Indigo</option>
             <option value="bg-emerald-100 text-emerald-700">Emerald</option>
             <option value="bg-amber-100 text-amber-700">Amber</option>
@@ -69,239 +91,474 @@
             <option value="bg-slate-100 text-slate-700">Slate</option>
           </select>
         </div>
-      </div>
-      <div class="flex justify-end gap-2 mt-5">
-        <button onclick="closeDomainModal()" class="px-3 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
-        <button onclick="saveDomain()" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium">Save</button>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+          <textarea id="domain-field-desc" rows="3" placeholder="Brief description of this domain..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+        </div>
+      </form>
+      <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-2">
+        <button id="domain-modal-cancel" type="button" class="px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
+        <button id="domain-modal-save" type="button" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">Save</button>
       </div>
     </div>
   </div>
 
   <!-- Skill Modal -->
-  <div id="skill-modal" class="modal-overlay" hidden>
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-      <h3 id="skill-modal-title" class="text-lg font-semibold mb-4">Add skill</h3>
-      <div class="space-y-3">
-        <div><label class="block text-xs font-medium text-slate-600 mb-1">Name</label><input id="sk-name" type="text" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg" placeholder="e.g. Neural Networks"></div>
-        <div><label class="block text-xs font-medium text-slate-600 mb-1">Domain</label>
-          <select id="sk-domain" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"></select>
-        </div>
-        <div><label class="block text-xs font-medium text-slate-600 mb-1">Description</label><input id="sk-desc" type="text" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg" placeholder="Brief description"></div>
-        <div><label class="block text-xs font-medium text-slate-600 mb-1">Tags (comma-separated)</label><input id="sk-tags" type="text" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg" placeholder="tag1, tag2"></div>
+  <div id="skill-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h3 id="skill-modal-title" class="font-semibold text-lg">Add skill</h3>
+        <button id="skill-modal-close" class="text-slate-400 hover:text-slate-600">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
-      <div class="flex justify-end gap-2 mt-5">
-        <button onclick="closeSkillModal()" class="px-3 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
-        <button onclick="saveSkill()" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium">Save</button>
+      <form id="skill-form" class="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+        <input type="hidden" id="skill-edit-id" value="">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+          <input id="skill-field-name" type="text" required placeholder="e.g. Parse CSV safely" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+          <!-- MULTI-DOMAIN: a skill can belong to several domains (many-to-many). -->
+          <label class="block text-sm font-medium text-slate-700 mb-1">Domains <span class="text-slate-400 font-normal">(select one or more)</span></label>
+          <div id="skill-field-domains" class="max-h-36 overflow-y-auto border border-slate-300 rounded-lg p-2 grid grid-cols-2 gap-1"></div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+          <textarea id="skill-field-desc" rows="3" placeholder="What this skill covers..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Tags</label>
+          <input id="skill-field-tags" type="text" placeholder="e.g. python, pandas, io" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <p class="text-[11px] text-slate-500 mt-1">Comma-separated list</p>
+        </div>
+        <div>
+          <!-- Skill file attachment lives INSIDE the Add Skill flow (not a global import).
+               Product rule: this file is REQUIRED. It is the skill definition that
+               documents how the skill should be applied; reviewers/testers read it
+               via "View skill". We store the raw text in file.content so View can
+               render it. (A real impl would upload the file and store a URL.) -->
+          <label class="block text-sm font-medium text-slate-700 mb-1">Skill file <span class="text-rose-500 font-normal">(required)</span></label>
+          <label id="skill-file-drop" class="flex items-center gap-2 px-3 py-2.5 text-sm border border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-slate-50 transition-colors text-slate-500">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            <span id="skill-file-label">Attach a skill definition (.md, .txt, .json, .yaml)</span>
+            <input id="skill-field-file" type="file" accept=".md,.txt,.json,.yaml,.yml" class="hidden">
+          </label>
+          <div id="skill-file-chosen" class="hidden mt-2 flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+            <span class="truncate text-slate-700" id="skill-file-name"></span>
+            <button type="button" id="skill-file-remove" class="text-red-600 hover:text-red-700 font-medium shrink-0">Remove</button>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1">Defines what "good" looks like for this skill. Viewable from the catalog. Required for every skill.</p>
+        </div>
+      </form>
+      <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-2">
+        <button id="skill-modal-cancel" type="button" class="px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
+        <button id="skill-modal-save" type="button" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Skill modal: read-only inspection incl. the uploaded skill file content -->
+  <div id="view-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h3 id="view-modal-title" class="font-semibold text-lg">Skill</h3>
+        <button id="view-modal-close" class="text-slate-400 hover:text-slate-600">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="px-6 py-5 space-y-4 overflow-y-auto scroll-y">
+        <div>
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-1">Description</div>
+          <p id="view-desc" class="text-sm text-slate-700"></p>
+        </div>
+        <div>
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-1">Domains</div>
+          <div id="view-domains" class="flex flex-wrap gap-1"></div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-1">Tags</div>
+          <div id="view-tags" class="flex flex-wrap gap-1"></div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold uppercase text-slate-500 mb-1 flex items-center justify-between">
+            <span>Skill file</span>
+            <span id="view-file-name" class="font-mono normal-case text-[11px] text-slate-400"></span>
+          </div>
+          <pre id="view-file-content" class="text-xs text-slate-700 whitespace-pre-wrap bg-slate-50 border border-slate-200 rounded-lg p-3 max-h-72 overflow-y-auto scroll-y"></pre>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-slate-200 flex justify-end">
+        <button id="view-modal-done" type="button" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">Done</button>
       </div>
     </div>
   </div>
 
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('admin');
+    if (!SB.requireRole('admin')) throw 'auth';
     SB.renderNav();
 
+    const DOMAIN_COLORS = [
+      'bg-indigo-100 text-indigo-700',
+      'bg-emerald-100 text-emerald-700',
+      'bg-amber-100 text-amber-700',
+      'bg-purple-100 text-purple-700',
+      'bg-cyan-100 text-cyan-700',
+      'bg-rose-100 text-rose-700',
+      'bg-slate-100 text-slate-700',
+    ];
+
     let activeDomain = null;
-    let editingDomain = null;
-    let editingSkill = null;
+    const domainsList = document.getElementById('domains-list');
+    const skillsTitle = document.getElementById('skills-title');
+    const skillsCount = document.getElementById('skills-count');
+    const skillsTbody = document.getElementById('skills-tbody');
+    const skillSearch = document.getElementById('skill-search');
 
-    function render() {
-      const q = (document.getElementById('skill-search').value || '').trim().toLowerCase();
-      const dl = document.getElementById('domains-list');
-      dl.innerHTML = '';
-      const allBtn = document.createElement('button');
-      allBtn.className = 'w-full text-left px-4 py-3 text-sm hover:bg-slate-50 flex items-center justify-between' + (!activeDomain ? ' bg-indigo-50 text-indigo-700 font-medium' : ' text-slate-700');
-      allBtn.innerHTML = '<span>All</span><span class="text-xs text-slate-400">' + SBData.skillsLibrary.length + '</span>';
-      allBtn.onclick = function() { activeDomain = null; render(); };
-      dl.appendChild(allBtn);
-      SBData.skillDomains.forEach(function(d) {
-        var c = SBData.getSkillsByDomain(d.id).length;
-        var b = document.createElement('div');
-        b.className = 'flex items-center justify-between px-4 py-3 text-sm hover:bg-slate-50 cursor-pointer' + (activeDomain === d.id ? ' bg-indigo-50 text-indigo-700 font-medium' : ' text-slate-700');
-        b.innerHTML = '<span onclick="activeDomain=\'' + d.id + '\';render()">' + SB.escapeHtml(d.name) + '</span><div class="flex items-center gap-2"><span class="text-xs text-slate-400">' + c + '</span><button onclick="editDomain(\'' + d.id + '\')" class="text-slate-400 hover:text-indigo-600 text-xs">Edit</button><button onclick="deleteDomain(\'' + d.id + '\')" class="text-slate-400 hover:text-red-600 text-xs">Del</button></div>';
-        dl.appendChild(b);
+    // Domain modal elements
+    const domainOverlay = document.getElementById('domain-modal-overlay');
+    const domainModalTitle = document.getElementById('domain-modal-title');
+    const domainEditId = document.getElementById('domain-edit-id');
+    const domainFieldId = document.getElementById('domain-field-id');
+    const domainFieldName = document.getElementById('domain-field-name');
+    const domainFieldColor = document.getElementById('domain-field-color');
+    const domainFieldDesc = document.getElementById('domain-field-desc');
+
+    // Skill modal elements
+    const skillOverlay = document.getElementById('skill-modal-overlay');
+    const skillModalTitle = document.getElementById('skill-modal-title');
+    const skillEditId = document.getElementById('skill-edit-id');
+    const skillFieldName = document.getElementById('skill-field-name');
+    const skillFieldDomains = document.getElementById('skill-field-domains');
+    const skillFieldDesc = document.getElementById('skill-field-desc');
+    const skillFieldTags = document.getElementById('skill-field-tags');
+    const skillFieldFile = document.getElementById('skill-field-file');
+    const skillFileChosen = document.getElementById('skill-file-chosen');
+    const skillFileName = document.getElementById('skill-file-name');
+    // { name, size, content } captured from the modal file input. `content` holds
+    // the raw text so the "View skill" modal can render the uploaded definition.
+    let skillFile = null;
+
+    function openOverlay(el) {
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+    }
+    function closeOverlay(el) {
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    }
+
+    // Render the multi-domain checkbox group; pre-check any selected domain ids.
+    function populateDomainCheckboxes(selectedIds) {
+      selectedIds = selectedIds || [];
+      skillFieldDomains.innerHTML = '';
+      SBData.skillDomains.forEach(d => {
+        const checked = selectedIds.includes(d.id) ? 'checked' : '';
+        const label = document.createElement('label');
+        label.className = 'flex items-center gap-1.5 text-xs text-slate-700 px-1.5 py-1 rounded hover:bg-slate-50 cursor-pointer';
+        label.innerHTML = `<input type="checkbox" value="${SB.escapeHtml(d.id)}" ${checked} class="skill-domain-cb rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"><span class="truncate">${SB.escapeHtml(d.name)}</span>`;
+        skillFieldDomains.appendChild(label);
+      });
+    }
+    function getSelectedDomains() {
+      return Array.from(skillFieldDomains.querySelectorAll('.skill-domain-cb:checked')).map(cb => cb.value);
+    }
+
+    function renderDomains() {
+      domainsList.innerHTML = '';
+      const allItem = document.createElement('button');
+      allItem.type = 'button';
+      allItem.className = 'w-full text-left px-4 py-3 text-sm hover:bg-slate-50 flex items-center justify-between' + (!activeDomain ? ' bg-indigo-50 text-indigo-700 font-medium' : ' text-slate-700');
+      allItem.innerHTML = `<span>All domains</span><span class="text-xs text-slate-400">${SBData.skillsLibrary.length}</span>`;
+      allItem.addEventListener('click', () => { activeDomain = null; renderDomains(); renderSkills(); });
+      domainsList.appendChild(allItem);
+
+      SBData.skillDomains.forEach(d => {
+        const count = SBData.getSkillsByDomain(d.id).length;
+        const row = document.createElement('div');
+        row.className = 'flex items-stretch' + (activeDomain === d.id ? ' bg-indigo-50' : '');
+
+        const selectBtn = document.createElement('button');
+        selectBtn.type = 'button';
+        selectBtn.className = 'flex-1 text-left px-4 py-3 text-sm hover:bg-slate-50 flex items-center gap-2 min-w-0' + (activeDomain === d.id ? ' text-indigo-700 font-medium' : ' text-slate-700');
+        selectBtn.innerHTML = `<span class="text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${d.color}">${SB.escapeHtml(d.id)}</span><span class="truncate">${SB.escapeHtml(d.name)}</span><span class="text-xs ml-auto shrink-0 ${activeDomain === d.id ? 'text-indigo-500' : 'text-slate-400'}">${count}</span>`;
+        selectBtn.addEventListener('click', () => { activeDomain = d.id; renderDomains(); renderSkills(); });
+
+        const actions = document.createElement('div');
+        actions.className = 'flex items-center gap-1 px-2 border-l border-slate-100';
+        actions.innerHTML = `
+          <button type="button" data-id="${SB.escapeHtml(d.id)}" class="domain-edit-btn p-1 text-slate-400 hover:text-indigo-600" title="Edit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button type="button" data-id="${SB.escapeHtml(d.id)}" class="domain-delete-btn p-1 text-slate-400 hover:text-red-600" title="Delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>`;
+
+        row.appendChild(selectBtn);
+        row.appendChild(actions);
+        domainsList.appendChild(row);
       });
 
-      var skills = activeDomain ? SBData.getSkillsByDomain(activeDomain) : SBData.skillsLibrary;
-      if (q) skills = skills.filter(function(s) { return (s.name + ' ' + s.id + ' ' + (s.desc || '')).toLowerCase().includes(q); });
-      document.getElementById('skills-title').textContent = (activeDomain ? (SBData.skillDomains.find(function(d) { return d.id === activeDomain; }) || {}).name || activeDomain : 'All') + ' skills';
-      document.getElementById('skills-count').textContent = skills.length + ' skills';
-      var tb = document.getElementById('skills-tbody');
-      tb.innerHTML = '';
-      document.getElementById('empty-skills').classList.toggle('hidden', skills.length > 0);
-      skills.forEach(function(s) {
-        var dom = SBData.skillDomains.find(function(d) { return d.id === s.domain; });
-        var tagsHtml = (s.tags || []).slice(0, 3).map(function(t) { return '<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">' + SB.escapeHtml(t) + '</span>'; }).join(' ');
-        var tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50';
-        tr.innerHTML = '<td class="px-4 py-2.5 text-xs font-medium">' + SB.escapeHtml(s.name) + (s.desc ? '<div class="text-[10px] text-slate-400 mt-0.5">' + SB.escapeHtml(s.desc) + '</div>' : '') + '</td><td class="px-4 py-2.5"><span class="text-[10px] px-2 py-0.5 rounded font-medium ' + (dom ? dom.color : 'bg-slate-100 text-slate-600') + '">' + (dom ? dom.name : s.domain) + '</span></td><td class="px-4 py-2.5"><div class="flex flex-wrap gap-1">' + (tagsHtml || '<span class="text-[10px] text-slate-400">—</span>') + '</div></td><td class="px-4 py-2.5 text-right"><button onclick="editSkill(\'' + s.id + '\')" class="text-xs text-indigo-600 hover:text-indigo-700 mr-2">Edit</button><button onclick="deleteSkill(\'' + s.id + '\')" class="text-xs text-red-600 hover:text-red-700">Delete</button></td>';
-        tb.appendChild(tr);
+      document.querySelectorAll('.domain-edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); openEditDomainModal(btn.dataset.id); });
+      });
+      document.querySelectorAll('.domain-delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); deleteDomain(btn.dataset.id); });
       });
     }
 
-    document.getElementById('skill-search').addEventListener('input', render);
-
-    function openDomainModal(domain) {
-      editingDomain = domain || null;
-      document.getElementById('domain-modal-title').textContent = domain ? 'Edit domain' : 'Add domain';
-      document.getElementById('dm-id').value = domain ? domain.id : '';
-      document.getElementById('dm-id').disabled = !!domain;
-      document.getElementById('dm-name').value = domain ? domain.name : '';
-      document.getElementById('dm-color').value = domain ? domain.color : 'bg-indigo-100 text-indigo-700';
-      document.getElementById('domain-modal').hidden = false;
+    function getFilteredSkills() {
+      let skills = activeDomain ? SBData.getSkillsByDomain(activeDomain) : SBData.skillsLibrary.slice();
+      const query = skillSearch.value.toLowerCase().trim();
+      if (query) skills = skills.filter(s => s.name.toLowerCase().includes(query) || s.id.toLowerCase().includes(query));
+      return skills;
     }
-    function closeDomainModal() { document.getElementById('domain-modal').hidden = true; editingDomain = null; }
-    function saveDomain() {
-      var id = document.getElementById('dm-id').value.trim();
-      var name = document.getElementById('dm-name').value.trim();
-      var color = document.getElementById('dm-color').value;
-      if (!id || !name) { SB.toast('ID and name are required', 'error'); return; }
-      if (editingDomain) {
-        editingDomain.name = name;
-        editingDomain.color = color;
-        SB.toast('Domain updated', 'success');
-      } else {
-        if (SBData.skillDomains.find(function(d) { return d.id === id; })) { SB.toast('Domain ID already exists', 'error'); return; }
-        SBData.skillDomains.push({ id: id, name: name, color: color });
-        SB.toast('Domain added', 'success');
+
+    function renderSkills() {
+      const skills = getFilteredSkills();
+      const domainLabel = activeDomain ? SBData.skillDomains.find(d => d.id === activeDomain)?.name : 'All';
+      skillsTitle.textContent = domainLabel + ' skills';
+      const total = activeDomain ? SBData.getSkillsByDomain(activeDomain).length : SBData.skillsLibrary.length;
+      skillsCount.textContent = skills.length === total ? total + ' skills' : skills.length + ' of ' + total + ' skills';
+      skillsTbody.innerHTML = '';
+
+      if (!skills.length) {
+        skillsTbody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-xs text-slate-400">No skills found</td></tr>`;
+        return;
       }
-      closeDomainModal();
-      render();
-    }
-    function editDomain(id) {
-      var d = SBData.skillDomains.find(function(x) { return x.id === id; });
-      if (d) openDomainModal(d);
-    }
-    function deleteDomain(id) {
-      var skills = SBData.getSkillsByDomain(id);
-      if (skills.length > 0) { SB.toast('Cannot delete domain with ' + skills.length + ' skills', 'error'); return; }
-      if (!confirm('Delete this domain?')) return;
-      var idx = SBData.skillDomains.findIndex(function(d) { return d.id === id; });
-      if (idx >= 0) SBData.skillDomains.splice(idx, 1);
-      if (activeDomain === id) activeDomain = null;
-      SB.toast('Domain deleted', 'success');
-      render();
+
+      skills.forEach(s => {
+        const domainIds = SBData.skillDomainIds(s);
+        const domainsHtml = domainIds.map(did => {
+          const d = SBData.getDomain(did);
+          return `<span class="text-[10px] px-2 py-0.5 rounded font-medium ${d ? d.color : 'bg-slate-100 text-slate-600'}">${d ? SB.escapeHtml(d.name) : SB.escapeHtml(did)}</span>`;
+        }).join(' ');
+        const fileHtml = s.file ? `<span class="ml-1 text-[10px] text-slate-400" title="Has skill file">&#128206;</span>` : '';
+        const tagsHtml = (s.tags || []).slice(0, 3).map(t => '<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">' + SB.escapeHtml(t) + '</span>').join(' ');
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="px-4 py-2.5">
+            <div class="font-medium text-xs">${SB.escapeHtml(s.name)}${fileHtml}</div>
+            ${s.desc ? `<div class="text-[10px] text-slate-400 mt-0.5 line-clamp-1">${SB.escapeHtml(s.desc)}</div>` : ''}
+          </td>
+          <td class="px-4 py-2.5"><div class="flex flex-wrap gap-1">${domainsHtml || '<span class="text-[10px] text-slate-400">—</span>'}</div></td>
+          <td class="px-4 py-2.5"><div class="flex flex-wrap gap-1">${tagsHtml || '<span class="text-[10px] text-slate-400">—</span>'}</div></td>
+          <td class="px-4 py-2.5 text-right whitespace-nowrap">
+            <button data-id="${SB.escapeHtml(s.id)}" class="skill-view-btn text-xs text-slate-600 hover:text-slate-800 font-medium mr-2">View</button>
+            <button data-id="${SB.escapeHtml(s.id)}" class="skill-edit-btn text-xs text-indigo-600 hover:text-indigo-700 font-medium mr-2">Edit</button>
+            <button data-id="${SB.escapeHtml(s.id)}" class="skill-delete-btn text-xs text-red-600 hover:text-red-700 font-medium">Delete</button>
+          </td>`;
+        skillsTbody.appendChild(tr);
+      });
+
+      document.querySelectorAll('.skill-view-btn').forEach(btn => {
+        btn.addEventListener('click', () => openViewSkillModal(btn.dataset.id));
+      });
+      document.querySelectorAll('.skill-edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => openEditSkillModal(btn.dataset.id));
+      });
+      document.querySelectorAll('.skill-delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => deleteSkill(btn.dataset.id));
+      });
     }
 
+    // Domain CRUD
+    function openAddDomainModal() {
+      domainModalTitle.textContent = 'Add domain';
+      domainEditId.value = '';
+      domainFieldId.value = '';
+      domainFieldId.disabled = false;
+      domainFieldName.value = '';
+      domainFieldColor.value = DOMAIN_COLORS[0];
+      domainFieldDesc.value = '';
+      openOverlay(domainOverlay);
+    }
+
+    function openEditDomainModal(id) {
+      const d = SBData.skillDomains.find(x => x.id === id);
+      if (!d) return;
+      domainModalTitle.textContent = 'Edit domain';
+      domainEditId.value = d.id;
+      domainFieldId.value = d.id;
+      domainFieldId.disabled = true;
+      domainFieldName.value = d.name;
+      domainFieldColor.value = DOMAIN_COLORS.includes(d.color) ? d.color : DOMAIN_COLORS[0];
+      domainFieldDesc.value = d.desc || '';
+      openOverlay(domainOverlay);
+    }
+
+    function saveDomain() {
+      const id = domainFieldId.value.trim().toLowerCase();
+      const name = domainFieldName.value.trim();
+      const color = domainFieldColor.value;
+      const desc = domainFieldDesc.value.trim();
+      if (!id || !name) { SB.toast('Please fill required fields', 'error'); return; }
+      if (!/^[a-z0-9-]+$/.test(id)) { SB.toast('ID must use lowercase letters, numbers, and hyphens', 'error'); return; }
+
+      if (domainEditId.value) {
+        const d = SBData.skillDomains.find(x => x.id === domainEditId.value);
+        if (d) { d.name = name; d.color = color; d.desc = desc; }
+        SB.toast('Updated domain "' + name + '"', 'success');
+      } else {
+        if (SBData.skillDomains.some(x => x.id === id)) { SB.toast('Domain ID already exists', 'error'); return; }
+        SBData.skillDomains.push({ id, name, color, desc });
+        SB.toast('Added domain "' + name + '"', 'success');
+      }
+      closeOverlay(domainOverlay);
+      renderDomains();
+      renderSkills();
+    }
+
+    function deleteDomain(id) {
+      const d = SBData.skillDomains.find(x => x.id === id);
+      if (!d) return;
+      const skillCount = SBData.getSkillsByDomain(id).length;
+      if (skillCount > 0) {
+        SB.toast('Cannot delete domain with ' + skillCount + ' skill(s). Reassign or delete them first.', 'error');
+        return;
+      }
+      if (!confirm('Delete domain "' + d.name + '"? This cannot be undone.')) return;
+      const idx = SBData.skillDomains.findIndex(x => x.id === id);
+      if (idx !== -1) SBData.skillDomains.splice(idx, 1);
+      if (activeDomain === id) activeDomain = null;
+      SB.toast('Deleted domain "' + d.name + '"', 'success');
+      renderDomains();
+      renderSkills();
+    }
+
+    // Skill CRUD
     function generateId(name) {
       return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 40);
     }
-    function openSkillModal(skill) {
-      editingSkill = skill || null;
-      document.getElementById('skill-modal-title').textContent = skill ? 'Edit skill' : 'Add skill';
-      var sel = document.getElementById('sk-domain');
-      sel.innerHTML = SBData.skillDomains.map(function(d) { return '<option value="' + d.id + '">' + SB.escapeHtml(d.name) + '</option>'; }).join('');
-      document.getElementById('sk-name').value = skill ? skill.name : '';
-      sel.value = skill ? skill.domain : (activeDomain || SBData.skillDomains[0].id);
-      document.getElementById('sk-desc').value = skill ? (skill.desc || '') : '';
-      document.getElementById('sk-tags').value = skill ? (skill.tags || []).join(', ') : '';
-      document.getElementById('skill-modal').hidden = false;
+
+    function setAttachment(att) {
+      skillFile = att;
+      if (att) {
+        skillFileName.textContent = att.name + (att.size ? ' · ' + att.size : '');
+        skillFileChosen.classList.remove('hidden');
+      } else {
+        skillFileChosen.classList.add('hidden');
+        skillFieldFile.value = '';
+      }
     }
-    function closeSkillModal() { document.getElementById('skill-modal').hidden = true; editingSkill = null; }
+
+    function openAddSkillModal() {
+      skillModalTitle.textContent = 'Add skill';
+      skillEditId.value = '';
+      skillFieldName.value = '';
+      // Pre-check the currently selected domain (if filtering by one).
+      populateDomainCheckboxes(activeDomain ? [activeDomain] : []);
+      skillFieldDesc.value = '';
+      skillFieldTags.value = '';
+      setAttachment(null);
+      openOverlay(skillOverlay);
+    }
+
+    function openEditSkillModal(id) {
+      const s = SBData.skillsLibrary.find(x => x.id === id);
+      if (!s) return;
+      skillModalTitle.textContent = 'Edit skill';
+      skillEditId.value = s.id;
+      skillFieldName.value = s.name;
+      populateDomainCheckboxes(SBData.skillDomainIds(s));
+      skillFieldDesc.value = s.desc || '';
+      skillFieldTags.value = (s.tags || []).join(', ');
+      setAttachment(s.file || null);
+      openOverlay(skillOverlay);
+    }
+
+    function parseTags(str) {
+      return str.split(',').map(t => t.trim()).filter(Boolean);
+    }
+
     function saveSkill() {
-      var name = document.getElementById('sk-name').value.trim();
-      var domain = document.getElementById('sk-domain').value;
-      var desc = document.getElementById('sk-desc').value.trim();
-      var tags = document.getElementById('sk-tags').value.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
-      if (!name) { SB.toast('Name is required', 'error'); return; }
-      if (editingSkill) {
-        editingSkill.name = name;
-        editingSkill.domain = domain;
-        editingSkill.desc = desc;
-        editingSkill.tags = tags;
-        SB.toast('Skill updated', 'success');
+      const name = skillFieldName.value.trim();
+      const domains = getSelectedDomains();
+      const desc = skillFieldDesc.value.trim();
+      const tags = parseTags(skillFieldTags.value);
+      if (!name || !domains.length) { SB.toast('Enter a name and pick at least one domain', 'error'); return; }
+      // Skill file is REQUIRED (product rule). Block save without one.
+      if (!skillFile) { SB.toast('A skill file is required. Attach a skill definition.', 'error'); return; }
+
+      if (skillEditId.value) {
+        const s = SBData.skillsLibrary.find(x => x.id === skillEditId.value);
+        if (s) { s.name = name; s.domains = domains; s.desc = desc; s.tags = tags; s.file = skillFile; delete s.domain; delete s.attachment; }
+        SB.toast('Updated skill "' + name + '"', 'success');
       } else {
         var id = generateId(name);
         var suffix = 1;
-        while (SBData.skillsLibrary.find(function(s) { return s.id === id; })) { id = generateId(name) + '-' + suffix; suffix++; }
-        SBData.skillsLibrary.push({ id: id, name: name, domain: domain, desc: desc, tags: tags });
-        SB.toast('Skill added', 'success');
+        while (SBData.skillsLibrary.some(x => x.id === id)) { id = generateId(name) + '-' + suffix; suffix++; }
+        SBData.skillsLibrary.push({ id: id, name: name, domains: domains, desc: desc, tags: tags, file: skillFile });
+        SB.toast('Added skill "' + name + '"', 'success');
       }
-      closeSkillModal();
-      render();
-    }
-    function editSkill(id) {
-      var s = SBData.skillsLibrary.find(function(x) { return x.id === id; });
-      if (s) openSkillModal(s);
-    }
-    function deleteSkill(id) {
-      if (!confirm('Delete this skill?')) return;
-      var idx = SBData.skillsLibrary.findIndex(function(s) { return s.id === id; });
-      if (idx >= 0) SBData.skillsLibrary.splice(idx, 1);
-      SB.toast('Skill deleted', 'success');
-      render();
+      closeOverlay(skillOverlay);
+      renderDomains();
+      renderSkills();
     }
 
-    // File upload for bulk skills import
-    document.getElementById('skills-file-upload').addEventListener('change', function(e) {
+    // Skill file attachment (inside the Add Skill modal). We read the file text so
+    // the catalog's "View skill" can show its content. A real impl would upload the
+    // file to storage and persist a URL/reference instead of inlining the text.
+    skillFieldFile.addEventListener('change', function(e) {
       var file = e.target.files[0];
       if (!file) return;
+      var kb = Math.max(1, Math.round(file.size / 1024));
       var reader = new FileReader();
-      reader.onload = function(ev) {
-        var content = ev.target.result;
-        var imported = 0;
-        try {
-          if (file.name.endsWith('.json')) {
-            var data = JSON.parse(content);
-            var arr = Array.isArray(data) ? data : (data.skills || []);
-            arr.forEach(function(item) {
-              var nm = item.name || item.skill || '';
-              if (!nm) return;
-              var dom = item.domain || activeDomain || SBData.skillDomains[0].id;
-              var id = generateId(nm);
-              var sfx = 1;
-              while (SBData.skillsLibrary.some(function(x) { return x.id === id; })) { id = generateId(nm) + '-' + sfx; sfx++; }
-              SBData.skillsLibrary.push({ id: id, name: nm, domain: dom, desc: item.description || item.desc || '', tags: item.tags || [] });
-              imported++;
-            });
-          } else {
-            var lines = content.split('\n').map(function(l) { return l.trim(); }).filter(Boolean);
-            if (file.name.endsWith('.csv') && lines.length > 0) {
-              var header = lines[0].toLowerCase();
-              var hasHeader = header.includes('name') || header.includes('skill');
-              var startIdx = hasHeader ? 1 : 0;
-              for (var i = startIdx; i < lines.length; i++) {
-                var cols = lines[i].split(',').map(function(c) { return c.trim().replace(/^"|"$/g, ''); });
-                var nm = cols[0];
-                if (!nm) continue;
-                var dom = cols[1] || activeDomain || SBData.skillDomains[0].id;
-                var id = generateId(nm);
-                var sfx = 1;
-                while (SBData.skillsLibrary.some(function(x) { return x.id === id; })) { id = generateId(nm) + '-' + sfx; sfx++; }
-                SBData.skillsLibrary.push({ id: id, name: nm, domain: dom, desc: cols[2] || '', tags: [] });
-                imported++;
-              }
-            } else {
-              lines.forEach(function(line) {
-                var nm = line;
-                var dom = activeDomain || SBData.skillDomains[0].id;
-                var id = generateId(nm);
-                var sfx = 1;
-                while (SBData.skillsLibrary.some(function(x) { return x.id === id; })) { id = generateId(nm) + '-' + sfx; sfx++; }
-                SBData.skillsLibrary.push({ id: id, name: nm, domain: dom, desc: '', tags: [] });
-                imported++;
-              });
-            }
-          }
-        } catch(err) {
-          SB.toast('Failed to parse file: ' + err.message, 'error');
-          return;
-        }
-        if (imported > 0) {
-          SB.toast('Imported ' + imported + ' skill(s)', 'success');
-          render();
-        } else {
-          SB.toast('No skills found in file', 'error');
-        }
-      };
+      reader.onload = function() { setAttachment({ name: file.name, size: kb + ' KB', content: String(reader.result || '') }); };
       reader.readAsText(file);
-      e.target.value = '';
     });
+    document.getElementById('skill-file-remove').addEventListener('click', function() { setAttachment(null); });
 
-    render();
+    // View skill (read-only) — shows metadata + the uploaded skill-file content.
+    const viewOverlay = document.getElementById('view-modal-overlay');
+    function openViewSkillModal(id) {
+      const s = SBData.getSkillById(id);
+      if (!s) return;
+      document.getElementById('view-modal-title').textContent = s.name;
+      document.getElementById('view-desc').textContent = s.desc || '—';
+      document.getElementById('view-domains').innerHTML = SBData.skillDomainIds(s).map(did => {
+        const d = SBData.getDomain(did);
+        return `<span class="text-[10px] px-2 py-0.5 rounded font-medium ${d ? d.color : 'bg-slate-100 text-slate-600'}">${d ? SB.escapeHtml(d.name) : SB.escapeHtml(did)}</span>`;
+      }).join(' ') || '<span class="text-xs text-slate-400">—</span>';
+      document.getElementById('view-tags').innerHTML = (s.tags || []).map(t => `<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${SB.escapeHtml(t)}</span>`).join(' ') || '<span class="text-xs text-slate-400">—</span>';
+      document.getElementById('view-file-name').textContent = s.file ? s.file.name : '';
+      document.getElementById('view-file-content').textContent = s.file && s.file.content ? s.file.content : '(No skill file uploaded)';
+      openOverlay(viewOverlay);
+    }
+    document.getElementById('view-modal-close').addEventListener('click', () => closeOverlay(viewOverlay));
+    document.getElementById('view-modal-done').addEventListener('click', () => closeOverlay(viewOverlay));
+    viewOverlay.addEventListener('click', (e) => { if (e.target === viewOverlay) closeOverlay(viewOverlay); });
+
+    function deleteSkill(id) {
+      const s = SBData.skillsLibrary.find(x => x.id === id);
+      if (!s) return;
+      if (!confirm('Delete skill "' + s.name + '"? This cannot be undone.')) return;
+      const idx = SBData.skillsLibrary.findIndex(x => x.id === id);
+      if (idx !== -1) SBData.skillsLibrary.splice(idx, 1);
+      SB.toast('Deleted skill "' + s.name + '"', 'success');
+      renderDomains();
+      renderSkills();
+    }
+
+    // Event listeners
+    document.getElementById('btn-add-domain').addEventListener('click', openAddDomainModal);
+    document.getElementById('btn-add-skill').addEventListener('click', openAddSkillModal);
+    document.getElementById('domain-modal-close').addEventListener('click', () => closeOverlay(domainOverlay));
+    document.getElementById('domain-modal-cancel').addEventListener('click', () => closeOverlay(domainOverlay));
+    document.getElementById('domain-modal-save').addEventListener('click', saveDomain);
+    domainOverlay.addEventListener('click', (e) => { if (e.target === domainOverlay) closeOverlay(domainOverlay); });
+    document.getElementById('skill-modal-close').addEventListener('click', () => closeOverlay(skillOverlay));
+    document.getElementById('skill-modal-cancel').addEventListener('click', () => closeOverlay(skillOverlay));
+    document.getElementById('skill-modal-save').addEventListener('click', saveSkill);
+    skillOverlay.addEventListener('click', (e) => { if (e.target === skillOverlay) closeOverlay(skillOverlay); });
+    skillSearch.addEventListener('input', renderSkills);
+
+    renderDomains();
+    renderSkills();
   </script>
 </body>
 </html>

@@ -6,7 +6,7 @@
   <title>People - Skill Bench</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
@@ -68,7 +68,17 @@
         <input type="hidden" id="edit-id" value="">
         <div><label class="block text-sm font-medium text-slate-700 mb-1">Full name</label><input id="field-name" type="text" required placeholder="e.g. John Doe" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></div>
         <div><label class="block text-sm font-medium text-slate-700 mb-1">Email</label><input id="field-email" type="email" required placeholder="e.g. john@my-org.com" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></div>
-        <div><label class="block text-sm font-medium text-slate-700 mb-1">Role</label><select id="field-role" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"><option value="">Select a role...</option></select><p id="role-desc" class="text-[11px] text-slate-500 mt-1"></p></div>
+        <div>
+          <!-- MULTI-ROLE: a user can hold several roles. Pick all that apply, then
+               choose which one is their primary (default landing) role. -->
+          <label class="block text-sm font-medium text-slate-700 mb-1">Roles <span class="text-slate-400 font-normal">(one or more)</span></label>
+          <div id="field-roles" class="border border-slate-300 rounded-lg p-2 grid grid-cols-1 gap-0.5 max-h-44 overflow-y-auto"></div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Primary role</label>
+          <select id="field-primary" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></select>
+          <p class="text-[11px] text-slate-500 mt-1">Determines the landing page after login.</p>
+        </div>
         <div><label class="block text-sm font-medium text-slate-700 mb-1">Status</label><select id="field-status" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
       </div>
       <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-2">
@@ -78,18 +88,16 @@
     </div>
   </div>
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('admin');
+    if (!SB.requireRole('admin')) throw 'auth';
     SB.renderNav();
 
     const roleSelect = document.getElementById('filter-role');
-    const roleField = document.getElementById('field-role');
+    // Filter by ROLE KEY (a user matches if they HOLD that role).
     Object.values(SBData.ROLES).forEach(r => {
-      roleSelect.innerHTML += `<option value="${r.label}">${r.label}</option>`;
-      roleField.innerHTML += `<option value="${r.label}">${r.label}</option>`;
+      roleSelect.innerHTML += `<option value="${r.key}">${r.label}</option>`;
     });
 
     const searchInput = document.getElementById('search-input');
@@ -97,28 +105,35 @@
     const filterStatus = document.getElementById('filter-status');
     const tbody = document.getElementById('people-tbody');
     const resultCount = document.getElementById('result-count');
+    const rolesBox = document.getElementById('field-roles');
+    const primarySel = document.getElementById('field-primary');
+
+    function roleBadges(u) {
+      return SBData.userRoleKeys(u).map(rk => {
+        const r = SBData.ROLES[rk] || {};
+        return `<span class="text-[10px] px-2 py-0.5 rounded font-medium ${r.color || 'bg-slate-100 text-slate-700'}">${SB.escapeHtml(r.label || rk)}</span>`;
+      }).join(' ');
+    }
 
     function renderTable() {
       const query = searchInput.value.toLowerCase().trim();
-      const role = filterRole.value;
+      const roleKey = filterRole.value;
       const status = filterStatus.value;
       let filtered = SBData.allUsers.filter(u => {
         if (query && !u.name.toLowerCase().includes(query) && !u.email.toLowerCase().includes(query)) return false;
-        if (role && u.role !== role) return false;
+        if (roleKey && !SBData.userHasRole(u, roleKey)) return false;
         if (status && u.status !== status) return false;
         return true;
       });
       resultCount.textContent = filtered.length + ' of ' + SBData.allUsers.length;
       tbody.innerHTML = '';
       filtered.forEach(u => {
-        const roleInfo = Object.values(SBData.ROLES).find(r => r.label === u.role) || {};
-        const rc = roleInfo.color || 'bg-slate-100 text-slate-700';
         const statusCls = u.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500';
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
           <td class="px-4 py-3"><div class="flex items-center gap-2.5"><div class="avatar" style="width:2rem;height:2rem;font-size:0.65rem">${u.initials||'?'}</div><div><div class="text-sm font-medium">${SB.escapeHtml(u.name)}</div><div class="text-[11px] text-slate-500">${SB.escapeHtml(u.email)}</div></div></div></td>
-          <td class="px-4 py-3"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${rc}">${SB.escapeHtml(u.role)}</span></td>
+          <td class="px-4 py-3"><div class="flex flex-wrap gap-1">${roleBadges(u)}</div></td>
           <td class="px-4 py-3"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${statusCls}">${u.status}</span></td>
           <td class="px-4 py-3 text-xs text-slate-500">${u.lastSeen || '—'}</td>
           <td class="px-4 py-3 text-xs">${u.tasksCount || 0}</td>
@@ -132,10 +147,42 @@
       document.querySelectorAll('.toggle-btn').forEach(b => b.addEventListener('click', () => { const u = SBData.allUsers.find(x => x.id === b.dataset.id); if(u){ u.status = u.status==='active'?'inactive':'active'; SB.toast(u.name+' '+(u.status==='active'?'activated':'deactivated'),'success'); renderTable(); } }));
     }
 
+    // Build role checkboxes; keep the primary-role dropdown in sync with checks.
+    function renderRoleCheckboxes(selected) {
+      selected = selected || [];
+      rolesBox.innerHTML = '';
+      Object.values(SBData.ROLES).forEach(r => {
+        const checked = selected.includes(r.key) ? 'checked' : '';
+        const label = document.createElement('label');
+        label.className = 'flex items-start gap-2 text-xs text-slate-700 px-1.5 py-1 rounded hover:bg-slate-50 cursor-pointer';
+        label.innerHTML = `<input type="checkbox" value="${r.key}" ${checked} class="role-cb mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"><span><span class="font-medium">${r.label}</span><span class="block text-[10px] text-slate-400">${SB.escapeHtml(r.desc)}</span></span>`;
+        rolesBox.appendChild(label);
+      });
+      rolesBox.querySelectorAll('.role-cb').forEach(cb => cb.addEventListener('change', syncPrimary));
+      syncPrimary();
+    }
+    function getCheckedRoles() { return Array.from(rolesBox.querySelectorAll('.role-cb:checked')).map(cb => cb.value); }
+    function syncPrimary() {
+      const checked = getCheckedRoles();
+      const prev = primarySel.value;
+      primarySel.innerHTML = checked.length
+        ? checked.map(rk => `<option value="${rk}">${SBData.roleLabel(rk)}</option>`).join('')
+        : '<option value="">Select roles first</option>';
+      if (checked.includes(prev)) primarySel.value = prev;
+    }
+
     const overlay = document.getElementById('modal-overlay');
     function openModal() { overlay.classList.remove('hidden'); overlay.classList.add('flex'); }
     function closeModal() { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
-    document.getElementById('btn-add-user').addEventListener('click', () => { document.getElementById('modal-title').textContent='Add person'; document.getElementById('edit-id').value=''; document.getElementById('field-name').value=''; document.getElementById('field-email').value=''; document.getElementById('field-role').value=''; document.getElementById('field-status').value='active'; openModal(); });
+    document.getElementById('btn-add-user').addEventListener('click', () => {
+      document.getElementById('modal-title').textContent='Add person';
+      document.getElementById('edit-id').value='';
+      document.getElementById('field-name').value='';
+      document.getElementById('field-email').value='';
+      document.getElementById('field-status').value='active';
+      renderRoleCheckboxes([]);
+      openModal();
+    });
     document.getElementById('modal-close').addEventListener('click', closeModal);
     document.getElementById('modal-cancel').addEventListener('click', closeModal);
     overlay.addEventListener('click', e => { if(e.target===overlay) closeModal(); });
@@ -146,26 +193,28 @@
       document.getElementById('edit-id').value=u.id;
       document.getElementById('field-name').value=u.name;
       document.getElementById('field-email').value=u.email;
-      document.getElementById('field-role').value=u.role;
       document.getElementById('field-status').value=u.status;
+      const roles = SBData.userRoleKeys(u);
+      renderRoleCheckboxes(roles);
+      primarySel.value = (u.primaryRole && roles.includes(u.primaryRole)) ? u.primaryRole : (roles[0] || '');
       openModal();
     }
-
-    document.getElementById('field-role').addEventListener('change', function(){ const r = Object.values(SBData.ROLES).find(x => x.label === this.value); document.getElementById('role-desc').textContent = r ? r.desc : ''; });
 
     document.getElementById('modal-save').addEventListener('click', () => {
       const name = document.getElementById('field-name').value.trim();
       const email = document.getElementById('field-email').value.trim();
-      const role = document.getElementById('field-role').value;
-      if (!name||!email||!role) { SB.toast('Fill all fields','error'); return; }
+      const roles = getCheckedRoles();
+      const primary = primarySel.value || roles[0];
+      if (!name || !email || !roles.length) { SB.toast('Enter name, email and at least one role','error'); return; }
+      const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const editId = document.getElementById('edit-id').value;
       if (editId) {
         const u = SBData.allUsers.find(x => x.id === editId);
-        if(u){ u.name=name; u.email=email; u.role=role; u.status=document.getElementById('field-status').value; u.initials=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+        if(u){ u.name=name; u.email=email; u.roles=roles; u.primaryRole=primary; u.role=SBData.roleLabel(primary); u.status=document.getElementById('field-status').value; u.initials=initials; }
         SB.toast('Updated '+name,'success');
       } else {
-        SBData.allUsers.push({ id:'u'+(Date.now()%10000), name, email, role, initials: name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(), lastSeen:'just now', tasksCount:0, status:document.getElementById('field-status').value, joinedAt:new Date().toISOString().split('T')[0] });
-        SB.toast('Added '+name+' as '+role,'success');
+        SBData.allUsers.push({ id:'u'+(Date.now()%10000), name, email, roles, primaryRole: primary, role: SBData.roleLabel(primary), initials, lastSeen:'just now', tasksCount:0, status:document.getElementById('field-status').value, joinedAt:new Date().toISOString().split('T')[0] });
+        SB.toast('Added '+name+' ('+roles.map(SBData.roleLabel).join(', ')+')','success');
       }
       closeModal(); renderTable();
     });

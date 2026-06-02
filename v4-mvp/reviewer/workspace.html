@@ -6,7 +6,7 @@
   <title>Review - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
@@ -66,6 +66,11 @@
         <div id="harbor-preview"></div>
       </div>
       <aside class="space-y-4">
+        <div id="tester-notes-card" class="bg-white border border-slate-200 rounded-lg p-5 hidden">
+          <div class="text-xs font-semibold uppercase text-emerald-700 mb-2">Tester notes</div>
+          <div id="tester-outcome" class="mb-2"></div>
+          <p id="tester-notes" class="text-sm text-slate-700 whitespace-pre-wrap"></p>
+        </div>
         <div class="bg-white border border-slate-200 rounded-lg p-5">
           <div class="font-semibold mb-3">Comments</div>
           <div id="comments-list" class="space-y-3 text-sm mb-3"></div>
@@ -80,11 +85,10 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('taskReviewer');
+    if (!SB.requireRole('taskReviewer')) throw 'auth';
     SB.renderNav();
     (function() {
     const id = new URLSearchParams(location.search).get('id');
@@ -108,7 +112,7 @@
         `Prompter: <b>${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</b>`,
         t.tester ? `Tester: <b>${SB.escapeHtml(t.tester.name)}</b>` : '',
         t.oraclePassed ? `Oracle: <b class="text-emerald-700">PASS (1.0)</b>` : `Oracle: <span class="text-slate-400">not run</span>`,
-        `Domain: <b>${SB.escapeHtml(t.domain)}</b>`,
+        `Domain: <b>${SB.escapeHtml(SBData.domainLabel(t.domain))}</b>`,
       ].filter(Boolean).join(' &middot; ');
 
       document.getElementById('sec-solution').textContent = t.solveSh || '(No solve.sh written yet)';
@@ -118,9 +122,25 @@
       document.getElementById('verifier-count').textContent = verifiers.length + ' defined';
       document.getElementById('sec-verifiers').innerHTML = verifiers.length ?
         verifiers.map(v => {
-          const vt = (SBData.VERIFIER_TYPES.find(x => x.id === v.type) || {}).label || v.type;
-          return `<div class="flex items-start gap-2"><span class="px-1.5 py-0.5 rounded bg-slate-100 text-[10px] font-medium text-slate-600 shrink-0">${SB.escapeHtml(vt)}</span><span class="text-slate-700">${SB.escapeHtml(v.description)}</span></div>`;
+          const cat = v.category ? (SBData.VERIFIER_CATEGORIES.find(c => c.id === v.category) || {}) : null;
+          const val = SBData.VERIFIER_VALIDATION[v.validationStatus] || null;
+          const catBadge = cat ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${cat.color}">${SB.escapeHtml(cat.label)}</span>` : '';
+          const valBadge = val ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${val.color}">${SB.escapeHtml(val.label)}</span>` : '';
+          return `<div class="flex items-start gap-2">${catBadge}${valBadge}<span class="text-slate-700">${SB.escapeHtml(v.description)}</span></div>`;
         }).join('') : '<p class="text-slate-400 italic">No verifiers.</p>';
+
+      // Surface what the Tester reported (notes + test outcome) so the reviewer
+      // has the full context behind the submission.
+      const notesCard = document.getElementById('tester-notes-card');
+      if (t.testingNotes || t.testOutcome) {
+        notesCard.classList.remove('hidden');
+        const OUTCOME = { pass: ['Pass', 'bg-emerald-100 text-emerald-700'], fail: ['Fail', 'bg-rose-100 text-rose-700'], blocked: ['Blocked', 'bg-amber-100 text-amber-700'] };
+        const o = OUTCOME[t.testOutcome];
+        document.getElementById('tester-outcome').innerHTML = o ? `<span class="text-[11px] px-1.5 py-0.5 rounded font-medium ${o[1]}">Outcome: ${o[0]}</span>` : '';
+        document.getElementById('tester-notes').textContent = t.testingNotes || '(no notes)';
+      } else {
+        notesCard.classList.add('hidden');
+      }
 
       renderActions();
       renderComments();

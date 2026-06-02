@@ -6,7 +6,7 @@
   <title>All Tasks - Skill Bench</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
@@ -17,6 +17,9 @@
         <p class="text-sm text-slate-500 mt-1">View, filter, and manage all tasks in the pipeline</p>
       </div>
     </div>
+
+    <!-- Lifecycle tabs (Rework is split out so blocked tasks are easy to find). -->
+    <div id="tabs" class="flex flex-wrap gap-1.5 mb-3"></div>
 
     <!-- Filters -->
     <div class="flex flex-wrap items-center gap-3 mb-4">
@@ -72,11 +75,10 @@
   </div>
 
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('projectManager');
+    if (!SB.requireRole('projectManager')) throw 'auth';
     SB.renderNav();
 
     // Populate filters
@@ -88,12 +90,40 @@
     const search = document.getElementById('search-input');
     const tbody = document.getElementById('tasks-tbody');
     const resultCount = document.getElementById('result-count');
+    const tabsEl = document.getElementById('tabs');
+
+    const TABS = [
+      { id: 'all',        label: 'All',         match: () => true },
+      { id: 'new',        label: 'New',         match: t => t.status === 'prompter-draft' },
+      { id: 'inprogress', label: 'In progress', match: t => ['domain-review','with-tester','in-review'].includes(t.status) },
+      { id: 'rework',     label: 'Rework',      match: t => t.status === 'changes-requested' },
+      { id: 'completed',  label: 'Completed',   match: t => ['approved','published'].includes(t.status) },
+    ];
+    let activeTab = 'all';
+    // Allow deep links from the dashboard KPIs: ?tab=rework / ?status=with-tester.
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get('tab') && TABS.some(x => x.id === urlParams.get('tab'))) activeTab = urlParams.get('tab');
+    if (urlParams.get('status') && SBData.STATUS[urlParams.get('status')]) statusSel.value = urlParams.get('status');
+    function countFor(id) { const tab = TABS.find(x => x.id === id); return SBData.tasks.filter(tab.match).length; }
+    function renderTabs() {
+      tabsEl.innerHTML = TABS.map(tab => {
+        const active = tab.id === activeTab;
+        const isRework = tab.id === 'rework';
+        const cnt = countFor(tab.id);
+        const cls = active ? (isRework ? 'bg-amber-600 text-white' : 'bg-indigo-600 text-white')
+                           : (isRework && cnt > 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50');
+        return `<button data-tab="${tab.id}" class="px-3 py-1.5 text-xs font-medium rounded-full ${cls}">${tab.label}<span class="ml-1 opacity-70">${cnt}</span></button>`;
+      }).join('');
+      tabsEl.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { activeTab = b.dataset.tab; renderTabs(); renderTasks(); }));
+    }
 
     function renderTasks() {
       const q = search.value.toLowerCase().trim();
       const st = statusSel.value;
       const dom = domainSel.value;
+      const tab = TABS.find(x => x.id === activeTab);
       let filtered = SBData.tasks.filter(t => {
+        if (!tab.match(t)) return false;
         if (q && !t.name.toLowerCase().includes(q) && !(t.description||'').toLowerCase().includes(q)) return false;
         if (st && t.status !== st) return false;
         if (dom && t.domain !== dom) return false;
@@ -103,14 +133,15 @@
       tbody.innerHTML = '';
       filtered.forEach(t => {
         const s = SBData.STATUS[t.status];
+        const reworkNote = (t.status === 'changes-requested' && t.reworkReason) ? `<div class="mt-1 text-[10px] text-amber-700">Rework (${SB.escapeHtml(t.changesTarget||'')}): ${SB.escapeHtml(t.reworkReason)}</div>` : '';
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50';
         tr.innerHTML = `
-          <td class="px-4 py-3"><div class="font-mono text-xs font-medium">${SB.escapeHtml(t.name)}</div><div class="text-[10px] text-slate-500 mt-0.5">${SB.escapeHtml((t.description||'').slice(0,55))}</div></td>
+          <td class="px-4 py-3"><div class="font-mono text-xs font-medium">${SB.escapeHtml(t.name)}</div><div class="text-[10px] text-slate-500 mt-0.5">${SB.escapeHtml((t.description||'').slice(0,55))}</div>${reworkNote}</td>
           <td class="px-4 py-3 text-xs">${t.prompter ? SB.escapeHtml(t.prompter.name) : '<span class=\"text-slate-400\">Unassigned</span>'}</td>
           <td class="px-4 py-3 text-xs">${t.tester ? SB.escapeHtml(t.tester.name) : '<span class=\"text-slate-400\">Unassigned</span>'}</td>
           <td class="px-4 py-3"><span class="pill ${s.cls}">${s.label}</span></td>
-          <td class="px-4 py-3 text-xs text-slate-500">${t.domain || '—'}</td>
+          <td class="px-4 py-3 text-xs text-slate-500">${SB.escapeHtml(SBData.domainLabel(t.domain))}</td>
           <td class="px-4 py-3 text-right"><button data-id="${t.id}" class="assign-btn text-xs text-indigo-600 hover:text-indigo-700 font-medium">Assign</button></td>`;
         tbody.appendChild(tr);
       });
@@ -131,9 +162,14 @@
       document.getElementById('assign-task-name').textContent = t ? t.name : '';
       const sel = document.getElementById('assign-to');
       sel.innerHTML = '<option value="">Select person...</option>';
-      const targetRoles = t && t.status === 'with-tester' ? ['Tester'] : t && t.status === 'prompter-draft' ? ['Prompter'] : ['Prompter','Tester','Domain Reviewer','Task Reviewer'];
-      SBData.allUsers.filter(u => targetRoles.includes(u.role) && u.status === 'active').forEach(u => {
-        sel.innerHTML += `<option value="${u.id}">${u.name} (${u.role})</option>`;
+      // Suggest people whose ROLES are relevant to the task's current stage.
+      // Multi-role aware: a user qualifies if they hold ANY of the target roles.
+      const targetRoleKeys = t && t.status === 'with-tester' ? ['tester']
+                           : t && t.status === 'prompter-draft' ? ['prompter']
+                           : ['prompter','tester','domainReviewer','taskReviewer'];
+      SBData.allUsers.filter(u => u.status === 'active' && SBData.userRoleKeys(u).some(r => targetRoleKeys.includes(r))).forEach(u => {
+        const roleLabels = SBData.userRoleKeys(u).map(SBData.roleLabel).join(', ');
+        sel.innerHTML += `<option value="${u.id}">${u.name} (${roleLabels})</option>`;
       });
       assignOverlay.classList.remove('hidden'); assignOverlay.classList.add('flex');
     }
@@ -148,16 +184,24 @@
       const task = SBData.getTaskById(assignTaskId);
       if (task && user) {
         var assignee = { id: user.id, name: user.name, initials: user.initials, email: user.email, role: user.role };
-        if (user.role === 'Tester') task.tester = assignee;
-        else if (user.role === 'Prompter') task.prompter = assignee;
-        else if (user.role === 'Domain Reviewer') task.domainReviewer = assignee;
-        else if (user.role === 'Task Reviewer') task.taskReviewer = assignee;
+        var roles = SBData.userRoleKeys(user);
+        // Prefer the slot the task currently needs; otherwise fall back to the
+        // user's first relevant role. Multi-role users can fill any slot they hold.
+        var slot = task.status === 'with-tester' && roles.includes('tester') ? 'tester'
+                 : task.status === 'prompter-draft' && roles.includes('prompter') ? 'prompter'
+                 : roles.includes('tester') ? 'tester'
+                 : roles.includes('prompter') ? 'prompter'
+                 : roles.includes('domainReviewer') ? 'domainReviewer'
+                 : roles.includes('taskReviewer') ? 'taskReviewer' : null;
+        if (slot) task[slot] = assignee;
         SB.toast('Assigned "' + task.name.split('/')[1] + '" to ' + user.name, 'success');
       }
       assignOverlay.classList.add('hidden'); assignOverlay.classList.remove('flex');
+      renderTabs();
       renderTasks();
     });
 
+    renderTabs();
     renderTasks();
   </script>
 </body>

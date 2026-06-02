@@ -6,7 +6,7 @@
   <title>Submit - Prompter - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
@@ -53,11 +53,10 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('prompter');
+    if (!SB.requireRole('prompter')) throw 'auth';
     SB.renderNav();
     SB.renderWizardStepper(7, 'prompter');
 
@@ -90,13 +89,14 @@
     const hasGolden = !!(t.goldenSolution && t.goldenSolution.trim());
     const attachmentsCount = (t.attachments || []).length;
 
+    // Order mirrors the wizard: ... Solution (step 4) then Verifiers (step 5).
     document.getElementById('summary-list').innerHTML = [
       summaryRow(hasName, 'Name', hasName ? t.name : 'Missing'),
-      summaryRow(hasDomain, 'Domain', hasDomain ? t.domain : 'Missing'),
+      summaryRow(hasDomain, 'Domain', hasDomain ? SBData.domainLabel(t.domain) : 'Missing'),
       summaryRow(hasDifficulty, 'Difficulty', hasDifficulty ? t.difficulty : 'Missing'),
       summaryRow(skillsCount > 0, 'Skills', skillsCount + ' selected'),
-      summaryRow(verifiersCount > 0, 'Verifiers', verifiersCount + ' defined'),
       summaryRow(hasGolden, 'Golden solution', hasGolden ? 'Provided' : 'Missing'),
+      summaryRow(verifiersCount > 0, 'Verifiers', verifiersCount + ' defined'),
       summaryRow(true, 'Attachments', attachmentsCount + ' file(s)'),
     ].join('');
 

@@ -6,20 +6,23 @@
   <title>Review queue - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
   <main class="max-w-7xl">
     <h1 class="text-2xl font-bold">Review queue</h1>
     <p class="text-sm text-slate-500 mt-1">Tasks where the Tester ran Oracle PASS. Approve to publish, or request changes back to Prompter or Tester.</p>
-    <div class="flex items-center justify-between mt-5 mb-4">
+    <div class="flex flex-wrap items-center justify-between gap-3 mt-5 mb-4">
       <div class="tab-bar">
         <button data-tab="pending" class="active">Pending <span id="cnt-pending" class="text-xs bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
-        <button data-tab="changes">Awaiting fixes <span id="cnt-changes" class="text-xs bg-orange-100 text-orange-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
+        <button data-tab="changes">Rework <span id="cnt-changes" class="text-xs bg-orange-100 text-orange-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
         <button data-tab="done">Approved / Published <span id="cnt-done" class="text-xs bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5 ml-1">0</span></button>
       </div>
-      <input id="search" type="text" placeholder="Search..." class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg w-48 focus:ring-2 focus:ring-amber-200 focus:border-amber-400">
+      <div class="flex items-center gap-2">
+        <select id="filter-domain" class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-200"><option value="">All domains</option></select>
+        <input id="search" type="text" placeholder="Search..." class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg w-48 focus:ring-2 focus:ring-amber-200 focus:border-amber-400">
+      </div>
     </div>
     <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
       <table class="w-full text-sm">
@@ -39,11 +42,10 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('taskReviewer');
+    if (!SB.requireRole('taskReviewer')) throw 'auth';
     SB.renderNav();
     const FILTERS = {
       pending: t => t.status === 'in-review',
@@ -55,12 +57,16 @@
       document.getElementById('cnt-changes').textContent = SBData.tasks.filter(FILTERS.changes).length;
       document.getElementById('cnt-done').textContent = SBData.tasks.filter(FILTERS.done).length;
     }
+    const domainSel = document.getElementById('filter-domain');
+    SBData.skillDomains.forEach(d => { domainSel.innerHTML += '<option value="' + d.id + '">' + SB.escapeHtml(d.name) + '</option>'; });
     counts();
     function render(tab) {
       var q = (document.getElementById('search').value || '').trim().toLowerCase();
+      var dom = domainSel.value;
       const list = SBData.tasks.filter(function(t) {
         if (!FILTERS[tab](t)) return false;
-        if (q && !(t.name + ' ' + t.description + ' ' + (t.domain || '') + ' ' + (t.prompter ? t.prompter.name : '') + ' ' + (t.tester ? t.tester.name : '')).toLowerCase().includes(q)) return false;
+        if (dom && t.domain !== dom) return false;
+        if (q && !(t.name + ' ' + t.description + ' ' + SBData.domainLabel(t.domain) + ' ' + (t.prompter ? t.prompter.name : '') + ' ' + (t.tester ? t.tester.name : '')).toLowerCase().includes(q)) return false;
         return true;
       });
       const tbody = document.getElementById('rows');
@@ -73,12 +79,13 @@
           : '<span class="text-xs text-slate-400">—</span>';
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 cursor-pointer';
+        const reworkNote = (tab === 'changes' && t.reworkReason) ? `<div class="mt-1 text-[11px] text-orange-700 bg-orange-50 border border-orange-100 rounded px-2 py-1">Rework (${SB.escapeHtml(t.changesTarget || '')}): ${SB.escapeHtml(t.reworkReason)}</div>` : '';
         tr.innerHTML = `
-          <td class="px-4 py-3"><div class="font-mono font-medium">${SB.escapeHtml(t.name)}</div><div class="text-xs text-slate-500">${SB.escapeHtml(t.description)}</div></td>
+          <td class="px-4 py-3"><div class="font-mono font-medium">${SB.escapeHtml(t.name)}</div><div class="text-xs text-slate-500">${SB.escapeHtml(t.description)}</div>${reworkNote}</td>
           <td class="px-4 py-3">${SB.escapeHtml(t.prompter ? t.prompter.name : '—')}</td>
           <td class="px-4 py-3">${t.tester ? SB.escapeHtml(t.tester.name) : '—'}</td>
           <td class="px-4 py-3">${oracle}</td>
-          <td class="px-4 py-3"><span class="pill ${st.cls}">${st.label}</span>${t.changesTarget ? `<div class="text-[10px] text-slate-500 mt-0.5">→ ${t.changesTarget}</div>` : ''}</td>
+          <td class="px-4 py-3"><span class="pill ${st.cls}">${st.label}</span>${t.changesTarget ? `<div class="text-[10px] text-slate-500 mt-0.5">needs: ${t.changesTarget}</div>` : ''}</td>
           <td class="px-2 py-3 text-right text-xs text-indigo-600 font-medium">Open &rarr;</td>`;
         tr.onclick = () => location.href = 'workspace.html?id=' + t.id;
         tbody.appendChild(tr);

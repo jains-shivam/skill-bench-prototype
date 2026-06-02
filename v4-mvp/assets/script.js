@@ -1,5 +1,14 @@
 /* Skill Bench MVP - Shared UI logic.
-   7 roles: superAdmin, admin, projectManager, prompter, domainReviewer, tester, taskReviewer */
+ *
+ * 7 roles: superAdmin, admin, projectManager, prompter, domainReviewer, tester, taskReviewer
+ *
+ * MULTI-ROLE: a user can hold several roles. The auth session stores `roles[]`
+ * (everything they may act as) and `role` (the currently ACTIVE role used for
+ * nav + landing). switchActiveRole() flips the active role among assigned roles.
+ *
+ * WIZARD FLOW (Prompter): Brief → Skills → Problem → SOLUTION → VERIFIERS → Try Model → Submit.
+ * Solution is authored BEFORE verifiers so each verifier can be validated
+ * against a concrete reference solution (mirrors Harbor's oracle dry-run). */
 const SB = (function () {
   'use strict';
 
@@ -15,23 +24,36 @@ const SB = (function () {
     return icons[name] || '';
   }
 
-  /* ───── Authentication ───── */
+  /* ───── Authentication ─────
+   * Mock auth. CREDENTIALS maps email → userId; the user's roles are derived from
+   * SBData.allUsers so the multi-role model stays in one place (the data layer). */
   const AUTH_KEY = 'sb-mvp-auth';
   const DEMO_PASSWORD = 'demo123';
 
   const CREDENTIALS = {
-    'sarah@my-org.com': { role: 'superAdmin',      userId: 'u0' },
-    'dave@my-org.com':  { role: 'admin',           userId: 'u5' },
-    'nina@my-org.com':  { role: 'projectManager',  userId: 'u8' },
-    'jane@my-org.com':  { role: 'prompter',        userId: 'u1' },
-    'raj@my-org.com':   { role: 'domainReviewer',  userId: 'u2' },
-    'tara@my-org.com':  { role: 'tester',          userId: 'u3' },
-    'bob@my-org.com':   { role: 'taskReviewer',    userId: 'u4' },
-    'aisha@my-org.com': { role: 'prompter',        userId: 'u6' },
-    'marco@my-org.com': { role: 'tester',          userId: 'u7' },
+    'sarah@my-org.com': 'u0',
+    'dave@my-org.com':  'u5',
+    'nina@my-org.com':  'u8',
+    'jane@my-org.com':  'u1',
+    'raj@my-org.com':   'u2',
+    'tara@my-org.com':  'u3',
+    'bob@my-org.com':   'u4',
+    'aisha@my-org.com': 'u6',
+    'marco@my-org.com': 'u7',
   };
 
   const VALID_ROLES = ['superAdmin','admin','projectManager','prompter','domainReviewer','tester','taskReviewer'];
+
+  /* Landing page per role. Used after login and when switching the active role. */
+  const ROLE_HOME = {
+    superAdmin: 'super-admin/dashboard.html',
+    admin: 'admin/dashboard.html',
+    projectManager: 'project-manager/dashboard.html',
+    prompter: 'prompter/dashboard.html',
+    domainReviewer: 'domain-reviewer/queue.html',
+    tester: 'tester/queue.html',
+    taskReviewer: 'reviewer/queue.html',
+  };
 
   function isAuthenticated() {
     const session = localStorage.getItem(AUTH_KEY);
@@ -48,15 +70,64 @@ const SB = (function () {
     try { return JSON.parse(localStorage.getItem(AUTH_KEY)) || null; } catch(e) { return null; }
   }
 
+  /* All role keys the logged-in user can act as (from their session). */
+  function getSessionRoles() {
+    const s = getSession();
+    if (!s) return [];
+    if (Array.isArray(s.roles) && s.roles.length) return s.roles.filter(r => VALID_ROLES.includes(r));
+    return s.role ? [s.role] : [];
+  }
+
   function login(email, password) {
-    const cred = CREDENTIALS[email.toLowerCase()];
-    if (!cred) return { success: false, error: 'No account found with this email address' };
+    const userId = CREDENTIALS[email.toLowerCase()];
+    if (!userId) return { success: false, error: 'No account found with this email address' };
     if (password !== DEMO_PASSWORD) return { success: false, error: 'Incorrect password. Try: demo123' };
-    const user = SBData.users[cred.role] || Object.values(SBData.users).find(u => u.id === cred.userId);
-    const session = { email: email.toLowerCase(), role: cred.role, userId: cred.userId, name: user ? user.name : email, loginAt: Date.now() };
+    const user = SBData.allUsers.find(u => u.id === userId);
+    if (!user) return { success: false, error: 'Account is not provisioned' };
+    if (user.status === 'inactive') return { success: false, error: 'This account is deactivated. Contact your admin.' };
+    const roles = SBData.userRoleKeys(user).filter(r => VALID_ROLES.includes(r));
+    const active = (user.primaryRole && roles.includes(user.primaryRole)) ? user.primaryRole : (roles[0] || 'prompter');
+    const session = { email: email.toLowerCase(), userId: user.id, name: user.name, roles, role: active, loginAt: Date.now() };
     localStorage.setItem(AUTH_KEY, JSON.stringify(session));
-    localStorage.setItem(ROLE_KEY, cred.role);
+    localStorage.setItem(ROLE_KEY, active);
     return { success: true, session };
+  }
+
+  /* Switch which role the user is currently acting as. Only roles the user
+   * actually holds are allowed (enforced here, not just hidden in the UI). */
+  function switchActiveRole(roleKey) {
+    const s = getSession();
+    if (!s) return false;
+    const roles = getSessionRoles();
+    if (!roles.includes(roleKey)) return false;
+    s.role = roleKey;
+    localStorage.setItem(AUTH_KEY, JSON.stringify(s));
+    localStorage.setItem(ROLE_KEY, roleKey);
+    return true;
+  }
+
+  /* DEMO ONLY: jump into any role by logging in as that role's representative
+   * user. Used by the index.html role gallery so reviewers can explore every
+   * flow during a demo. In production this gallery would not exist; users only
+   * ever switch among roles they actually hold (see goToRole). */
+  const ROLE_DEMO_EMAIL = {
+    superAdmin: 'sarah@my-org.com', admin: 'dave@my-org.com', projectManager: 'nina@my-org.com',
+    prompter: 'jane@my-org.com', domainReviewer: 'raj@my-org.com', tester: 'tara@my-org.com',
+    taskReviewer: 'bob@my-org.com',
+  };
+  function demoLoginAs(roleKey) {
+    const email = ROLE_DEMO_EMAIL[roleKey];
+    if (!email) return false;
+    const r = login(email, DEMO_PASSWORD);
+    if (r.success) { switchActiveRole(roleKey); setRole(roleKey); return true; }
+    return false;
+  }
+
+  /* Switch active role AND navigate to that role's home (used by sidebar switcher). */
+  function goToRole(roleKey) {
+    if (!switchActiveRole(roleKey)) return;
+    const base = basePath();
+    location.href = base + '/' + (ROLE_HOME[roleKey] || 'index.html');
   }
 
   function logout() {
@@ -71,16 +142,7 @@ const SB = (function () {
   function getHomePage() {
     const session = getSession();
     if (!session) return 'login.html';
-    const routes = {
-      superAdmin: 'super-admin/dashboard.html',
-      admin: 'admin/dashboard.html',
-      projectManager: 'project-manager/dashboard.html',
-      prompter: 'prompter/dashboard.html',
-      domainReviewer: 'domain-reviewer/queue.html',
-      tester: 'tester/queue.html',
-      taskReviewer: 'reviewer/queue.html',
-    };
-    return routes[session.role] || 'admin/dashboard.html';
+    return ROLE_HOME[session.role] || 'admin/dashboard.html';
   }
 
   function requireAuth() {
@@ -92,11 +154,33 @@ const SB = (function () {
     return true;
   }
 
-  /* ───── Role management ───── */
+  /* ───── Role management ─────
+   * ROLE_KEY tracks the role whose sidebar/nav is currently shown. Each role page
+   * declares its role via requireRole(), which doubles as an ACCESS GUARD. */
   const ROLE_KEY = 'sb-mvp-role';
   function getRole() { return localStorage.getItem(ROLE_KEY) || (getSession() ? getSession().role : 'prompter'); }
   function setRole(role) { localStorage.setItem(ROLE_KEY, role); }
   function clearRole() { localStorage.removeItem(ROLE_KEY); }
+
+  /* Page-level access guard. Call at the top of every role-specific page:
+   *   if (!SB.requireRole('prompter')) throw 'auth';
+   * 1) Requires a valid session (else → login).
+   * 2) Enforces that the logged-in user actually HOLDS this role (real access
+   *    control, not just hidden nav). If not, redirect to their own home.
+   * 3) Sets the active role so the correct sidebar renders. */
+  function requireRole(roleKey) {
+    if (!requireAuth()) return false;
+    const roles = getSessionRoles();
+    if (roleKey && roles.length && !roles.includes(roleKey)) {
+      // Switch active role to the page's home owner only if allowed; otherwise bounce.
+      const base = basePath();
+      try { sessionStorage.setItem('sb-access-denied', roleKey); } catch(e) {}
+      location.href = base + '/' + getHomePage();
+      return false;
+    }
+    if (roleKey) { switchActiveRole(roleKey); setRole(roleKey); }
+    return true;
+  }
 
   /* ───── Wizard task persistence (survives page navigation) ───── */
   const WIZARD_TASK_KEY = 'sb-mvp-wizard-task-id';
@@ -258,6 +342,24 @@ const SB = (function () {
 
     const roleLabel = (SBData.ROLES[role] || {}).label || role;
 
+    /* Multi-role switcher: only list the roles THIS user actually holds. Each
+     * entry flips the active role and lands on that role's home page. Shown only
+     * when the user has more than one role. */
+    const myRoles = getSessionRoles();
+    let roleSwitcherHtml = '';
+    if (myRoles.length > 1) {
+      const links = myRoles.map(rk => {
+        const rl = (SBData.ROLES[rk] || {}).label || rk;
+        const isCur = rk === role;
+        return `<a href="#" onclick="SB.goToRole('${rk}');return false;" class="sb-nav-item ${isCur ? 'active' : ''}" style="padding-left:0.65rem">
+          <span class="sb-icon">${ICONS.switchRole}</span>
+          <span class="sb-label">${escapeHtml(rl)}${isCur ? ' ✓' : ''}</span>
+          <span class="sb-tooltip">Act as ${escapeHtml(rl)}</span>
+        </a>`;
+      }).join('');
+      roleSwitcherHtml = `<div class="sb-nav-section-title">My roles</div>${links}`;
+    }
+
     mount.innerHTML = `
       <aside class="app-sidebar ${collapsed ? 'collapsed' : ''}" id="app-sidebar">
         <div class="sb-brand">
@@ -269,12 +371,8 @@ const SB = (function () {
         <nav class="sb-nav">
           <div class="sb-nav-section">${sidebarItems}</div>
           <div class="sb-nav-section" style="margin-top:auto; padding-top:0.5rem; border-top:1px solid #1e293b;">
+            ${roleSwitcherHtml}
             <div class="sb-nav-section-title">Account</div>
-            <a href="${base}/index.html" class="sb-nav-item">
-              <span class="sb-icon">${ICONS.switchRole}</span>
-              <span class="sb-label">Switch Role</span>
-              <span class="sb-tooltip">Switch Role</span>
-            </a>
             <a href="#" onclick="SB.logout();return false;" class="sb-nav-item">
               <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
               <span class="sb-label">Logout</span>
@@ -362,14 +460,18 @@ const SB = (function () {
     setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, 3200);
   }
 
-  /* ───── Wizard stepper ───── */
+  /* ───── Wizard stepper ─────
+   * PROMPTER flow intentionally puts SOLUTION (4) before VERIFIERS (5): a verifier
+   * is only meaningful when there is a concrete golden solution to check it
+   * against. The Try Model step then runs the prompt+verifiers against a mock
+   * model. TESTER flow turns the package into an executable environment + tests. */
   const WIZARD_STEPS = {
     prompter: [
       { id: 1, label: 'Brief',      href: 'wizard-1-brief.html' },
       { id: 2, label: 'Skills',     href: 'wizard-2-skills.html' },
       { id: 3, label: 'Problem',    href: 'wizard-3-instruction.html' },
-      { id: 4, label: 'Verifiers',  href: 'wizard-4-verifiers.html' },
-      { id: 5, label: 'Solution',   href: 'wizard-5-solution.html' },
+      { id: 4, label: 'Solution',   href: 'wizard-4-solution.html' },
+      { id: 5, label: 'Verifiers',  href: 'wizard-5-verifiers.html' },
       { id: 6, label: 'Try Model',  href: 'wizard-6-trymodel.html' },
       { id: 7, label: 'Submit',     href: 'wizard-7-submit.html' },
     ],
@@ -461,6 +563,46 @@ const SB = (function () {
       setTimeout(next, ms);
     }
     next();
+  }
+
+  /* ───── Verifier validation (MOCK) ─────
+   * Product intent: when a Prompter adds a verifier, the platform validates it
+   * AGAINST THE GOLDEN SOLUTION + PROMPT to answer "is this verifier checkable
+   * and does the reference solution satisfy it?". That requires an LLM at runtime.
+   *
+   * TODO (real implementation): replace this mock with a call to the verifier
+   * validation service / LLM. Inputs: { verifierText, goldenSolution, prompt }.
+   * Output: { status: 'validated'|'needs_review'|'failed', rationale }.
+   *
+   * MOCK heuristic (deterministic enough for demo): if the verifier text shares
+   * meaningful keywords with the solution/prompt → 'validated'; if it is very
+   * short or references nothing concrete → 'needs_review'; empty → 'failed'.
+   * Always resolves after a short delay so the UI can show a "Validating…" state. */
+  function validateVerifierMock(opts) {
+    opts = opts || {};
+    const text = (opts.verifierText || '').toLowerCase();
+    const context = ((opts.goldenSolution || '') + ' ' + (opts.prompt || '')).toLowerCase();
+    const onComplete = opts.onComplete || function () {};
+    const delay = opts.delay != null ? opts.delay : (900 + Math.random() * 700);
+    setTimeout(function () {
+      let status = 'needs_review';
+      let rationale = 'Could not confirm this check against the golden solution. Please review.';
+      if (!text.trim()) {
+        status = 'failed';
+        rationale = 'Empty verifier.';
+      } else {
+        const words = text.split(/[^a-z0-9_./]+/).filter(w => w.length >= 4);
+        const overlap = words.filter(w => context.includes(w));
+        if (context && overlap.length >= 2) {
+          status = 'validated';
+          rationale = 'The golden solution appears to satisfy this check.';
+        } else if (context && overlap.length === 1) {
+          status = 'needs_review';
+          rationale = 'Partial match with the solution — confirm this is fully covered.';
+        }
+      }
+      onComplete({ status, rationale });
+    }, delay);
   }
 
   /* ───── Harbor preview ───── */
@@ -561,21 +703,27 @@ const SB = (function () {
     function render() {
       const domainList = domains.map(d => `<button data-domain="${d.id}" class="skill-domain-btn w-full text-left px-3 py-2.5 rounded-md text-sm transition-colors ${d.id === activeDomain ? d.color + ' font-semibold' : 'hover:bg-slate-100 text-slate-700'}">${escapeHtml(d.name)}</button>`).join('');
       const skills = SBData.getSkillsByDomain(activeDomain);
+      // Each row = a selectable label (checkbox + text) + a separate "View" link.
+      // The View link opens the read-only skill definition (incl. uploaded file)
+      // so a Prompter can inspect a skill before attaching it.
       const skillList = skills.length ? skills.map(s => {
         const checked = selectedSkills.includes(s.id);
-        return `<label class="flex items-start gap-3 p-3 rounded-lg border ${checked ? 'border-indigo-200 bg-indigo-50' : 'border-slate-200 hover:border-indigo-200'} cursor-pointer transition-colors">
-          <input type="checkbox" value="${s.id}" ${checked ? 'checked' : ''} class="mt-0.5 accent-indigo-600">
-          <div class="flex-1 min-w-0">
-            <div class="font-medium text-sm text-slate-900">${escapeHtml(s.name)}</div>
-            <div class="text-xs text-slate-500 mt-0.5">${escapeHtml(s.desc)}</div>
-            <div class="mt-1 flex flex-wrap gap-1">${s.tags.map(t => `<span class="text-[10px] px-1 py-0.5 rounded bg-slate-100 text-slate-600">${escapeHtml(t)}</span>`).join('')}</div>
-          </div>
-        </label>`;
+        return `<div class="flex items-start gap-2 p-3 rounded-lg border ${checked ? 'border-indigo-200 bg-indigo-50' : 'border-slate-200 hover:border-indigo-200'} transition-colors">
+          <label class="flex items-start gap-3 flex-1 min-w-0 cursor-pointer">
+            <input type="checkbox" value="${s.id}" ${checked ? 'checked' : ''} class="mt-0.5 accent-indigo-600">
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-sm text-slate-900">${escapeHtml(s.name)}</div>
+              <div class="text-xs text-slate-500 mt-0.5">${escapeHtml(s.desc)}</div>
+              <div class="mt-1 flex flex-wrap gap-1">${s.tags.map(t => `<span class="text-[10px] px-1 py-0.5 rounded bg-slate-100 text-slate-600">${escapeHtml(t)}</span>`).join('')}</div>
+            </div>
+          </label>
+          <button type="button" data-view="${s.id}" class="skill-view-link text-xs text-indigo-600 hover:underline shrink-0 mt-0.5">View</button>
+        </div>`;
       }).join('') : '<p class="text-sm text-slate-400 italic p-4">No skills in this domain yet.</p>';
 
       mount.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-[12rem_1fr] gap-4 border border-slate-200 rounded-lg overflow-hidden bg-white">
-          <div class="bg-slate-50 p-3 space-y-1 border-r border-slate-200">${domainList}</div>
+          <div class="bg-slate-50 p-3 space-y-1 border-r border-slate-200 max-h-[24rem] overflow-y-auto scroll-y">${domainList}</div>
           <div class="p-4 space-y-2 max-h-[24rem] overflow-y-auto scroll-y">${skillList}</div>
         </div>
         <div class="mt-2 text-xs text-slate-500">${selectedSkills.length} skill(s) selected</div>`;
@@ -591,8 +739,53 @@ const SB = (function () {
           render();
         });
       });
+      mount.querySelectorAll('.skill-view-link').forEach(b => {
+        b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); renderSkillViewModal(SBData.getSkillById(b.dataset.view)); });
+      });
     }
     render();
+  }
+
+  /* ───── Skill viewer (read-only) ─────────────────────────────────────────
+   * Shows a skill's definition plus the REQUIRED uploaded skill-file content.
+   * Reused by the skills picker (Prompter) so skills can be inspected anywhere
+   * they are listed, not just on the admin catalog page. */
+  function renderSkillViewModal(skill) {
+    if (!skill) return;
+    const old = document.getElementById('skill-view-modal'); if (old) old.remove();
+    const domainsHtml = SBData.skillDomainIds(skill).map(did => {
+      const d = SBData.getDomain(did);
+      return `<span class="text-[10px] px-2 py-0.5 rounded font-medium ${d ? d.color : 'bg-slate-100 text-slate-600'}">${escapeHtml(d ? d.name : did)}</span>`;
+    }).join(' ') || '<span class="text-xs text-slate-400">—</span>';
+    const tagsHtml = (skill.tags || []).map(t => `<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${escapeHtml(t)}</span>`).join(' ') || '<span class="text-xs text-slate-400">—</span>';
+    const fileName = skill.file ? skill.file.name : '';
+    const fileContent = skill.file && skill.file.content ? skill.file.content : '(No skill file uploaded)';
+    const overlay = el('div', 'modal-overlay');
+    overlay.id = 'skill-view-modal';
+    overlay.innerHTML = `
+      <div class="bg-white rounded-lg w-full max-w-lg max-h-[85vh] flex flex-col shadow-xl mx-4">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="font-semibold text-lg">${escapeHtml(skill.name)}</h3>
+          <button id="sv-close" type="button" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">&times;</button>
+        </div>
+        <div class="px-6 py-5 space-y-4 overflow-y-auto scroll-y">
+          <div><div class="text-xs font-semibold uppercase text-slate-500 mb-1">Description</div><p class="text-sm text-slate-700">${escapeHtml(skill.desc || '—')}</p></div>
+          <div><div class="text-xs font-semibold uppercase text-slate-500 mb-1">Domains</div><div class="flex flex-wrap gap-1">${domainsHtml}</div></div>
+          <div><div class="text-xs font-semibold uppercase text-slate-500 mb-1">Tags</div><div class="flex flex-wrap gap-1">${tagsHtml}</div></div>
+          <div>
+            <div class="text-xs font-semibold uppercase text-slate-500 mb-1 flex items-center justify-between"><span>Skill file</span><span class="font-mono normal-case text-[11px] text-slate-400">${escapeHtml(fileName)}</span></div>
+            <pre class="text-xs text-slate-700 whitespace-pre-wrap bg-slate-50 border border-slate-200 rounded-lg p-3 max-h-72 overflow-y-auto scroll-y">${escapeHtml(fileContent)}</pre>
+          </div>
+        </div>
+        <div class="px-6 py-4 border-t border-slate-200 flex justify-end">
+          <button id="sv-done" type="button" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">Done</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.querySelector('#sv-close').onclick = close;
+    overlay.querySelector('#sv-done').onclick = close;
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   }
 
   /* ───── Modals ───── */
@@ -630,11 +823,17 @@ const SB = (function () {
     };
   }
 
-  /* ───── State transitions ───── */
+  /* ───── State transitions ─────
+   * Each transition keeps the audit trail (history) and, where relevant, clears
+   * rework metadata so a resubmitted task no longer shows as "in rework". */
+  function getSessionUser(fallback) {
+    const session = getSession();
+    return session ? (SBData.allUsers.find(u => u.id === session.userId) || fallback) : fallback;
+  }
+
   function submitPrompterToDomainReview(t) {
     const now = 'just now';
-    const session = getSession();
-    const prompterUser = session ? (SBData.allUsers.find(u => u.id === session.userId) || SBData.users.prompter) : SBData.users.prompter;
+    const prompterUser = getSessionUser(SBData.users.prompter);
     const prompterRef = { id: prompterUser.id, name: prompterUser.name, initials: prompterUser.initials };
     const existing = SBData.tasks.find(x => x.id && getWizardTaskId() === x.id);
     if (existing) {
@@ -643,6 +842,8 @@ const SB = (function () {
         instructionMd: t.instructionMd, verifiers: t.verifiers || [], goldenSolution: t.goldenSolution || '',
         selectedSkills: t.selectedSkills || [], attachments: t.attachments || [],
         status: 'domain-review', domainReviewer: null, updatedAt: now,
+        // Clear rework flags on resubmit (the task is fresh in the review queue again).
+        changesTarget: null, reworkReason: null, reworkRequestedBy: null,
         history: (existing.history || []).concat([{ when: now, who: prompterUser.name, event: 'Submitted for domain review' }]),
       });
       return existing;
@@ -666,28 +867,36 @@ const SB = (function () {
   function domainReviewerApprove(taskId) {
     const t = SBData.getTaskById(taskId);
     if (!t) return;
+    const reviewer = getSessionUser(SBData.users.domainReviewer);
     t.status = 'with-tester';
-    t.domainReviewer = SBData.users.domainReviewer;
+    t.domainReviewer = { id: reviewer.id, name: reviewer.name, initials: reviewer.initials };
     t.updatedAt = 'just now';
-    t.history.push({ when: 'just now', who: SBData.users.domainReviewer.name, event: 'Domain review approved' });
+    // Approving clears any prior rework flags.
+    t.changesTarget = null; t.reworkReason = null; t.reworkRequestedBy = null;
+    t.history.push({ when: 'just now', who: reviewer.name, event: 'Domain review approved' });
   }
 
+  /* Domain reviewer can only route rework back to the PROMPTER: at this stage no
+   * tester has been assigned yet, so the prompter is the only valid owner. */
   function domainReviewerReject(taskId, comment) {
     const t = SBData.getTaskById(taskId);
     if (!t) return;
+    const reviewer = getSessionUser(SBData.users.domainReviewer);
     t.status = 'changes-requested';
     t.changesTarget = 'prompter';
+    t.reworkReason = comment || 'Changes requested by domain reviewer.';
+    t.reworkRequestedBy = reviewer.name;
+    t.reworkCount = (t.reworkCount || 0) + 1;
     t.updatedAt = 'just now';
-    t.domainReviewer = SBData.users.domainReviewer;
-    t.history.push({ when: 'just now', who: SBData.users.domainReviewer.name, event: 'Requested changes (prompter)' });
-    if (comment) t.comments.push({ author: SBData.users.domainReviewer, when: 'just now', body: comment });
+    t.domainReviewer = { id: reviewer.id, name: reviewer.name, initials: reviewer.initials };
+    t.history.push({ when: 'just now', who: reviewer.name, event: 'Requested changes (prompter)' });
+    if (comment) t.comments.push({ author: { id: reviewer.id, name: reviewer.name, initials: reviewer.initials, role: 'Domain Reviewer' }, when: 'just now', body: comment });
   }
 
   function pickUpTask(taskId) {
     const t = SBData.getTaskById(taskId);
     if (!t) return;
-    const session = getSession();
-    const user = session ? SBData.allUsers.find(u => u.id === session.userId) || SBData.users.tester : SBData.users.tester;
+    const user = getSessionUser(SBData.users.tester);
     t.tester = { id: user.id, name: user.name, initials: user.initials };
     t.updatedAt = 'just now';
     t.history.push({ when: 'just now', who: user.name, event: 'Picked up from tester queue' });
@@ -695,26 +904,242 @@ const SB = (function () {
 
   function submitTesterToReview(t) {
     const now = 'just now';
+    const tester = getSessionUser(SBData.users.tester);
     const id = getWizardTaskId();
     const row = id ? SBData.getTaskById(id) : null;
     if (row) {
       Object.assign(row, {
         templateId: t.templateId, dockerfile: t.dockerfile, solveSh: t.solveSh, testSh: t.testSh,
         oraclePassed: t.oraclePassed, oracleReward: t.oracleReward,
+        testingNotes: t.testingNotes || row.testingNotes || '',
+        // Reaching review means the tester reproduced the task and Oracle PASSed.
+        testOutcome: 'pass',
         status: 'in-review', updatedAt: now,
+        // Tester resubmitting after rework clears the tester-targeted rework flags.
+        changesTarget: null, reworkReason: null, reworkRequestedBy: null,
       });
-      row.history.push({ when: now, who: SBData.users.tester.name, event: 'Submitted for tech review (Oracle PASS)' });
+      row.history.push({ when: now, who: tester.name, event: 'Submitted for tech review (Oracle PASS)' });
     }
+  }
+
+  /* ───── Role + status based task permissions ─────────────────────────────
+   * Single source of truth for "what can role X do on a task in status Y".
+   * UI screens read this instead of re-deriving permissions inline, so edit
+   * access is intentional and workflow-based rather than scattered/guessed.
+   *
+   * Editing rationale:
+   *  - Domain Reviewer (status = domain-review): owns quality of the Prompter's
+   *    content before it reaches a Tester, so may edit that content INLINE
+   *    (problem statement, golden solution, verifiers, skills, domain, difficulty)
+   *    to fix small issues instead of bouncing every typo back. Identity fields
+   *    (name/id), status and assignees stay locked.
+   *  - Tester (status = with-tester / tester-targeted rework): owns the
+   *    implementation artifacts (Dockerfile, solve.sh, test.sh) and may make
+   *    MINOR fixes to the spec text. For anything substantive (wrong golden
+   *    solution, impossible verifier, missing input) they send the task BACK as
+   *    rework rather than rewriting the Prompter's intent.
+   *  - Task Reviewer (status = in-review): approves/publishes or requests rework;
+   *    does not edit content directly.
+   */
+  function taskPermissions(task, roleKey) {
+    const status = task ? task.status : null;
+    const p = {
+      role: roleKey, status: status,
+      canEditContent: false,   // full edit of Prompter-authored fields
+      canEditMinor: false,     // small fixes to spec text only
+      canEditArtifacts: false, // Dockerfile / solve.sh / test.sh
+      canApprove: false,
+      canRequestRework: false,
+      canSendBack: false,
+      lockedFields: ['id', 'name', 'status', 'prompter', 'tester', 'domainReviewer'],
+    };
+    if (roleKey === 'domainReviewer' && status === 'domain-review') {
+      p.canEditContent = true; p.canApprove = true; p.canRequestRework = true;
+    } else if (roleKey === 'tester' &&
+        (status === 'with-tester' || (status === 'changes-requested' && task.changesTarget === 'tester'))) {
+      p.canEditArtifacts = true; p.canEditMinor = true; p.canSendBack = true;
+    } else if (roleKey === 'taskReviewer' && status === 'in-review') {
+      p.canApprove = true; p.canRequestRework = true;
+    }
+    return p;
+  }
+
+  /* Apply an edited patch to a live task and record an audit-trail entry.
+   * Used by Domain Reviewer (full content edit) and Tester (minor edits). */
+  function updateTaskFields(taskId, patch, eventLabel) {
+    const t = SBData.getTaskById(taskId);
+    if (!t) return null;
+    Object.assign(t, patch || {});
+    t.updatedAt = 'just now';
+    const actor = getSessionUser({ name: 'Someone' });
+    if (!t.history) t.history = [];
+    t.history.push({ when: 'just now', who: actor.name, event: eventLabel || 'Edited task' });
+    return t;
+  }
+
+  /* Tester bounces a task back when the spec itself is broken. Routes to the
+   * Prompter (content/intent problems) or Domain Reviewer (review-stage miss),
+   * captures a plain-language reason + a test outcome, and increments rework. */
+  function testerSendBack(task, opts) {
+    opts = opts || {};
+    const t = SBData.getTaskById(task.id) || task;
+    const tester = getSessionUser(SBData.users.tester);
+    t.status = 'changes-requested';
+    t.changesTarget = opts.target || 'prompter';
+    t.reworkReason = opts.reason || 'Tester reported a problem with the task spec.';
+    t.reworkRequestedBy = tester.name;
+    t.reworkCount = (t.reworkCount || 0) + 1;
+    t.testOutcome = opts.outcome || 'blocked';
+    if (opts.notes != null) t.testingNotes = opts.notes;
+    t.updatedAt = 'just now';
+    if (!t.history) t.history = [];
+    t.history.push({ when: 'just now', who: tester.name,
+      event: 'Tester sent back to ' + t.changesTarget + ' (' + t.testOutcome + ')' });
+    if (!t.comments) t.comments = [];
+    if (opts.reason) t.comments.push({ author: { id: tester.id, name: tester.name, initials: tester.initials, role: 'Tester' }, when: 'just now', body: opts.reason });
+    return t;
+  }
+
+  /* ───── Generic Edit-Task modal ─────────────────────────────────────────
+   * Reused by Domain Reviewer (full content) and Tester (minor fixes). `fields`
+   * controls which inputs render so each role only edits what it is allowed to.
+   * Supported keys: domain, difficulty, instructionMd, goldenSolution,
+   * verifiers, skills, testingNotes. Calls onSave(patch) with only those keys. */
+  function renderEditTaskModal(task, opts) {
+    opts = opts || {};
+    const fields = opts.fields || ['instructionMd', 'goldenSolution', 'verifiers', 'skills', 'domain', 'difficulty'];
+    const has = (k) => fields.includes(k);
+    const existing = document.getElementById('edit-task-modal');
+    if (existing) existing.remove();
+
+    // Work on copies so Cancel discards cleanly.
+    let verifiers = JSON.parse(JSON.stringify(task.verifiers || []));
+    let selectedSkills = (task.selectedSkills || []).slice();
+
+    const domainOptions = SBData.skillDomains.map(d => `<option value="${d.id}" ${d.id === task.domain ? 'selected' : ''}>${escapeHtml(d.name)}</option>`).join('');
+    const diffOptions = ['easy', 'medium', 'hard'].map(d => `<option value="${d}" ${(task.difficulty || 'medium') === d ? 'selected' : ''}>${d}</option>`).join('');
+
+    const overlay = el('div', 'modal-overlay');
+    overlay.id = 'edit-task-modal';
+    overlay.innerHTML = `
+      <div class="bg-white rounded-lg max-w-3xl w-full shadow-xl mx-4 max-h-[90vh] flex flex-col">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="font-semibold text-lg">${escapeHtml(opts.title || 'Edit task')}</h3>
+          <button id="et-close" type="button" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">&times;</button>
+        </div>
+        ${opts.note ? `<div class="px-6 pt-3 text-xs text-slate-500">${opts.note}</div>` : ''}
+        <div class="px-6 py-4 space-y-5 overflow-y-auto scroll-y">
+          ${(has('domain') || has('difficulty')) ? `<div class="grid grid-cols-2 gap-3">
+            ${has('domain') ? `<div><label class="text-sm font-medium">Domain</label><select id="et-domain" class="mt-1 w-full px-3 py-2 text-sm border rounded-md">${domainOptions}</select></div>` : ''}
+            ${has('difficulty') ? `<div><label class="text-sm font-medium">Difficulty</label><select id="et-difficulty" class="mt-1 w-full px-3 py-2 text-sm border rounded-md">${diffOptions}</select></div>` : ''}
+          </div>` : ''}
+          ${has('instructionMd') ? `<div><label class="text-sm font-medium">Problem statement</label><textarea id="et-instruction" rows="8" class="mt-1 w-full px-3 py-2 text-sm border rounded-md font-mono">${escapeHtml(task.instructionMd || '')}</textarea></div>` : ''}
+          ${has('goldenSolution') ? `<div><label class="text-sm font-medium">Golden solution</label><textarea id="et-golden" rows="6" class="mt-1 w-full px-3 py-2 text-sm border rounded-md font-mono">${escapeHtml(task.goldenSolution || '')}</textarea></div>` : ''}
+          ${has('verifiers') ? `<div><div class="flex items-center justify-between"><label class="text-sm font-medium">Verifiers</label><button id="et-add-ver" type="button" class="text-xs px-2 py-1 rounded bg-slate-100 hover:bg-slate-200">+ Add verifier</button></div><div id="et-verifiers" class="mt-2 space-y-2"></div></div>` : ''}
+          ${has('testingNotes') ? `<div><label class="text-sm font-medium">Testing notes</label><textarea id="et-notes" rows="3" placeholder="What you observed while testing..." class="mt-1 w-full px-3 py-2 text-sm border rounded-md">${escapeHtml(task.testingNotes || '')}</textarea></div>` : ''}
+          ${has('skills') ? `<div><label class="text-sm font-medium">Skills</label><div id="et-skills" class="mt-1"></div></div>` : ''}
+        </div>
+        <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
+          <button id="et-cancel" type="button" class="px-3 py-1.5 text-sm border rounded-md hover:bg-slate-50">Cancel</button>
+          <button id="et-save" type="button" class="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium">Save changes</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const catOpts = (sel) => '<option value="">No category</option>' + SBData.VERIFIER_CATEGORIES.map(c => `<option value="${c.id}" ${sel === c.id ? 'selected' : ''}>${escapeHtml(c.label)}</option>`).join('');
+    function renderVerifiers() {
+      const wrap = overlay.querySelector('#et-verifiers');
+      if (!wrap) return;
+      if (!verifiers.length) { wrap.innerHTML = '<p class="text-xs text-slate-400 italic">No verifiers yet. Add at least one.</p>'; return; }
+      wrap.innerHTML = '';
+      verifiers.forEach((v, i) => {
+        const row = el('div', 'border border-slate-200 rounded-md p-2 space-y-1');
+        row.innerHTML = `
+          <div class="flex gap-2 items-center">
+            <select data-i="${i}" class="et-vcat text-xs px-2 py-1 border rounded-md">${catOpts(v.category)}</select>
+            <button data-i="${i}" type="button" class="et-vdel ml-auto text-xs text-rose-600 hover:underline">Remove</button>
+          </div>
+          <textarea data-i="${i}" rows="2" class="et-vdesc w-full px-2 py-1 text-sm border rounded-md" placeholder="Describe the success criterion in plain language">${escapeHtml(v.description || '')}</textarea>`;
+        wrap.appendChild(row);
+      });
+      wrap.querySelectorAll('.et-vdesc').forEach(t => t.addEventListener('input', e => { verifiers[+e.target.dataset.i].description = e.target.value; }));
+      wrap.querySelectorAll('.et-vcat').forEach(s => s.addEventListener('change', e => { verifiers[+e.target.dataset.i].category = e.target.value || null; }));
+      wrap.querySelectorAll('.et-vdel').forEach(b => b.addEventListener('click', e => { verifiers.splice(+e.currentTarget.dataset.i, 1); renderVerifiers(); }));
+    }
+    renderVerifiers();
+    const addVer = overlay.querySelector('#et-add-ver');
+    if (addVer) addVer.addEventListener('click', () => { verifiers.push({ description: '', category: null, validationStatus: 'pending' }); renderVerifiers(); });
+    if (has('skills')) renderSkillsPicker(overlay.querySelector('#et-skills'), selectedSkills, (sk) => { selectedSkills = sk; });
+
+    const close = () => overlay.remove();
+    overlay.querySelector('#et-close').onclick = close;
+    overlay.querySelector('#et-cancel').onclick = close;
+    overlay.querySelector('#et-save').onclick = () => {
+      const patch = {};
+      if (has('domain')) patch.domain = overlay.querySelector('#et-domain').value;
+      if (has('difficulty')) patch.difficulty = overlay.querySelector('#et-difficulty').value;
+      if (has('instructionMd')) patch.instructionMd = overlay.querySelector('#et-instruction').value;
+      if (has('goldenSolution')) patch.goldenSolution = overlay.querySelector('#et-golden').value;
+      if (has('verifiers')) patch.verifiers = verifiers;
+      if (has('testingNotes')) patch.testingNotes = overlay.querySelector('#et-notes').value;
+      if (has('skills')) patch.selectedSkills = selectedSkills;
+      if (has('instructionMd') && !patch.instructionMd.trim()) { toast('Problem statement cannot be empty.', 'warning'); return; }
+      if (has('verifiers') && patch.verifiers.some(v => !(v.description || '').trim())) { toast('Every verifier needs a description (or remove it).', 'warning'); return; }
+      close();
+      if (opts.onSave) opts.onSave(patch);
+    };
+  }
+
+  /* Tester "send back" modal: target (prompter / domain reviewer), reason,
+   * and a test outcome. Distinct from the reviewer's request-changes modal. */
+  function renderSendBackModal(task, onSubmit) {
+    const existing = document.getElementById('sendback-modal');
+    if (existing) existing.remove();
+    const overlay = el('div', 'modal-overlay');
+    overlay.id = 'sendback-modal';
+    overlay.innerHTML = `
+      <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl mx-4">
+        <h3 class="font-semibold text-lg mb-1">Send task back</h3>
+        <p class="text-sm text-slate-500 mb-4">Use this when the task spec itself is wrong and needs the author to fix it.</p>
+        <label class="text-sm font-medium">Route to</label>
+        <div class="flex gap-2 mt-1 mb-3">
+          <label class="flex-1 text-center px-3 py-2 border rounded-md cursor-pointer text-sm has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-300"><input type="radio" name="sb-target" value="prompter" checked class="mr-1">Prompter</label>
+          <label class="flex-1 text-center px-3 py-2 border rounded-md cursor-pointer text-sm has-[:checked]:bg-violet-50 has-[:checked]:border-violet-300"><input type="radio" name="sb-target" value="domainReviewer" class="mr-1">Domain Reviewer</label>
+        </div>
+        <label class="text-sm font-medium">Test outcome</label>
+        <select id="sb-outcome" class="mt-1 mb-3 w-full px-3 py-2 text-sm border rounded-md">
+          <option value="fail">Fail — solution/verifiers don't work</option>
+          <option value="blocked">Blocked — missing input or unclear spec</option>
+        </select>
+        <label class="text-sm font-medium">What needs to change</label>
+        <textarea id="sb-reason" rows="3" placeholder="Describe the problem you hit while testing..." class="mt-1 w-full px-3 py-2 text-sm border rounded-md"></textarea>
+        <div class="mt-4 flex justify-end gap-2">
+          <button id="sb-cancel" type="button" class="px-3 py-1.5 text-sm border rounded-md hover:bg-slate-50">Cancel</button>
+          <button id="sb-send" type="button" class="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-700 text-white rounded-md font-medium">Send back</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.querySelector('#sb-cancel').onclick = close;
+    overlay.querySelector('#sb-send').onclick = () => {
+      const reason = overlay.querySelector('#sb-reason').value.trim();
+      const target = overlay.querySelector('input[name="sb-target"]:checked').value;
+      const outcome = overlay.querySelector('#sb-outcome').value;
+      if (!reason) { toast('Please describe what needs to change.', 'warning'); return; }
+      close();
+      if (onSubmit) onSubmit({ target, outcome, reason });
+    };
   }
 
   return {
     $, $$, el, icon, escapeHtml,
-    isAuthenticated, getSession, login, logout, getHomePage, requireAuth,
-    getRole, setRole, clearRole,
+    isAuthenticated, getSession, getSessionRoles, login, logout, getHomePage, requireAuth,
+    getRole, setRole, clearRole, requireRole, switchActiveRole, goToRole, demoLoginAs,
     getWizardTaskId, setWizardTaskId, loadWizardTask, getWizardTaskFromSession, saveWizardTaskToSession,
     renderNav, renderWizardStepper, toast,
-    runOracle, runMockModel, renderHarborPreview, renderTemplatePicker, renderSkillsPicker,
-    openModal, closeModal, renderRequestChangesModal,
+    runOracle, runMockModel, validateVerifierMock, renderHarborPreview, renderTemplatePicker, renderSkillsPicker, renderSkillViewModal,
+    openModal, closeModal, renderRequestChangesModal, renderEditTaskModal, renderSendBackModal,
+    taskPermissions, updateTaskFields, testerSendBack,
     submitPrompterToDomainReview, domainReviewerApprove, domainReviewerReject,
     pickUpTask, submitTesterToReview,
   };

@@ -6,7 +6,7 @@
   <title>Project Manager - Skill Bench</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
@@ -21,36 +21,37 @@
       </a>
     </div>
 
-    <!-- Pipeline summary -->
+    <!-- Pipeline summary. Each KPI links to the filtered task list (tasks.html
+         reads ?status= / ?tab= from the URL) so counts are actionable. -->
     <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
-      <div class="bg-white border border-slate-200 rounded-lg p-3 text-center">
+      <a href="tasks.html" class="bg-white border border-slate-200 rounded-lg p-3 text-center hover:border-slate-400 transition-colors">
         <div class="text-lg font-bold" id="kpi-total">-</div>
         <div class="text-[10px] text-slate-500 uppercase mt-0.5">Total</div>
-      </div>
-      <div class="bg-white border border-slate-200 rounded-lg p-3 text-center">
+      </a>
+      <a href="tasks.html?status=prompter-draft" class="bg-white border border-slate-200 rounded-lg p-3 text-center hover:border-slate-400 transition-colors">
         <div class="text-lg font-bold" id="kpi-draft">-</div>
         <div class="text-[10px] text-slate-500 uppercase mt-0.5">Draft</div>
-      </div>
-      <div class="bg-white border border-violet-200 rounded-lg p-3 text-center">
+      </a>
+      <a href="tasks.html?status=domain-review" class="bg-white border border-violet-200 rounded-lg p-3 text-center hover:border-violet-400 transition-colors">
         <div class="text-lg font-bold text-violet-700" id="kpi-domain">-</div>
         <div class="text-[10px] text-violet-600 uppercase mt-0.5">Domain review</div>
-      </div>
-      <div class="bg-white border border-blue-200 rounded-lg p-3 text-center">
+      </a>
+      <a href="tasks.html?status=with-tester" class="bg-white border border-blue-200 rounded-lg p-3 text-center hover:border-blue-400 transition-colors">
         <div class="text-lg font-bold text-blue-700" id="kpi-tester">-</div>
         <div class="text-[10px] text-blue-600 uppercase mt-0.5">With tester</div>
-      </div>
-      <div class="bg-white border border-amber-200 rounded-lg p-3 text-center">
+      </a>
+      <a href="tasks.html?status=in-review" class="bg-white border border-amber-200 rounded-lg p-3 text-center hover:border-amber-400 transition-colors">
         <div class="text-lg font-bold text-amber-700" id="kpi-review">-</div>
         <div class="text-[10px] text-amber-600 uppercase mt-0.5">Task review</div>
-      </div>
-      <div class="bg-white border border-orange-200 rounded-lg p-3 text-center">
+      </a>
+      <a href="tasks.html?tab=rework" class="bg-white border border-orange-200 rounded-lg p-3 text-center hover:border-orange-400 transition-colors">
         <div class="text-lg font-bold text-orange-700" id="kpi-changes">-</div>
-        <div class="text-[10px] text-orange-600 uppercase mt-0.5">Changes</div>
-      </div>
-      <div class="bg-white border border-emerald-200 rounded-lg p-3 text-center">
+        <div class="text-[10px] text-orange-600 uppercase mt-0.5">Rework</div>
+      </a>
+      <a href="tasks.html?tab=completed" class="bg-white border border-emerald-200 rounded-lg p-3 text-center hover:border-emerald-400 transition-colors">
         <div class="text-lg font-bold text-emerald-700" id="kpi-published">-</div>
-        <div class="text-[10px] text-emerald-600 uppercase mt-0.5">Published</div>
-      </div>
+        <div class="text-[10px] text-emerald-600 uppercase mt-0.5">Completed</div>
+      </a>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
@@ -77,11 +78,10 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('projectManager');
+    if (!SB.requireRole('projectManager')) throw 'auth';
     SB.renderNav();
 
     const tasks = SBData.tasks;
@@ -93,32 +93,35 @@
     document.getElementById('kpi-changes').textContent = tasks.filter(t => t.status === 'changes-requested').length;
     document.getElementById('kpi-published').textContent = tasks.filter(t => t.status === 'published' || t.status === 'approved').length;
 
-    // Needs attention
+    // Needs attention = items the PM should act on: tasks in rework, OR
+    // domain-approved tasks with no tester assigned yet (need pickup/assignment).
     const attentionEl = document.getElementById('attention-list');
-    const needsAttention = tasks.filter(t => ['changes-requested','with-tester'].includes(t.status) && !t.tester);
+    const needsAttention = tasks.filter(t => t.status === 'changes-requested' || (t.status === 'with-tester' && !t.tester));
     if (needsAttention.length) {
       needsAttention.forEach(t => {
         const st = SBData.STATUS[t.status];
-        attentionEl.innerHTML += `<div class="px-5 py-3 flex items-center justify-between"><div><div class="text-sm font-medium">${SB.escapeHtml(t.name)}</div><div class="text-xs text-slate-500">${SB.escapeHtml(t.description || '').slice(0,50)}</div></div><span class="pill ${st.cls}">${st.label}</span></div>`;
+        const reason = t.status === 'changes-requested'
+          ? (t.reworkReason ? 'Rework: ' + t.reworkReason : 'In rework')
+          : 'Awaiting tester assignment';
+        attentionEl.innerHTML += `<a href="tasks.html" class="block px-5 py-3 hover:bg-slate-50"><div class="flex items-center justify-between"><div class="min-w-0"><div class="text-sm font-medium font-mono truncate">${SB.escapeHtml(t.name)}</div><div class="text-xs text-amber-700 mt-0.5">${SB.escapeHtml(reason)}</div></div><span class="pill ${st.cls} shrink-0 ml-2">${st.label}</span></div></a>`;
       });
     } else {
-      tasks.filter(t => t.status !== 'published').slice(0, 4).forEach(t => {
-        const st = SBData.STATUS[t.status];
-        attentionEl.innerHTML += `<div class="px-5 py-3 flex items-center justify-between"><div><div class="text-sm font-medium">${SB.escapeHtml(t.name)}</div><div class="text-xs text-slate-500">${SB.escapeHtml(t.description || '').slice(0,50)}</div></div><span class="pill ${st.cls}">${st.label}</span></div>`;
-      });
+      attentionEl.innerHTML = '<div class="px-5 py-8 text-center text-xs text-slate-400">Nothing needs attention. Pipeline is healthy.</div>';
     }
 
-    // Team workload
+    // Team workload (multi-role aware). A person appears if they hold any pipeline role.
     const workloadEl = document.getElementById('workload-rows');
-    const teamRoles = ['Prompter','Tester','Domain Reviewer','Task Reviewer'];
-    SBData.allUsers.filter(u => teamRoles.includes(u.role)).forEach(u => {
-      const roleInfo = Object.values(SBData.ROLES).find(r => r.label === u.role) || {};
-      const rc = roleInfo.color || 'bg-slate-100 text-slate-700';
+    const teamRoleKeys = ['prompter','tester','domainReviewer','taskReviewer'];
+    SBData.allUsers.filter(u => SBData.userRoleKeys(u).some(r => teamRoleKeys.includes(r))).forEach(u => {
+      const badges = SBData.userRoleKeys(u).map(rk => {
+        const r = SBData.ROLES[rk] || {};
+        return `<span class="text-[10px] px-2 py-0.5 rounded font-medium ${r.color || 'bg-slate-100 text-slate-700'}">${SB.escapeHtml(r.label || rk)}</span>`;
+      }).join(' ');
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-slate-50';
       tr.innerHTML = `
         <td class="px-4 py-2.5"><div class="flex items-center gap-2"><div class="avatar" style="width:1.5rem;height:1.5rem;font-size:0.55rem">${u.initials}</div><span class="text-xs font-medium">${SB.escapeHtml(u.name)}</span></div></td>
-        <td class="px-4 py-2.5"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${rc}">${SB.escapeHtml(u.role)}</span></td>
+        <td class="px-4 py-2.5"><div class="flex flex-wrap gap-1">${badges}</div></td>
         <td class="px-4 py-2.5 text-xs font-medium">${u.tasksCount}</td>
         <td class="px-4 py-2.5"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${u.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${u.status}</span></td>`;
       workloadEl.appendChild(tr);

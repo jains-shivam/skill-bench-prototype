@@ -6,7 +6,7 @@
   <title>Brief - Prompter - Skill Bench MVP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=3">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="app-nav"></div>
@@ -39,9 +39,12 @@
         </div>
         <div>
           <label class="block text-sm font-medium mb-1" for="f-domain">Domain</label>
-          <input id="f-domain" type="text" placeholder="e.g. finance, data-analysis, legal, marketing"
-                 class="w-full max-w-md px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200">
-          <p class="text-xs text-slate-500 mt-1">Any field — helps route your task to the right reviewers.</p>
+          <!-- Domain is chosen from the platform taxonomy so it maps cleanly to
+               skill filters, reviewer routing, and dashboards. -->
+          <select id="f-domain" class="w-full max-w-md px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <option value="">Select a domain...</option>
+          </select>
+          <p class="text-xs text-slate-500 mt-1">Helps route your task to the right reviewers and skills.</p>
         </div>
         <div>
           <div class="text-sm font-medium mb-2">Difficulty</div>
@@ -69,11 +72,10 @@
     </div>
   </main>
   <div id="toast-container"></div>
-  <script src="../assets/data.js?v=3"></script>
-  <script src="../assets/script.js?v=3"></script>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
   <script>
-    if (!SB.requireAuth()) throw 'auth';
-    SB.setRole('prompter');
+    if (!SB.requireRole('prompter')) throw 'auth';
     SB.renderNav();
     SB.renderWizardStepper(1, 'prompter');
 
@@ -83,9 +85,11 @@
     }
 
     const t = SB.getWizardTaskFromSession();
+    const domainSel = document.getElementById('f-domain');
+    SBData.skillDomains.forEach(d => { domainSel.innerHTML += `<option value="${d.id}">${SB.escapeHtml(d.name)}</option>`; });
     document.getElementById('f-name').value = t.name || '';
     document.getElementById('f-desc').value = t.description || '';
-    document.getElementById('f-domain').value = t.domain || '';
+    domainSel.value = t.domain || '';
     const diff = t.difficulty || 'medium';
     const diffRadio = document.querySelector(`input[name="diff"][value="${diff}"]`);
     if (diffRadio) diffRadio.checked = true;
@@ -101,9 +105,10 @@
       SB.saveWizardTaskToSession(t);
     }
 
-    ['f-name', 'f-desc', 'f-domain'].forEach(id => {
+    ['f-name', 'f-desc'].forEach(id => {
       document.getElementById(id).addEventListener('input', persist);
     });
+    domainSel.addEventListener('change', persist);
     document.querySelectorAll('input[name="diff"]').forEach(r => r.addEventListener('change', persist));
     document.getElementById('next').addEventListener('click', persist);
   </script>

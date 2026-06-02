@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verifiers - Prompter - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="max-w-5xl">
+    <div class="flex justify-between mb-4 text-sm text-slate-500">
+      <span><a href="dashboard.html" class="hover:text-slate-900">My Tasks</a> / New task</span>
+      <a id="save-exit" href="dashboard.html" class="hover:text-slate-900">Save &amp; Exit</a>
+    </div>
+    <div id="wizard-stepper" class="mb-8 stepper-prompter"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-[14rem_1fr] gap-6">
+      <aside class="bg-white border border-slate-200 rounded-lg p-4 h-fit text-sm text-slate-600">
+        <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Step 5 — Verifiers</div>
+        <p>Add the checks that decide whether an agent solved the task. Write each one in plain language.</p>
+        <ul class="mt-3 list-disc pl-4 space-y-1">
+          <li>One check per line</li>
+          <li>Category is optional</li>
+          <li>Each check is validated against your golden solution</li>
+        </ul>
+        <div class="mt-3 p-2.5 rounded-md bg-indigo-50 text-[12px] text-indigo-800 leading-snug">
+          We check each verifier against the <b>golden solution</b> you wrote in the previous step.
+        </div>
+      </aside>
+      <section class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-semibold">Verification criteria</h2>
+            <p class="text-sm text-slate-500 mt-0.5"><span id="verifier-count">0</span> verifier(s) · <span id="validated-count">0</span> validated</p>
+          </div>
+          <button id="ai-suggest" type="button"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 text-xs border border-indigo-200 bg-indigo-50 text-indigo-700 rounded-md hover:bg-indigo-100">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><path d="M12 3l1.9 5.7L19.6 10l-5.7 1.9L12 17l-1.9-5.1L4.4 10l5.7-1.3z"/></svg>
+            AI Suggest
+          </button>
+        </div>
+
+        <!-- Add verifier: simple one-by-one. Category is OPTIONAL. -->
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <div class="flex flex-col sm:flex-row gap-2">
+            <select id="v-category" title="Optional category"
+                    class="sm:w-44 px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200">
+              <option value="">No category</option>
+            </select>
+            <input id="v-desc" type="text" placeholder="Describe what must be true when the task is solved correctly..."
+                   class="flex-1 px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400">
+            <button id="v-add" type="button"
+                    class="px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg whitespace-nowrap">
+              + Add
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1.5">Press Enter or click Add. Plain language, e.g. "The output file results.json must contain a numeric word_count field."</p>
+        </div>
+
+        <div id="verifier-list" class="divide-y divide-slate-100"></div>
+        <div id="verifier-empty" class="hidden px-6 py-12 text-center text-sm text-slate-500">
+          <svg class="mx-auto w-10 h-10 text-slate-300 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <p class="font-medium text-slate-700">No verifiers yet</p>
+          <p class="mt-1">Add a check above or click <b>AI Suggest</b> for examples based on your solution.</p>
+        </div>
+      </section>
+    </div>
+    <div class="mt-8 flex justify-between">
+      <a id="back" href="wizard-4-solution.html" class="text-sm text-slate-600 hover:text-slate-900">&larr; Back</a>
+      <a id="next" href="wizard-6-trymodel.html"
+         class="inline-flex items-center gap-2 px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md font-medium">
+        Next: Try Model
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
+  <script>
+    // Step 5 of the Prompter wizard.
+    //
+    // VERIFIER FIELDS (product reasoning):
+    //   description     — REQUIRED. Plain-language check. This is the source of truth;
+    //                     a Tester later compiles it into an executable assertion.
+    //   category        — OPTIONAL. correctness/completeness/safety/etc. Helps the
+    //                     reviewer reason about coverage + enables weighted scoring later.
+    //   type            — technical hint (file_exists, json_key_equals...). Inferred/
+    //                     left blank here; the Tester sets the concrete mechanism.
+    //   validationStatus— result of validating the verifier AGAINST the golden solution
+    //                     + prompt. Mock for now (see SB.validateVerifierMock). When a
+    //                     real LLM validator exists it replaces the mock and writes the
+    //                     same status values (validated / needs_review / failed).
+    if (!SB.requireRole('prompter')) throw 'auth';
+    SB.renderNav();
+    SB.renderWizardStepper(5, 'prompter');
+
+    function wizHref(path) {
+      var id = SB.getWizardTaskId();
+      return path + (id ? '?id=' + encodeURIComponent(id) : '');
+    }
+    document.getElementById('back').href = wizHref('wizard-4-solution.html');
+    document.getElementById('next').href = wizHref('wizard-6-trymodel.html');
+
+    var t = SB.getWizardTaskFromSession();
+    if (!Array.isArray(t.verifiers)) t.verifiers = [];
+    // Normalize legacy verifiers (older data may lack category/validationStatus).
+    t.verifiers.forEach(function(v) { if (!v.validationStatus) v.validationStatus = 'pending'; });
+
+    var descInput = document.getElementById('v-desc');
+    var catSelect = document.getElementById('v-category');
+    SBData.VERIFIER_CATEGORIES.forEach(function(c) {
+      catSelect.innerHTML += '<option value="' + c.id + '">' + SB.escapeHtml(c.label) + '</option>';
+    });
+
+    var AI_SAMPLES = [
+      { category: 'completeness', description: 'The expected output file is created after running the solution' },
+      { category: 'correctness',  description: 'The output values match the golden solution for the sample input' },
+      { category: 'correctness',  description: 'Running the solution exits with code 0 (no errors)' },
+      { category: 'output_format',description: 'The output is valid JSON with the documented keys' },
+    ];
+
+    function persist() { SB.saveWizardTaskToSession(t); }
+
+    function catBadge(catId) {
+      if (!catId) return '';
+      var c = SBData.VERIFIER_CATEGORIES.find(function(x) { return x.id === catId; });
+      if (!c) return '';
+      return '<span class="text-[10px] px-1.5 py-0.5 rounded font-medium ' + c.color + '">' + SB.escapeHtml(c.label) + '</span>';
+    }
+    function statusBadge(st) {
+      var v = SBData.VERIFIER_VALIDATION[st] || SBData.VERIFIER_VALIDATION.pending;
+      var spin = st === 'validating' ? '<span class="inline-block w-2 h-2 mr-1 rounded-full bg-blue-500 animate-pulse"></span>' : '';
+      return '<span class="text-[10px] px-1.5 py-0.5 rounded font-medium ' + v.color + '">' + spin + SB.escapeHtml(v.label) + '</span>';
+    }
+
+    function updateCounts() {
+      document.getElementById('verifier-count').textContent = t.verifiers.length;
+      var validated = t.verifiers.filter(function(v) { return v.validationStatus === 'validated'; }).length;
+      document.getElementById('validated-count').textContent = validated;
+    }
+
+    function renderList() {
+      var list = document.getElementById('verifier-list');
+      var empty = document.getElementById('verifier-empty');
+      updateCounts();
+      list.innerHTML = '';
+      empty.classList.toggle('hidden', t.verifiers.length > 0);
+
+      t.verifiers.forEach(function(v, i) {
+        var row = document.createElement('div');
+        row.className = 'px-6 py-3.5 flex items-start gap-3 hover:bg-slate-50/80 group';
+        row.innerHTML =
+          '<span class="w-5 h-5 mt-0.5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold shrink-0">' + (i + 1) + '</span>' +
+          '<div class="flex-1 min-w-0">' +
+            '<p class="text-sm text-slate-700">' + SB.escapeHtml(v.description || '') + '</p>' +
+            '<div class="mt-1.5 flex flex-wrap items-center gap-1.5">' + catBadge(v.category) + statusBadge(v.validationStatus) +
+              (v.rationale && v.validationStatus !== 'validating' ? '<span class="text-[10px] text-slate-400">' + SB.escapeHtml(v.rationale) + '</span>' : '') +
+            '</div>' +
+          '</div>' +
+          '<button type="button" data-rm="' + i + '" title="Remove" class="shrink-0 text-slate-300 hover:text-red-600 p-1 rounded hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>' +
+          '</button>';
+        list.appendChild(row);
+      });
+
+      list.querySelectorAll('[data-rm]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          t.verifiers.splice(Number(btn.dataset.rm), 1);
+          persist();
+          renderList();
+        });
+      });
+    }
+
+    // Validate a single verifier against the golden solution + prompt (mock).
+    // TODO: swap SB.validateVerifierMock for the real LLM verifier-validation call.
+    function runValidation(v) {
+      v.validationStatus = 'validating';
+      renderList();
+      SB.validateVerifierMock({
+        verifierText: v.description,
+        goldenSolution: t.goldenSolution || '',
+        prompt: t.instructionMd || '',
+        onComplete: function(res) {
+          v.validationStatus = res.status;
+          v.rationale = res.rationale;
+          persist();
+          renderList();
+        }
+      });
+    }
+
+    function addVerifier() {
+      var desc = descInput.value.trim();
+      if (!desc) { descInput.focus(); return; }
+      var v = { type: 'freeform', category: catSelect.value || '', description: desc, validationStatus: 'pending' };
+      t.verifiers.push(v);
+      descInput.value = '';
+      catSelect.value = '';
+      persist();
+      renderList();
+      runValidation(v);
+      descInput.focus();
+    }
+
+    document.getElementById('v-add').addEventListener('click', addVerifier);
+    descInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); addVerifier(); }
+    });
+
+    document.getElementById('ai-suggest').addEventListener('click', function() {
+      var btn = this;
+      var original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5 animate-spin"><path d="M21 12a9 9 0 1 1-3-6.7"/></svg> Suggesting...';
+      setTimeout(function() {
+        AI_SAMPLES.forEach(function(s) {
+          var v = { type: 'freeform', category: s.category, description: s.description, validationStatus: 'pending' };
+          t.verifiers.push(v);
+          runValidation(v);
+        });
+        persist();
+        renderList();
+        btn.disabled = false;
+        btn.innerHTML = original;
+        SB.toast('Added ' + AI_SAMPLES.length + ' suggested verifiers.', 'success');
+      }, 700);
+    });
+
+    document.getElementById('save-exit').addEventListener('click', persist);
+    document.getElementById('next').addEventListener('click', persist);
+    renderList();
+  </script>
+</body>
+</html>
