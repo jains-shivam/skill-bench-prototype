@@ -1,20 +1,62 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Prompter · Task detail (read-only, role-specific view)
-  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
-  FLOW:     prompter/dashboard.html → task-detail.html  (observes any lifecycle
-            status; editable only when prompter owns it: draft / prompter-rework)
-  PURPOSE:  Human-readable view of one task for the Prompter. Raw Harbor folder
-            is intentionally hidden behind an "Advanced" disclosure.
-  READS (SBData): getTaskById(?id), STATUS, domainLabel, getSkillById,
-            skillDomainIds, getDomain, VERIFIER_CATEGORIES, VERIFIER_VALIDATION,
-            harborFiles (via SB.renderHarborPreview).
-  CAPTURES/WRITES: none (read-only). Sets the active wizard task id
-            (SB.setWizardTaskId) when the Prompter chooses to continue/revise.
-  ACTIONS:  "Continue editing / Revise task" → wizard-1-brief.html (when owned).
-  AI-FIRST NOTE: data capture for these task fields happens in the Prompter
-            wizard (wizard-1..7); this page only renders persisted task data.
+  PAGE:        Prompter · Task detail (read-only view)
+  ROLE:        prompter            (access guard: SB.requireRole('prompter'))
+  ROUTE:       prompter/task-detail.html        [query: ?id=<taskId>]
+  PURPOSE:     Human-readable view of one persisted task for the Prompter; Harbor
+               export hidden behind an Advanced disclosure.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       prompter/dashboard.html ("View" on in-pipeline / published tasks)
+  EXIT:        → wizard-1-brief.html?id=… (Continue editing / Revise task when owned)
+               | breadcrumb → dashboard.html
+  LIFECYCLE:   observes any status; editable entry only when prompter-draft or
+               changes-requested with changesTarget === prompter.
+  ACTOR/ACTIONS: Prompter reads task content; action button sets SB.setWizardTaskId
+               and opens wizard-1-brief when ownsForEdit.
+  PERMISSIONS: prompter-only; no SBData mutation on this page.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (single row by ?id; falls back to tasks[0] if id missing)
+  READS:       SBData.getTaskById(id), STATUS, domainLabel(), getSkillById(),
+               skillDomainIds(), getDomain(), VERIFIER_CATEGORIES,
+               VERIFIER_VALIDATION; SB.renderHarborPreview(harborFiles)
+  WRITES:      none to SBData.tasks. SB.setWizardTaskId(t.id) when ownsForEdit.
+  FIELDS SHOWN:
+     name           : string     : header + breadcrumb
+     description    : string     : subtitle under title
+     status         : enum       : status pill + "what happens next" banner
+     domain         : enum(id)   : sidebar + meta line
+     difficulty     : enum       : meta line
+     updatedAt      : string     : meta line
+     instructionMd  : markdown   : "Prompt requirements" section
+     attachments    : Attachment[] : "Inputs & context" list (name, kind, size)
+     goldenSolution : markdown   : golden solution section
+     verifiers      : Verifier[] : category + validationStatus badges + description
+     selectedSkills : string[]   : skill tags in sidebar (FK → Skill)
+     tester         : UserRef?   : tester-card when assigned (solveSh, oraclePassed)
+     reworkReason   : string?    : rework banner when prompter-targeted rework
+     reworkRequestedBy : string? : rework banner attribution
+     reworkCount    : number?    : rework banner counter
+     comments       : Comment[]  : review feedback cards (when present)
+     history        : History[]  : timeline sidebar
+  RELATIONSHIPS: Task n—1 Domain; Task n—n Skill; Task 1—n Verifier; Task.prompter
+               → User; Task.tester → User (when with-tester+).
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      breadcrumb · header card (status, meta, next-step, action btn) ·
+               rework banner · 2-col grid (main sections + sidebar) · Harbor details.
+  COMPONENTS:  status pill, next-step colored callout, rework amber banner, pre blocks
+               for instruction/golden, attachment list, verifier list with badges,
+               skills tags, tester contribution card, comments list, history timeline,
+               <details> Harbor preview (SB.renderHarborPreview).
+  STATES:      task not found → inline error with dashboard link; sections show
+               placeholder text when fields empty; tester/comments cards hidden until
+               data exists; action button hidden unless ownsForEdit.
+
+  AI-FIRST NOTE: read-only mirror of persisted Task; all capture happens in wizard
+               steps 1–7; use this page to understand post-submit pipeline state.
   ============================================================================
 -->
 <html lang="en">

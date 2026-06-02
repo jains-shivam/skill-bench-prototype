@@ -477,9 +477,10 @@ const SB = (function () {
     ],
     tester: [
       { id: 1, label: 'Context',     href: 'wizard-1-context.html' },
-      { id: 2, label: 'Solution',    href: 'wizard-3-solution.html' },
-      { id: 3, label: 'Tests',       href: 'wizard-4-tests.html' },
-      { id: 4, label: 'Oracle',      href: 'wizard-5-oracle.html' },
+      { id: 2, label: 'Environment', href: 'wizard-2-environment.html' },
+      { id: 3, label: 'Solution',    href: 'wizard-3-solution.html' },
+      { id: 4, label: 'Tests',       href: 'wizard-4-tests.html' },
+      { id: 5, label: 'Oracle',      href: 'wizard-5-oracle.html' },
     ],
   };
 
@@ -922,6 +923,31 @@ const SB = (function () {
     }
   }
 
+  /* Task Reviewer decisions. Approve marks the task 'approved' (final QA passed).
+   * Publishing to the Harbor registry is a SEPARATE explicit step so 'approved' is
+   * a real, visible checkpoint in the lifecycle rather than being skipped. */
+  function taskReviewerApprove(taskId) {
+    const t = SBData.getTaskById(taskId);
+    if (!t) return null;
+    const reviewer = getSessionUser(SBData.users.taskReviewer);
+    t.status = 'approved';
+    t.updatedAt = 'just now';
+    t.changesTarget = null; t.reworkReason = null; t.reworkRequestedBy = null;
+    if (!t.history) t.history = [];
+    t.history.push({ when: 'just now', who: reviewer.name, event: 'Approved (final review passed)' });
+    return t;
+  }
+  function taskReviewerPublish(taskId) {
+    const t = SBData.getTaskById(taskId);
+    if (!t) return null;
+    const reviewer = getSessionUser(SBData.users.taskReviewer);
+    t.status = 'published';
+    t.updatedAt = 'just now';
+    if (!t.history) t.history = [];
+    t.history.push({ when: 'just now', who: reviewer.name, event: 'Published to Harbor registry' });
+    return t;
+  }
+
   /* ───── Role + status based task permissions ─────────────────────────────
    * Single source of truth for "what can role X do on a task in status Y".
    * UI screens read this instead of re-deriving permissions inline, so edit
@@ -1141,6 +1167,6 @@ const SB = (function () {
     openModal, closeModal, renderRequestChangesModal, renderEditTaskModal, renderSendBackModal,
     taskPermissions, updateTaskFields, testerSendBack,
     submitPrompterToDomainReview, domainReviewerApprove, domainReviewerReject,
-    pickUpTask, submitTesterToReview,
+    pickUpTask, submitTesterToReview, taskReviewerApprove, taskReviewerPublish,
   };
 })();

@@ -1,18 +1,69 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Task Reviewer · Review workspace
-  ROLE:     taskReviewer        (access guard: SB.requireRole('taskReviewer'))
-  FLOW:     queue.html → workspace.html  (in-review → approve → published, or
-            request changes → changes-requested)
-  PURPOSE:  Final review of complete Harbor package, tester notes, and Oracle result.
-  READS (SBData): getTaskById(?id), STATUS, VERIFIER_CATEGORIES, VERIFIER_VALIDATION,
-            harborFiles (SB.renderHarborPreview); t.solveSh, t.goldenSolution,
-            t.testingNotes, t.testOutcome, t.comments, t.history.
-  CAPTURES/WRITES: direct SBData.tasks mutations on t: comments push; Request changes
-            sets status/changesTarget/history; Approve sets status published + history
-            (requires t.oraclePassed). No SB.submit* helper on approve path.
-  ACTIONS:  Add comment; Request changes (modal); Approve & publish (if Oracle PASS).
+  PAGE:        Task Reviewer · Review workspace
+  ROLE:        taskReviewer        (access guard: SB.requireRole('taskReviewer'))
+  ROUTE:       reviewer/workspace.html        [query: ?id=<taskId>]
+  PURPOSE:     Final technical review of the complete Harbor package (solve.sh, tests,
+               dockerfile), tester notes, and Oracle outcome; publish or request rework.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       reviewer/queue.html → workspace.html?id=<taskId>
+               (fallback: first in-review task if ?id omitted)
+  EXIT:        breadcrumb → queue.html   (stays on page after approve/rework actions)
+  LIFECYCLE:   actionable when status in-review: Approve & publish → status published
+               (requires oraclePassed; skips intermediate approved in this MVP);
+               Request changes → status changes-requested + changesTarget (prompter |
+               tester | domainReviewer via modal). changes-requested / published show
+               read-only action bar messages.
+  ACTOR/ACTIONS: Task Reviewer. Add comment; Request changes (SB.renderRequestChangesModal);
+               Approve & publish (direct mutation, no SB.submit* helper).
+  PERMISSIONS: SB.taskPermissions(t,'taskReviewer') — canApprove (gated on oraclePassed),
+               canRequestRework; no inline content editing.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (live SBData.tasks row)
+  READS:       URL ?id → SBData.getTaskById (or first in-review); STATUS,
+               VERIFIER_CATEGORIES, VERIFIER_VALIDATION; SB.renderHarborPreview;
+               t.solveSh, t.goldenSolution, t.verifiers[], t.testingNotes, t.testOutcome,
+               t.oraclePassed, t.comments[], t.history[]
+  WRITES:      direct mutations on t (no dedicated SB helper on approve):
+               Add comment → comments[] push;
+               Request changes → comments[] push, status changes-requested,
+               changesTarget, updatedAt, history[];
+               Approve → status published, updatedAt, history[] (Oracle PASS required).
+  FIELDS SHOWN:
+     name            : string     : task title + description
+     status          : enum       : lifecycle pill
+     prompter        : UserRef    : FK → User
+     tester          : UserRef    : FK → User
+     oraclePassed    : bool       : meta badge (PASS 1.0 or "not run")
+     domain          : enum(id)   : FK → Domain
+     solveSh         : string     : tester's solution/solve.sh
+     goldenSolution  : markdown   : prompter reference
+     verifiers       : Verifier[] : category + validation badges
+     testingNotes    : string     : tester observations (sidebar card)
+     testOutcome     : enum       : pass | fail | blocked badge when present
+     comments        : Comment[]  : thread + new-comment textarea
+     history         : History[]  : audit timeline
+  RELATIONSHIPS: Task bundles Harbor artifacts (solveSh, testSh, dockerfile via preview);
+               publish is terminal lifecycle state for end users.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      breadcrumb · header (title, status, meta, action bar) · 2-col top
+               (solve.sh | golden + verifiers) · Harbor folder + right aside (tester notes,
+               comments, history).
+  COMPONENTS:  solve.sh + golden solution panels, verifiers list, SB.renderHarborPreview,
+               tester-notes card (outcome badge + notes), comment form + list, history
+               timeline, action bar (Request changes / Approve, then Publish to registry),
+               SB.renderRequestChangesModal, task-not-found fallback.
+  STATES:      Approve disabled until oraclePassed; in-review → Approve; approved → Publish
+               to registry; changes-requested → waiting message; published → status badge;
+               tester-notes card hidden when no testingNotes and no testOutcome.
+
+  AI-FIRST NOTE: terminal review gate — reads tester artifacts + Oracle PASS. Two explicit
+               steps: SB.taskReviewerApprove → 'approved', then SB.taskReviewerPublish →
+               'published', so the 'approved' checkpoint is a real, visible state.
   ============================================================================
 -->
 <html lang="en">
@@ -168,12 +219,13 @@
       const bar = document.getElementById('action-bar');
       bar.innerHTML = '';
       if (t.status === 'in-review') {
+        // Step 1 of final review: Approve (gated on Oracle PASS) → moves to 'approved'.
         const canApprove = !!t.oraclePassed;
         bar.innerHTML = `
           <button id="btn-changes" class="px-3 py-1.5 text-sm border rounded-md hover:bg-slate-50">Request changes</button>
           <button id="btn-approve" ${canApprove ? '' : 'disabled'}
             class="px-3 py-1.5 text-sm rounded-md font-medium ${canApprove ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}"
-            title="${canApprove ? '' : 'Oracle must PASS'}">Approve &amp; publish</button>`;
+            title="${canApprove ? '' : 'Oracle must PASS'}">Approve</button>`;
         document.getElementById('btn-changes').onclick = () => SB.renderRequestChangesModal(t, ({ body, target }) => {
           t.comments.push({ author: SBData.users.taskReviewer, when: 'just now', body });
           t.status = 'changes-requested';
@@ -183,10 +235,24 @@
           SB.toast('Changes requested.', 'success');
           refresh();
         });
-        if (canApprove) document.getElementById('btn-approve').onclick = approve;
+        if (canApprove) document.getElementById('btn-approve').onclick = () => {
+          SB.taskReviewerApprove(t.id);
+          SB.toast('Approved. Ready to publish.', 'success');
+          refresh();
+        };
+      } else if (t.status === 'approved') {
+        // Step 2 of final review: explicit publish to the Harbor registry → 'published'.
+        bar.innerHTML = `
+          <span class="text-xs px-2 py-1 rounded bg-emerald-50 text-emerald-700 font-medium">Approved</span>
+          <button id="btn-publish" class="px-3 py-1.5 text-sm rounded-md font-medium bg-indigo-600 hover:bg-indigo-700 text-white">Publish to registry</button>`;
+        document.getElementById('btn-publish').onclick = () => {
+          SB.taskReviewerPublish(t.id);
+          SB.toast('Published to Harbor registry!', 'success');
+          refresh();
+        };
       } else if (t.status === 'changes-requested') {
         bar.innerHTML = `<span class="text-xs text-slate-500">Waiting on <b>${t.changesTarget}</b> to address feedback.</span>`;
-      } else if (t.status === 'published' || t.status === 'approved') {
+      } else if (t.status === 'published') {
         bar.innerHTML = `<span class="text-xs px-2 py-1 rounded bg-emerald-50 text-emerald-700 font-medium">${SBData.STATUS[t.status].label}</span>`;
       }
     }
@@ -212,14 +278,6 @@
           <div>${SB.escapeHtml(h.event)}</div><div class="text-xs text-slate-500">${SB.escapeHtml(h.who)} · ${SB.escapeHtml(h.when)}</div>`;
         hist.appendChild(li);
       });
-    }
-
-    function approve() {
-      t.status = 'published';
-      t.updatedAt = 'just now';
-      t.history.push({ when: 'just now', who: SBData.users.taskReviewer.name, event: 'Approved + published to Harbor registry' });
-      SB.toast('Task published!', 'success');
-      refresh();
     }
 
     document.getElementById('add-comment').onclick = () => {

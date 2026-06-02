@@ -1,13 +1,44 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Project Manager · Assignments (workload view)
-  ROLE:     projectManager      (access guard: SB.requireRole('projectManager'))
-  FLOW:     dashboard.html → assignments.html → tasks.html (Assign link)
-  PURPOSE:  Per-person workload cards and list of with-tester tasks awaiting pickup.
-  READS (SBData): tasks, STATUS, ROLES, domainLabel (implicit via task rows).
-  CAPTURES/WRITES: none (read-only).
-  ACTIONS:  Unassigned row "Assign" → tasks.html.
+  PAGE:        Project Manager · Assignments (workload view)
+  ROLE:        projectManager      (access guard: SB.requireRole('projectManager'))
+  ROUTE:       project-manager/assignments.html
+  PURPOSE:     Read-only workload snapshot: per-person task cards (prompter/tester
+               slots) and unassigned with-tester tasks awaiting pickup.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       nav → Assignments (from dashboard or sidebar).
+  EXIT:        → tasks.html (unassigned row "Assign" link; actual assignment on tasks page).
+  LIFECYCLE:   surfaces with-tester tasks missing tester; does not change status.
+  ACTOR/ACTIONS: PM reviews workload cards and unassigned list; "Assign" navigates
+               to tasks.html (no inline assign on this page).
+  PERMISSIONS: projectManager-only; read-only aggregate.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITIES:    Task, User (workload grouping)
+  READS:       SBData.tasks, STATUS, ROLES; Task.prompter, Task.tester, Task.status,
+               Task.name, Task.description.
+  WRITES:      none (read-only; assignment delegated to tasks.html Assign modal).
+  FIELDS SHOWN:
+     workload card : derived : user (name, initials), role label (Prompter|Tester),
+                                  active task count (status !== published), up to 3
+                                  task names with status pills
+     unassigned row: Task    : name, description snippet, status; tester slot empty
+  WORKLOAD LOGIC: groups tasks by prompter.name and tester.name separately; only
+               prompter and tester slots counted (not domainReviewer/taskReviewer).
+  UNASSIGNED FILTER: status === with-tester AND !tester.
+  RELATIONSHIPS: Task n—1 User (prompter, tester); active tasks exclude published.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      page header · responsive grid of workload cards · unassigned tasks panel.
+  COMPONENTS:  workload cards (avatar, role badge, active count, mini task list),
+               unassigned list (task row + status pill + Assign link), count badge.
+  STATES:      no unassigned tasks → "All tasks are assigned" empty state; cards
+               show "+N more" when >3 active tasks; read-only (no modals).
+
+  AI-FIRST NOTE: workload companion to tasks.html; identifies tester pickup gaps but
+               does not perform assignment — PM must use tasks.html Assign modal.
   ============================================================================
 -->
 <html lang="en">

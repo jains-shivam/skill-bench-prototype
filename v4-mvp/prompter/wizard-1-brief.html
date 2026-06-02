@@ -1,16 +1,43 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Prompter · Task brief (wizard step 1)
-  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
-  FLOW:     dashboard.html → wizard-1-brief → wizard-2-skills  (prompter-draft /
-            prompter-rework working copy in session)
-  PURPOSE:  Capture task identity: name, description, domain, difficulty.
-  READS (SBData): getWizardTaskFromSession(), getWizardTaskId(), skillDomains.
-  CAPTURES/WRITES: sessionStorage wizard task via SB.saveWizardTaskToSession:
-            name, description, domain, difficulty.
-  ACTIONS:  "Next: Skills" → wizard-2-skills.html; Save & Exit / Cancel → dashboard.
-  AI-FIRST NOTE: first wizard step that writes core task metadata to the session copy.
+  PAGE:        Prompter · Task brief (wizard step 1 of 7)
+  ROLE:        prompter            (access guard: SB.requireRole('prompter'))
+  ROUTE:       prompter/wizard-1-brief.html        [query: ?id=<taskId> when editing]
+  PURPOSE:     Capture a task's identity (name, description, domain, difficulty)
+               as the first step of authoring a new task.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       prompter/dashboard.html ("New task", or "Continue/Revise" with ?id)
+  EXIT:        → wizard-2-skills.html   |  Cancel/Save&Exit → dashboard.html
+  LIFECYCLE:   operates on a DRAFT working copy (status prompter-draft or, when
+               revising, changes-requested→prompter). Status is NOT changed here;
+               it is only committed at wizard-7-submit (→ domain-review).
+  ACTOR/ACTIONS: Prompter. "Next: Skills" advances; every field auto-persists.
+  PERMISSIONS: author-only; the task is owned by the Prompter while in draft.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (the row being authored)
+  READS:       SBData.getWizardTaskFromSession(), getWizardTaskId(), skillDomains[]
+  WRITES:      sessionStorage wizard copy via SB.saveWizardTaskToSession (the row is
+               only inserted into SBData.tasks at submit).
+  FIELDS CAPTURED:
+     name        : string   : unique task identifier, convention "org/task-name"
+     description : string   : one-line summary of the goal
+     domain      : enum(id) : FK → Domain.id (from the 17-domain taxonomy)
+     difficulty  : enum     : "easy" | "medium" | "hard" (default "medium")
+  RELATIONSHIPS: Task n—1 Domain. (Task n—n Skill, Task 1—n Verifier captured later.)
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      top breadcrumb + Save&Exit · wizard stepper · left help aside ·
+               right form card · footer Back/Next.
+  COMPONENTS:  prompter stepper (SB.renderWizardStepper), text inputs, domain
+               <select> (populated from taxonomy), difficulty radio group.
+  STATES:      pre-fills from existing draft; auto-save on input/change; no hard
+               validation here (kept frictionless — required checks live at submit).
+
+  AI-FIRST NOTE: first capture step; defines the core Task metadata fields and the
+               Task→Domain relationship that downstream routing/filters depend on.
   ============================================================================
 -->
 <html lang="en">
@@ -35,7 +62,7 @@
         <div class="text-xs font-semibold uppercase text-slate-500 mb-2">Step 1 — Brief</div>
         <p>Identity fields for the task. No technical setup here.</p>
         <ul class="mt-3 list-disc pl-4 space-y-1">
-          <li><b>Domain</b> is free text: finance, legal, python, etc.</li>
+          <li><b>Domain</b> comes from the platform taxonomy (finance, python, etc.)</li>
           <li>Name uses <code class="bg-slate-100 px-1 rounded text-xs">org/task-name</code></li>
         </ul>
       </aside>

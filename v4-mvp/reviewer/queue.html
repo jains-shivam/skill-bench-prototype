@@ -1,15 +1,49 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Task Reviewer · Review queue
-  ROLE:     taskReviewer        (access guard: SB.requireRole('taskReviewer'))
-  FLOW:     reviewer hub → queue.html → workspace.html?id=…
-            (in-review pending; changes-requested; approved/published done)
-  PURPOSE:  List tasks awaiting final technical review or in rework/done states.
-  READS (SBData): tasks, STATUS, skillDomains, domainLabel; t.oraclePassed,
-            t.oracleReward, t.prompter, t.tester, rework fields.
-  CAPTURES/WRITES: none (read-only).
-  ACTIONS:  Row Open → workspace.html?id=….
+  PAGE:        Task Reviewer · Review queue
+  ROLE:        taskReviewer        (access guard: SB.requireRole('taskReviewer'))
+  ROUTE:       reviewer/queue.html
+  PURPOSE:     List tasks awaiting final technical review after tester Oracle PASS, plus
+               rework in flight and approved/published history.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       app nav / reviewer hub → queue.html
+  EXIT:        → reviewer/workspace.html?id=<taskId>   (row click)
+  LIFECYCLE:   Pending tab: status in-review (tester submitted, Oracle expected PASS).
+               Rework tab: status changes-requested (any changesTarget).
+               Approved / Published tab: status approved | published.
+  ACTOR/ACTIONS: Task Reviewer. Switch tabs; search; filter by domain; row click Open.
+  PERMISSIONS: read-only list; approve/request-changes happen in workspace.html.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (list rows)
+  READS:       SBData.tasks, STATUS, skillDomains, domainLabel;
+               per row: oraclePassed, oracleReward, prompter, tester, changesTarget,
+               reworkReason
+  WRITES:      none on this page.
+  FIELDS SHOWN:
+     name            : string   : task identifier + description
+     prompter        : UserRef  : FK → User
+     tester          : UserRef  : FK → User (who ran Oracle)
+     oraclePassed    : bool     : rendered PASS + oracleReward or em dash
+     oracleReward    : number   : shown when oraclePassed
+     status          : enum     : lifecycle pill + changesTarget hint
+     reworkReason    : string   : orange note on Rework tab
+     domain          : enum(id) : FK → Domain (filter only, not table column)
+  RELATIONSHIPS: Task n—1 Prompter; Task n—1 Tester; Oracle outcome gates publish in workspace.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      h1 + subtitle · tab-bar + domain filter + search · task table · empty state.
+  COMPONENTS:  tab-bar (Pending / Rework / Approved·Published + count badges), domain
+               <select>, search input, table (Task, Prompter, Tester, Oracle, Status,
+               Open CTA), #empty panel.
+  STATES:      per-tab empty ("No tasks in this tab"); rework rows show orange rework note;
+               Oracle column PASS/reward or dash; search input AND domain <select> both
+               re-filter the table live.
+
+  AI-FIRST NOTE: post-tester queue — rows arrive via SB.submitTesterToReview (in-review);
+               final approve/publish and rework routing occur in workspace.html.
   ============================================================================
 -->
 <html lang="en">
@@ -115,6 +149,8 @@
       });
     });
     document.getElementById('search').addEventListener('input', function() { render(activeTab); });
+    // Domain filter must re-render immediately on change (not only on search/tab change).
+    domainSel.addEventListener('change', function() { render(activeTab); });
   </script>
 </body>
 </html>

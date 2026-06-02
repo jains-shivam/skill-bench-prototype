@@ -1,16 +1,44 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Prompter · Try model (wizard step 6)
-  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
-  FLOW:     wizard-5-verifiers → wizard-6-trymodel → wizard-7-submit
-  PURPOSE:  Mock-run the selected model against defined verifiers before submit.
-  READS (SBData): getWizardTaskFromSession(), getWizardTaskId(), t.verifiers,
-            VERIFIER_TYPES; SB.runMockModel (simulated run only).
-  CAPTURES/WRITES: none substantive (mock run results are not persisted to the
-            task). Save & Exit re-saves the unchanged session copy.
-  ACTIONS:  Run model / Run again; Back → wizard-5-verifiers.html;
-            Next → wizard-7-submit.html.
+  PAGE:        Prompter · Try model (wizard step 6 of 7)
+  ROLE:        prompter            (access guard: SB.requireRole('prompter'))
+  ROUTE:       prompter/wizard-6-trymodel.html   [query: ?id=<taskId> when editing]
+  PURPOSE:     Mock-run a selected model against defined verifiers to sanity-check
+               the verifier plan before submitting for domain review.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       wizard-5-verifiers.html ("Next: Try Model")
+  EXIT:        → wizard-7-submit.html  |  Save&Exit → dashboard.html (re-saves session)
+  LIFECYCLE:   draft working copy; mock run does NOT advance lifecycle or persist
+               run results to SBData.tasks.
+  ACTOR/ACTIONS: Prompter selects model, clicks Run Model / Run Again; SB.runMockModel
+               simulates staged progress then per-verifier PASS/FAIL results.
+  PERMISSIONS: author-only while task is prompter-draft or prompter-rework.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (wizard session copy) — read-only for mock run
+  READS:       getWizardTaskFromSession(), getWizardTaskId(), t.verifiers[],
+               VERIFIER_TYPES (label lookup); SB.runMockModel({ verifiers })
+  WRITES:      none substantive — mock results are ephemeral. Save&Exit calls
+               SB.saveWizardTaskToSession(t) without changing task fields.
+  FIELDS USED:
+     verifiers : Verifier[] : descriptions/types sent to mock runner (not mutated)
+  RELATIONSHIPS: read-only exercise of Task.verifiers before submit gate.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      breadcrumb + Save&Exit · stepper · left help aside · run panel ·
+               footer Back/Next.
+  COMPONENTS:  model <select> (Claude Sonnet 4.5, GPT-5, Gemini 2.5 Pro), Run Model
+               button, three UI states (idle | running | results), progress bar +
+               stage list + elapsed timer, pass/fail banners, verifier result list
+               with PASS/FAIL badges, Run Again button.
+  STATES:      idle (no verifiers → disabled Run + amber warning); running (live-dot,
+               progress bar, staged checklist); results (all-pass emerald banner or
+               partial-fail amber banner + per-verifier rows).
+
+  AI-FIRST NOTE: optional sanity check — results are simulated in prototype only and
+               are not stored; submit step 7 does not require a successful mock run.
   ============================================================================
 -->
 <html lang="en">

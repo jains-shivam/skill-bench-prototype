@@ -1,17 +1,41 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Sign in (authentication entry)
-  ROLE:     public              (no auth guard)
-  FLOW:     unauthenticated entry → login.html → role home via SB.getHomePage()
-            after successful SB.login
-  PURPOSE:  Email/password and demo sign-in. Clears stale session on
-            ?logout / ?expired / ?switch query params.
-  READS (SBData): users (via SB.login credential lookup).
-  CAPTURES/WRITES: SB.login → localStorage auth (sb-mvp-auth, sb-mvp-role);
-            logout/expired/switch clears localStorage + sessionStorage.
-  ACTIONS:  "Sign in" / Google / demo quick-fill → SB.getHomePage(); banner
-            "Continue to dashboard" → SB.getHomePage(); "Sign out & switch" clears auth.
+  PAGE:        Sign in (authentication entry)
+  ROLE:        public              (no auth guard)
+  ROUTE:       login.html          [query: ?logout | ?expired | ?switch clears session]
+  PURPOSE:     Email/password and demo sign-in; establishes auth before role dashboards.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       unauthenticated users; ?logout/?expired/?switch clears stale session
+  EXIT:        → SB.getHomePage() after successful SB.login (email or Google mock)
+  LIFECYCLE:   n/a — creates auth session only; no Task rows touched.
+  ACTOR/ACTIONS: Submit form / Google sign-in / demo quick-fill → SB.login;
+               authenticated banner "Continue to dashboard" → getHomePage();
+               "Sign out & switch" clears localStorage + sessionStorage.
+  PERMISSIONS: public; valid credentials against SBData.users (demo password demo123).
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      User (auth session)
+  READS:       SBData.users (SB.login email/password lookup)
+  WRITES:      SB.login → localStorage sb-mvp-auth, sb-mvp-role; logout/switch/expired
+               clears localStorage (auth, role, sidebar) + sessionStorage.clear()
+  FIELDS CAPTURED:
+     email       : string   : User.email lookup key
+     password    : string   : credential check only (not persisted)
+  RELATIONSHIPS: User n—n Role; login sets session.role for SB.getHomePage() routing.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      full-screen dark gradient · centered sign-in card · optional fixed
+               logged-in banner at top.
+  COMPONENTS:  Google sign-in button, email/password form, show/hide password toggle,
+               inline field errors, login-error banner, demo account quick-fill grid
+               (6 users), forgot-password link (demo toast).
+  STATES:      field validation (required, email format); signing-in spinner;
+               redirecting state; already-authenticated banner with continue/switch.
+
+  AI-FIRST NOTE: auth entry point; session.role drives which dashboard SB.getHomePage()
+               returns (production path — index.html is demo-only role gallery).
   ============================================================================
 -->
 <html lang="en">

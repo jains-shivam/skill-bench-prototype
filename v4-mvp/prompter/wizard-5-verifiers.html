@@ -1,19 +1,48 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Prompter · Verifiers (wizard step 5)
-  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
-  FLOW:     wizard-4-solution → wizard-5-verifiers → wizard-6-trymodel
-  PURPOSE:  Define plain-language verifier checks; mock-validate each against the
-            golden solution and prompt.
-  READS (SBData): getWizardTaskFromSession(), getWizardTaskId(),
-            VERIFIER_CATEGORIES, VERIFIER_VALIDATION; t.goldenSolution,
-            t.instructionMd (SB.validateVerifierMock).
-  CAPTURES/WRITES: sessionStorage wizard task: verifiers[] (description, category,
-            type, validationStatus, rationale) via SB.saveWizardTaskToSession.
-  ACTIONS:  Add verifier / AI suggest; Back → wizard-4-solution.html;
-            Next → wizard-6-trymodel.html; Save & Exit → dashboard.html.
-  AI-FIRST NOTE: captures grading criteria; validationStatus is mock LLM output today.
+  PAGE:        Prompter · Verifiers (wizard step 5 of 7)
+  ROLE:        prompter            (access guard: SB.requireRole('prompter'))
+  ROUTE:       prompter/wizard-5-verifiers.html   [query: ?id=<taskId> when editing]
+  PURPOSE:     Define plain-language verifier checks; mock-validate each against
+               the golden solution and prompt before try-model/submit.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       wizard-4-solution.html ("Next: Verifiers")
+  EXIT:        → wizard-6-trymodel.html  |  Save&Exit → dashboard.html (persists)
+  LIFECYCLE:   draft working copy; status unchanged until wizard-7-submit.
+  ACTOR/ACTIONS: Prompter adds verifiers (category optional + description required),
+               removes rows, clicks AI Suggest (4 samples); each add triggers
+               SB.validateVerifierMock; Back/Next/Save&Exit persist verifiers[].
+  PERMISSIONS: author-only while task is prompter-draft or prompter-rework.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (wizard session copy) + Verifier[] embedded rows
+  READS:       getWizardTaskFromSession(), getWizardTaskId(), VERIFIER_CATEGORIES[],
+               VERIFIER_VALIDATION; t.goldenSolution, t.instructionMd for mock validation
+  WRITES:      sessionStorage wizard copy via SB.saveWizardTaskToSession on add/remove/
+               validation complete, Save&Exit, Next
+  FIELDS CAPTURED (Verifier[]):
+     description      : string   : plain-language check (required)
+     category         : enum?    : correctness|completeness|output_format|safety|
+                                    efficiency (optional)
+     type             : enum     : default "freeform"; Tester sets mechanism later
+     validationStatus : enum     : pending→validating→validated|needs_review|failed
+     rationale        : string?  : mock explanation from SB.validateVerifierMock
+  RELATIONSHIPS: Task 1—n Verifier; each verifier validated against Task.goldenSolution
+               + Task.instructionMd (mock LLM today).
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      breadcrumb + Save&Exit · stepper · left help aside · verifier card
+               (header counts + add row + list) · footer Back/Next.
+  COMPONENTS:  category <select>, description input, "+ Add" button, AI Suggest btn,
+               numbered verifier rows (category badge, validationStatus badge,
+               rationale, hover remove), empty-state illustration.
+  STATES:      empty list message; validating spinner badge; header shows verifier
+               count + validated count; legacy verifiers normalized to pending status.
+
+  AI-FIRST NOTE: captures grading criteria in plain language; validationStatus is
+               mock output today — same enum values for future real LLM validator.
   ============================================================================
 -->
 <html lang="en">

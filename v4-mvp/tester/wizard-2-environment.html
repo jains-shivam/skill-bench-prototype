@@ -1,0 +1,138 @@
+<!doctype html>
+<!--
+  ============================================================================
+  PAGE:        Tester · Environment (wizard step 2 of 5)
+  ROLE:        tester              (access guard: SB.requireRole('tester'))
+  ROUTE:       tester/wizard-2-environment.html     [query: ?id=<taskId> via stepper]
+  PURPOSE:     Define the execution environment for the task — write (or import) the
+               Dockerfile that solve.sh / test.sh will run inside.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       wizard-1-context.html → wizard-2-environment.html
+  EXIT:        → wizard-3-solution.html   |  Back → wizard-1-context.html  |  Save & Exit → queue.html
+  LIFECYCLE:   session working copy only (status unchanged); committed to SBData.tasks
+               at wizard-5-oracle submit.
+  ACTOR/ACTIONS: Tester. Edit the Dockerfile textarea (auto-save) or import a file;
+               Back / Next persist on click.
+  PERMISSIONS: SB.taskPermissions(task,'tester').canEditArtifacts — owns dockerfile.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (session working copy)
+  READS:       SB.getWizardTaskFromSession(); SB.renderHarborPreview.
+  WRITES:      sessionStorage via SB.saveWizardTaskToSession:
+  FIELDS CAPTURED:
+     dockerfile  : string   : container definition (environment/Dockerfile)
+  RELATIONSHIPS: dockerfile becomes a Harbor artifact bundled on the Task at submit.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      breadcrumb + Save & Exit · tester stepper · single Dockerfile editor
+               card (import button) · Harbor preview · footer Back / Next.
+  COMPONENTS:  monospace Dockerfile textarea, file-import label (Dockerfile/.txt),
+               line-count footer, SB.renderHarborPreview (environment/Dockerfile).
+  STATES:      pre-fills from session dockerfile or a sensible default; auto-save on
+               input; import replaces editor + toast.
+
+  AI-FIRST NOTE: dedicated, deliberately simple environment-capture step — just the
+               Dockerfile (no template picker), mirroring the v3 raw-editor approach.
+  ============================================================================
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Environment - Tester - Skill Bench MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css?v=4">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="app-nav"></div>
+  <main class="max-w-5xl">
+    <div class="flex justify-between mb-4 text-sm text-slate-500">
+      <span><a href="queue.html">Test queue</a> / <span class="font-mono text-slate-900" id="task-name"></span></span>
+      <a href="queue.html">Save &amp; Exit</a>
+    </div>
+    <div id="wizard-stepper" class="mb-6 stepper-tester"></div>
+
+    <div class="mb-4">
+      <h2 class="text-lg font-semibold">Environment</h2>
+      <p class="text-sm text-slate-500 mt-0.5">Write the Dockerfile for the sandbox where the agent runs. This becomes <code class="bg-slate-100 px-1 rounded text-xs">environment/Dockerfile</code>.</p>
+    </div>
+
+    <section class="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
+      <div class="px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="font-mono text-sm font-medium">environment/Dockerfile</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Your environment</span>
+        </div>
+        <label class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs border border-dashed border-slate-300 rounded-md cursor-pointer hover:bg-slate-50 hover:border-emerald-400 transition-colors">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          Import Dockerfile
+          <input id="file-upload" type="file" accept=".dockerfile,.txt,Dockerfile" class="hidden">
+        </label>
+      </div>
+      <textarea id="f-dockerfile" class="w-full px-4 py-3 text-sm font-mono border-0 flex-1 min-h-[26rem] resize-none"
+        placeholder="FROM python:3.12-slim&#10;WORKDIR /app&#10;RUN pip install ..."></textarea>
+      <div class="px-4 py-2 border-t border-slate-100 bg-slate-50 text-xs text-slate-500 flex justify-between">
+        <span>This image runs solve.sh and test.sh during the Oracle run</span>
+        <span id="line-count">0 lines</span>
+      </div>
+    </section>
+
+    <div class="mt-6"><div id="harbor-preview"></div></div>
+    <div class="mt-8 flex justify-between">
+      <a id="back" href="wizard-1-context.html" class="text-sm text-slate-600">&larr; Back: Context</a>
+      <a id="next" href="wizard-3-solution.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md">Next: Solution &rarr;</a>
+    </div>
+  </main>
+  <div id="toast-container"></div>
+  <script src="../assets/data.js?v=4"></script>
+  <script src="../assets/script.js?v=4"></script>
+  <script>
+    if (!SB.requireRole('tester')) throw 'auth';
+    SB.renderNav();
+    SB.renderWizardStepper(2, 'tester');
+
+    const id = new URLSearchParams(location.search).get('id') || SB.getWizardTaskId();
+    if (id) SB.setWizardTaskId(id);
+    const t = SB.getWizardTaskFromSession();
+    document.getElementById('task-name').textContent = t.name || 'Task';
+
+    const ta = document.getElementById('f-dockerfile');
+
+    function lineCount() {
+      const n = (ta.value || '').split('\n').length;
+      document.getElementById('line-count').textContent = n + ' line' + (n !== 1 ? 's' : '');
+    }
+    function persist() {
+      t.dockerfile = ta.value;
+      SB.saveWizardTaskToSession(t);
+      SB.renderHarborPreview('harbor-preview', t, { initial: 'environment/Dockerfile' });
+      lineCount();
+    }
+
+    // Seed from any existing Dockerfile on the task, else a minimal default.
+    if (!t.dockerfile) t.dockerfile = 'FROM python:3.12-slim\nWORKDIR /app\nRUN pip install --no-cache-dir pandas numpy\n';
+    ta.value = t.dockerfile;
+
+    ta.addEventListener('input', persist);
+
+    document.getElementById('file-upload').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function () { ta.value = reader.result; persist(); SB.toast('Imported ' + file.name, 'success'); };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    const back = document.getElementById('back');
+    const next = document.getElementById('next');
+    back.href = 'wizard-1-context.html' + (id ? '?id=' + encodeURIComponent(id) : '');
+    next.href = 'wizard-3-solution.html' + (id ? '?id=' + encodeURIComponent(id) : '');
+    next.addEventListener('click', persist);
+
+    persist();
+  </script>
+</body>
+</html>

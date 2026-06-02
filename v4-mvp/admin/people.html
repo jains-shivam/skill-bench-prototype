@@ -1,14 +1,48 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Admin · People management
-  ROLE:     admin               (access guard: SB.requireRole('admin'))
-  FLOW:     admin/dashboard.html → people.html
-  PURPOSE:  Add, edit, activate/deactivate users and assign multi-role membership.
-  READS (SBData): allUsers, ROLES, userRoleKeys, userHasRole, roleLabel.
-  CAPTURES/WRITES: SBData.allUsers CRUD (name, email, roles, primaryRole, status,
-            initials); inline status toggle on user rows.
-  ACTIONS:  Add person / Edit modal Save; Activate / Deactivate row toggle.
+  PAGE:        Admin · People management
+  ROLE:        admin               (access guard: SB.requireRole('admin'))
+  ROUTE:       admin/people.html
+  PURPOSE:     CRUD for User records: multi-role membership, primary role, and
+               active/inactive status.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       admin/dashboard.html ("Add person" quick link) or nav → People.
+  EXIT:        stays on page after Save/toggle; Cancel closes modal.
+  LIFECYCLE:   not task-scoped; manages User.active via status field.
+  ACTOR/ACTIONS: Admin. "Add person" / row "Edit" → modal Save (create/update);
+               row "Activate"/"Deactivate" toggles status inline without modal.
+  PERMISSIONS: admin-only; full User CRUD on SBData.allUsers (in-memory mock).
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      User
+  READS:       SBData.allUsers, ROLES, userRoleKeys, userHasRole, roleLabel.
+  WRITES:      SBData.allUsers push (create) or in-place update (edit); inline
+               status toggle on existing row. No delete action in UI.
+  FIELDS CAPTURED:
+     name        : string   : full name; initials derived on save
+     email       : string   : unique contact / login identifier
+     roles       : string[] : FK → Role keys (multi-select checkboxes)
+     primaryRole : roleKey  : must be one of roles[]; default landing role
+     status      : enum     : "active" | "inactive" (canonical activation flag; no separate bool)
+     initials    : string   : auto from name (max 2 chars)
+  FIELDS SHOWN (table, read-only): lastSeen, tasksCount.
+  ON CREATE ALSO SETS: id (generated), role (label of primaryRole), joinedAt, lastSeen.
+  RELATIONSHIPS: User n—n Role via roles[] + primaryRole; referenced by Task assignee
+               slots (prompter, tester, domainReviewer, taskReviewer) elsewhere.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      page header + "Add person" · filter bar · people table · Add/Edit modal.
+  COMPONENTS:  search input, role filter <select>, status filter <select>, result
+               count, data table (avatar, role badges, status pill, actions), modal
+               form (name, email, role checkboxes, primary role <select>, status).
+  STATES:      filtered table ("N of M"); modal Add vs Edit title; validation toast
+               if name/email/roles missing; success toast on save/toggle; empty
+               filter yields zero rows.
+
+  AI-FIRST NOTE: canonical User admin surface; multi-role model (roles[] + primaryRole)
+               is the source of truth for downstream assignment eligibility.
   ============================================================================
 -->
 <html lang="en">

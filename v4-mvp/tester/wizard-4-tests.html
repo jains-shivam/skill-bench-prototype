@@ -1,14 +1,43 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Tester · Tests / test.sh (wizard step 4)
-  ROLE:     tester              (access guard: SB.requireRole('tester'))
-  FLOW:     wizard-3-solution → wizard-4-tests → wizard-5-oracle
-  PURPOSE:  Compile prompter verifiers into tests/test.sh; preview Harbor layout.
-  READS (SBData): getWizardTaskFromSession(); renderVerifiersMd(t), t.goldenSolution;
-            harborFiles (SB.renderHarborPreview).
-  CAPTURES/WRITES: sessionStorage wizard task: testSh via SB.saveWizardTaskToSession.
-  ACTIONS:  Back → wizard-3-solution.html; Next → wizard-5-oracle.html; file import.
+  PAGE:        Tester · Tests / test.sh (wizard step 4 of 5)
+  ROLE:        tester              (access guard: SB.requireRole('tester'))
+  ROUTE:       tester/wizard-4-tests.html        [query: ?id=<taskId> via stepper]
+  PURPOSE:     Translate prompter verifiers into an automated tests/test.sh verifier script;
+               reference acceptance criteria and golden solution while authoring.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       wizard-3-solution.html → wizard-4-tests.html
+  EXIT:        → wizard-5-oracle.html   |  Save & Exit → queue.html
+  LIFECYCLE:   session working copy only; testSh persists to session until Oracle submit.
+  ACTOR/ACTIONS: Tester. Edit test.sh textarea (auto-save); Import file; Back to Solution;
+               Next to Oracle (persists on click).
+  PERMISSIONS: SB.taskPermissions(task,'tester').canEditArtifacts — testSh.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (session working copy)
+  READS:       SB.getWizardTaskFromSession(); SBData.renderVerifiersMd(t) → criteria text;
+               t.goldenSolution; SB.renderHarborPreview → harborFiles layout
+  WRITES:      sessionStorage via SB.saveWizardTaskToSession on every input/Next: testSh.
+  FIELDS CAPTURED:
+     testSh      : string   : automated verifier bash script (tests/test.sh; exit 0 = pass)
+  FIELDS SHOWN (reference, read-only left panel):
+     verifiers   : Verifier[] : rendered as tests/criteria.md markdown
+     goldenSolution : markdown : solution/golden.md reference
+  RELATIONSHIPS: testSh pairs with solveSh + dockerfile as Harbor test harness on Task.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      breadcrumb + Save & Exit · tester stepper · 2-col grid (Acceptance Criteria +
+               Golden Solution + job callout | test editor) · Harbor preview · footer.
+  COMPONENTS:  criteria <pre> (renderVerifiersMd), golden-solution card, guidance callout,
+               monospace textarea #f-tests, file-import, line-count, SB.renderHarborPreview
+               (initial: tests/test.sh).
+  STATES:      pre-fills from session testSh or STARTER_TEMPLATE (runs solve.sh stub);
+               auto-save on input; import + toast; criteria fallback when no verifiers.
+
+  AI-FIRST NOTE: maps Task.verifiers (plain-language acceptance) → executable testSh; the
+               left panel is the semantic source of truth testers must assert against.
   ============================================================================
 -->
 <html lang="en">
@@ -84,7 +113,7 @@
   <script>
     if (!SB.requireRole('tester')) throw 'auth';
     SB.renderNav();
-    SB.renderWizardStepper(3, 'tester');
+    SB.renderWizardStepper(4, 'tester');
     const t = SB.getWizardTaskFromSession();
     document.getElementById('task-name').textContent = t.name;
     document.getElementById('ctx-criteria').textContent = SBData.renderVerifiersMd ? SBData.renderVerifiersMd(t) : '(No verifiers defined)';

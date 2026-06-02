@@ -1,20 +1,55 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Tester · Oracle run (wizard step 5)
-  ROLE:     tester              (access guard: SB.requireRole('tester'))
-  FLOW:     wizard-4-tests → wizard-5-oracle → in-review  (via
-            SB.submitTesterToReview) or send-back → changes-requested
-  PURPOSE:  Run mock Oracle, record testing notes, submit package or send back.
-  READS (SBData): getWizardTaskFromSession(); task summary fields; harborFiles
-            (SB.renderHarborPreview); t.verifiers (alignment check mock).
-  CAPTURES/WRITES: sessionStorage: testingNotes, oraclePassed, oracleReward via
-            SB.saveWizardTaskToSession; SB.submitTesterToReview → SBData.tasks
-            (solveSh, testSh, dockerfile, oracle fields, testingNotes, status
-            in-review); SB.testerSendBack (rework + notes).
-  ACTIONS:  Run Oracle (pass/fail sim); Submit for tech review → queue.html;
-            Send back → queue.html; Back → wizard-4-tests.html.
-  AI-FIRST NOTE: terminal tester capture — persists Harbor artifacts and Oracle outcome.
+  PAGE:        Tester · Oracle run (wizard step 5 of 5)
+  ROLE:        tester              (access guard: SB.requireRole('tester'))
+  ROUTE:       tester/wizard-5-oracle.html        [query: ?id=<taskId> via stepper]
+  PURPOSE:     Run mock Oracle against the Harbor package, record testing notes, optionally
+               check golden/verifier alignment, then submit to task review or send spec back.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       wizard-4-tests.html → wizard-5-oracle.html
+  EXIT:        Submit → queue.html (status in-review)   |  Send back → queue.html
+               (changes-requested)   |  Back → wizard-4-tests.html   |  Save & Exit → queue
+  LIFECYCLE:   terminal tester step — SB.submitTesterToReview commits session → SBData.tasks
+               (status with-tester → in-review, requires oraclePassed); Send back routes to
+               changes-requested with changesTarget prompter | domainReviewer.
+  ACTOR/ACTIONS: Tester. Run alignment eval (mock); edit testingNotes; Run Oracle Test /
+               Demo FAIL; on PASS → Submit for tech review; Send back to author (modal).
+  PERMISSIONS: submit gated on t.oraclePassed; SB.taskPermissions(task,'tester').canSendBack.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (session working copy → SBData.tasks row on submit/send-back)
+  READS:       SB.getWizardTaskFromSession(); summary fields (name, prompter, domain,
+               dockerfile, solveSh, testSh, verifiers[], attachments[]);
+               SB.renderHarborPreview; t.verifiers (alignment mock)
+  WRITES:      session: testingNotes, oraclePassed, oracleReward via SB.saveWizardTaskToSession;
+               SB.submitTesterToReview(t) → row: templateId, dockerfile, solveSh, testSh,
+               oraclePassed, oracleReward, testingNotes, testOutcome='pass', status='in-review',
+               clears rework flags, history[];
+               SB.testerSendBack(t, {target,outcome,reason,notes}) → changes-requested,
+               changesTarget, reworkReason, reworkRequestedBy, reworkCount, testOutcome,
+               testingNotes, comments[], history[].
+  FIELDS CAPTURED:
+     testingNotes  : string   : free-text observations for task reviewer
+     oraclePassed  : bool     : set by SB.runOracle onComplete
+     oracleReward  : number   : reward score from Oracle run (1.0 on pass)
+  RELATIONSHIPS: committed artifacts (solveSh, testSh, dockerfile) + Oracle outcome attach
+               to Task before handoff to taskReviewer (in-review).
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      breadcrumb + Save & Exit · tester stepper · left aside (summary, alignment,
+               testing notes, send-back) · main Oracle panel · Harbor preview · footer.
+  COMPONENTS:  summary <dl>, alignment-check button + results list, testing-notes textarea,
+               send-back button + SB.renderSendBackModal, Oracle state machine panels
+               (#state-idle | #state-running | #state-pass | #state-fail), progress bar +
+               stage list, SB.runOracle, SB.renderHarborPreview (initial: task.toml).
+  STATES:      idle (Run / Demo FAIL) → running (progress + elapsed) → pass (Submit enabled)
+               or fail (Back to Tests / Retry); submit disabled until oraclePassed; alignment
+               results are mock (random per verifier).
+
+  AI-FIRST NOTE: terminal tester step — only page that writes Harbor artifacts + Oracle fields
+               to SBData.tasks; testOutcome='pass' is set automatically on successful submit.
   ============================================================================
 -->
 <html lang="en">
@@ -117,7 +152,7 @@
   <script>
     if (!SB.requireRole('tester')) throw 'auth';
     SB.renderNav();
-    SB.renderWizardStepper(4, 'tester');
+    SB.renderWizardStepper(5, 'tester');
     const t = SB.getWizardTaskFromSession();
     document.getElementById('task-name').textContent = t.name;
 

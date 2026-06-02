@@ -1,18 +1,65 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Domain Reviewer · Review workspace
-  ROLE:     domainReviewer      (access guard: SB.requireRole('domainReviewer'))
-  FLOW:     queue.html → workspace.html  (acts on domain-review status;
-            approve → with-tester; reject → changes-requested / prompter)
-  PURPOSE:  Review prompter-authored content; approve, request changes, or edit inline.
-  READS (SBData): getTaskById(?id), STATUS, skillsLibrary, getDomain,
-            skillDomainIds, VERIFIER_CATEGORIES, VERIFIER_VALIDATION; t.comments,
-            t.history.
-  CAPTURES/WRITES: SB.updateTaskFields (edit modal: domain, difficulty,
-            instructionMd, goldenSolution, verifiers, skills); SB.domainReviewerApprove;
-            SB.domainReviewerReject (status, rework fields, comments, history).
-  ACTIONS:  Edit task; Request changes (modal) → queue.html; Approve → queue.html.
+  PAGE:        Domain Reviewer · Review workspace
+  ROLE:        domainReviewer      (access guard: SB.requireRole('domainReviewer'))
+  ROUTE:       domain-reviewer/workspace.html        [query: ?id=<taskId>]
+  PURPOSE:     Review prompter-authored task content; inline-edit quality issues, approve
+               into the tester pool, or request changes back to the prompter.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       domain-reviewer/queue.html → workspace.html?id=<taskId>
+  EXIT:        Approve / Request changes → queue.html   |  breadcrumb → queue.html
+  LIFECYCLE:   actionable when status domain-review: Approve → with-tester (sets
+               domainReviewer UserRef, clears rework flags); Reject → changes-requested
+               with changesTarget=prompter (increments reworkCount, adds comment).
+               Non-actionable statuses show read-only status pill only.
+  ACTOR/ACTIONS: Domain Reviewer. Edit task (modal); Approve; Request changes (reject modal
+               with required comment textarea).
+  PERMISSIONS: SB.taskPermissions(t,'domainReviewer') — canEditContent (prompter fields),
+               canApprove, canRequestRework; locked: id, name, status, prompter, tester,
+               domainReviewer assignees.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (live SBData.tasks row)
+  READS:       URL ?id → SBData.getTaskById; STATUS, skillsLibrary, getDomain,
+               skillDomainIds, VERIFIER_CATEGORIES, VERIFIER_VALIDATION;
+               t.comments[], t.history[]
+  WRITES:      SB.updateTaskFields(id, patch, 'Domain Reviewer edited task') on edit —
+               domain, difficulty, instructionMd, goldenSolution, verifiers, selectedSkills;
+               SB.domainReviewerApprove(id) → status with-tester, domainReviewer ref,
+               clears changesTarget/reworkReason/reworkRequestedBy, history[];
+               SB.domainReviewerReject(id, comment) → status changes-requested,
+               changesTarget prompter, reworkReason, reworkRequestedBy, reworkCount++,
+               domainReviewer ref, comments[], history[].
+  FIELDS SHOWN:
+     name            : string     : task title (header)
+     status          : enum       : lifecycle pill
+     prompter        : UserRef    : FK → User
+     domain          : enum(id)   : FK → Domain
+     difficulty      : enum       : easy | medium | hard
+     instructionMd   : markdown   : problem statement
+     goldenSolution  : markdown   : reference answer
+     verifiers       : Verifier[] : category + validationStatus badges, description
+     selectedSkills  : string[]   : FK → Skill (n—n tags)
+     comments        : Comment[]  : author, when, body
+     history         : History[]  : when, who, event
+  RELATIONSHIPS: Task n—1 Domain; Task n—n Skill; Task 1—n Verifier; approve unblocks Tester.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      breadcrumb · header card (title, status pill, meta, action bar) · 3-col
+               content grid (instruction | golden solution | verifiers) · 2-col footer
+               (comments | history) · reject modal overlay.
+  COMPONENTS:  action bar (Edit / Request changes / Approve when domain-review),
+               SB.renderEditTaskModal, #reject-modal with comment textarea,
+               verifiers list with badges, skills tags, comments + history timelines,
+               task-not-found fallback with link back to queue.
+  STATES:      domain-review → full action bar; other statuses → status badge only;
+               reject requires non-empty comment (toast warning); refresh() after edit;
+               empty placeholders for missing content/comments/history.
+
+  AI-FIRST NOTE: quality gate on prompter content before any tester is assigned; inline edit
+               avoids bouncing trivial fixes; reject always routes to prompter (no tester yet).
   ============================================================================
 -->
 <html lang="en">

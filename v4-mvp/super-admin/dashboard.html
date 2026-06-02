@@ -1,14 +1,45 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Super Admin · Platform dashboard
-  ROLE:     superAdmin          (access guard: SB.requireRole('superAdmin'))
-  FLOW:     super-admin hub → dashboard.html  (platform stats; links to people/skills)
-  PURPOSE:  Platform-wide user, task, role-distribution, and pipeline state overview.
-  READS (SBData): tasks, STATUS, allUsers, ROLES, userRoleKeys, skillDomains,
-            skillsLibrary.
-  CAPTURES/WRITES: none (read-only).
-  ACTIONS:  Quick links → people.html, skills.html.
+  PAGE:        Super Admin · Platform dashboard
+  ROLE:        superAdmin          (access guard: SB.requireRole('superAdmin'))
+  ROUTE:       super-admin/dashboard.html
+  PURPOSE:     Platform-wide read-only overview: user/task totals, role distribution,
+               pipeline breakdown, recent users, and system catalog stats.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       superAdmin login landing (nav → Platform Overview).
+  EXIT:        → people.html (Add new user / Manage all) · skills.html (catalog).
+  LIFECYCLE:   aggregates all Task statuses; does not mutate lifecycle.
+  ACTOR/ACTIONS: Super Admin views stats/tables; sidebar quick actions link to
+               people and skills CRUD pages; "Manage all →" on recent users table.
+  PERMISSIONS: superAdmin-only; no writes on this page.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITIES:    User, Task, Domain, Skill (aggregates), Role (distribution).
+  READS:       SBData.tasks, STATUS, allUsers, ROLES, userRoleKeys, skillDomains,
+               skillsLibrary.
+  WRITES:      none (read-only dashboard).
+  FIELDS SHOWN:
+     stat cards    : derived : total users, active users (status==active), total
+                                  tasks, published|approved tasks
+     role dist     : derived : per Role key count (multi-role users counted in each)
+     pipeline bars : derived : task count per lifecycle status (7 states)
+     user row      : User    : name, email, initials, roles[], status, joinedAt
+     system info   : derived : domain count, skill count (static platform metadata)
+  RELATIONSHIPS: User n—n Role; Task n—1 status enum; Skill/Domain catalog sizes.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      page header · 4 platform stat cards · 2-col grid (left: role distribution,
+               pipeline breakdown, recent users table; right: system info + quick actions).
+  COMPONENTS:  KPI stat cards, horizontal bar role chart, 7-column pipeline breakdown,
+               recent users table (first 8), system info key-value list, quick-action
+               links, toast container.
+  STATES:      KPI placeholders "-" until computed; recent users capped at 8 rows;
+               "System healthy" status indicator in header.
+
+  AI-FIRST NOTE: platform-level aggregate view for superAdmin; complements admin
+               dashboard with role-distribution and system metadata panels.
   ============================================================================
 -->
 <html lang="en">
@@ -40,7 +71,7 @@
         <div id="stat-users" class="text-2xl font-bold mt-1">-</div>
       </div>
       <div class="bg-white border border-slate-200 rounded-lg p-4">
-        <div class="text-[10px] text-slate-500 uppercase font-medium tracking-wider">Active users (7d)</div>
+        <div class="text-[10px] text-slate-500 uppercase font-medium tracking-wider">Active users</div>
         <div id="stat-active" class="text-2xl font-bold mt-1">-</div>
       </div>
       <div class="bg-white border border-slate-200 rounded-lg p-4">

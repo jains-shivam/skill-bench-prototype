@@ -1,13 +1,47 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Project Manager · Dashboard
-  ROLE:     projectManager      (access guard: SB.requireRole('projectManager'))
-  FLOW:     PM hub → dashboard.html  (pipeline overview; links to tasks.html)
-  PURPOSE:  KPI counts, attention items, team workload, and recent activity feed.
-  READS (SBData): tasks, STATUS, allUsers, ROLES, userRoleKeys; task history.
-  CAPTURES/WRITES: none (read-only).
-  ACTIONS:  Attention items → tasks.html; sidebar nav to tasks / assignments.
+  PAGE:        Project Manager · Dashboard
+  ROLE:        projectManager      (access guard: SB.requireRole('projectManager'))
+  ROUTE:       project-manager/dashboard.html
+  PURPOSE:     Pipeline overview with actionable KPI deep-links, attention queue,
+               team workload table, and recent task activity feed.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       projectManager login landing (nav → Project Dashboard).
+  EXIT:        → tasks.html (KPI cards, "View all tasks", attention items) ·
+               assignments.html (nav) · tasks.html?status= / ?tab= (KPI deep-links).
+  LIFECYCLE:   read-only aggregate; surfaces tasks needing PM action (rework or
+               with-tester without tester assigned).
+  ACTOR/ACTIONS: PM clicks KPI cards → filtered tasks.html; reviews "Needs attention"
+               list; monitors team workload and activity feed.
+  PERMISSIONS: projectManager-only; no writes on this page.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITIES:    Task (KPIs + attention), User (workload), History (activity).
+  READS:       SBData.tasks, STATUS, allUsers, ROLES, userRoleKeys; Task.history[],
+               Task.reworkReason, Task.tester, Task.prompter.
+  WRITES:      none (read-only dashboard; assignment happens on tasks.html).
+  FIELDS SHOWN:
+     KPI counts     : derived : total; per status; rework = changes-requested;
+                                  completed = approved|published
+     attention item : Task    : name, reworkReason or "Awaiting tester assignment",
+                                  status pill (changes-requested OR with-tester && !tester)
+     workload row   : User    : name, initials, roles[], tasksCount, status
+     activity item  : History : who, event, when (+ task name)
+  RELATIONSHIPS: Task n—1 User (prompter, tester); Task 1—n History; User n—n Role.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      page header + "View all tasks" CTA · 7 clickable KPI cards · 2-col
+               grid (Needs attention list, Team workload table) · activity feed.
+  COMPONENTS:  linked KPI cards (href tasks.html with ?status= or ?tab=), attention
+               list (rows deep-link with ?tab/?status + ?q=<task name> to isolate the
+               exact task), workload table, scrollable activity feed, toast.
+  STATES:      healthy pipeline → attention empty state message; activity empty →
+               "No activity yet"; KPI counts computed on load.
+
+  AI-FIRST NOTE: PM operational hub; KPI cards deep-link to tasks.html filters so
+               counts are actionable without re-filtering manually.
   ============================================================================
 -->
 <html lang="en">
@@ -114,7 +148,11 @@
         const reason = t.status === 'changes-requested'
           ? (t.reworkReason ? 'Rework: ' + t.reworkReason : 'In rework')
           : 'Awaiting tester assignment';
-        attentionEl.innerHTML += `<a href="tasks.html" class="block px-5 py-3 hover:bg-slate-50"><div class="flex items-center justify-between"><div class="min-w-0"><div class="text-sm font-medium font-mono truncate">${SB.escapeHtml(t.name)}</div><div class="text-xs text-amber-700 mt-0.5">${SB.escapeHtml(reason)}</div></div><span class="pill ${st.cls} shrink-0 ml-2">${st.label}</span></div></a>`;
+        // Deep-link straight to this task on the list (pre-filtered by tab/status + name).
+        const href = t.status === 'changes-requested'
+          ? 'tasks.html?tab=rework&q=' + encodeURIComponent(t.name)
+          : 'tasks.html?status=with-tester&q=' + encodeURIComponent(t.name);
+        attentionEl.innerHTML += `<a href="${href}" class="block px-5 py-3 hover:bg-slate-50"><div class="flex items-center justify-between"><div class="min-w-0"><div class="text-sm font-medium font-mono truncate">${SB.escapeHtml(t.name)}</div><div class="text-xs text-amber-700 mt-0.5">${SB.escapeHtml(reason)}</div></div><span class="pill ${st.cls} shrink-0 ml-2">${st.label}</span></div></a>`;
       });
     } else {
       attentionEl.innerHTML = '<div class="px-5 py-8 text-center text-xs text-slate-400">Nothing needs attention. Pipeline is healthy.</div>';

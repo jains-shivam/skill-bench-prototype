@@ -1,20 +1,51 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Prompter · Submit (wizard step 7)
-  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
-  FLOW:     wizard-6-trymodel → wizard-7-submit → domain-review  (via
-            SB.submitPrompterToDomainReview) → prompter/dashboard.html
-  PURPOSE:  Review checklist and submit the completed task to domain review.
-  READS (SBData): getWizardTaskFromSession(), getWizardTaskId(), domainLabel;
-            summary reads name, domain, difficulty, selectedSkills, goldenSolution,
-            verifiers, attachments.
-  CAPTURES/WRITES: SB.saveWizardTaskToSession then SB.submitPrompterToDomainReview
-            → SBData.tasks (status domain-review, prompter content fields); clears
-            wizard session (setWizardTaskId null, sessionStorage wizard data).
-  ACTIONS:  Submit for domain review → dashboard.html; Back → wizard-6-trymodel.html;
-            Save & Exit → dashboard.html.
-  AI-FIRST NOTE: terminal prompter capture — persists session wizard fields to SBData.tasks.
+  PAGE:        Prompter · Submit (wizard step 7 of 7)
+  ROLE:        prompter            (access guard: SB.requireRole('prompter'))
+  ROUTE:       prompter/wizard-7-submit.html   [query: ?id=<taskId> when editing]
+  PURPOSE:     Review checklist and submit the completed task to domain review —
+               the terminal prompter capture step that persists to SBData.tasks.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       wizard-6-trymodel.html ("Next: Submit")
+  EXIT:        → dashboard.html after SB.submitPrompterToDomainReview (status
+               becomes domain-review) | Back → wizard-6-trymodel.html
+  LIFECYCLE:   commits draft/rework → domain-review; clears rework flags on resubmit;
+               wizard session cleared (setWizardTaskId null, sessionStorage removed).
+  ACTOR/ACTIONS: Prompter reviews summary checklist; "Submit for domain review"
+               saves session then calls SB.submitPrompterToDomainReview(t).
+  PERMISSIONS: author-only; submit gated on verifiersCount>0 && hasGolden.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (wizard session → persisted SBData.tasks row)
+  READS:       getWizardTaskFromSession(), getWizardTaskId(), domainLabel(); summary
+               reads name, domain, difficulty, selectedSkills, goldenSolution,
+               verifiers, attachments
+  WRITES:      SB.saveWizardTaskToSession then SB.submitPrompterToDomainReview →
+               SBData.tasks insert/update: name, description, domain, difficulty,
+               instructionMd, verifiers, goldenSolution, selectedSkills, attachments,
+               status→domain-review, prompter ref, updatedAt, history event; clears
+               changesTarget/reworkReason/reworkRequestedBy; then clears wizard session
+  FIELDS VALIDATED AT SUBMIT:
+     goldenSolution : markdown : required (hasGolden)
+     verifiers      : Verifier[] : at least one required
+     name/domain/difficulty : shown in checklist (warn icons if missing — not hard-gated)
+  RELATIONSHIPS: Task.prompter → User; Task.status → domain-review queue for
+               domainReviewer role; Task n—n Skill, Task 1—n Verifier persisted here.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      breadcrumb + Save&Exit · stepper · 2-col (summary aside + submit
+               card) · footer Back link.
+  COMPONENTS:  summary-list with ok/warn icons per field, indigo info callout
+               ("goes to Domain Expert Review"), Submit button + submit-hint when
+               disabled, Save&Exit link.
+  STATES:      checklist rows green (ok) or amber (missing/warn); submit disabled
+               with hint "Required: verifiers and/or golden solution"; success toast
+               then redirect dashboard after 800ms.
+
+  AI-FIRST NOTE: terminal prompter capture — only step that writes the Task row to
+               SBData.tasks and advances lifecycle to domain-review.
   ============================================================================
 -->
 <html lang="en">

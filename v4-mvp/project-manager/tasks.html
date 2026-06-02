@@ -1,16 +1,56 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Project Manager · All tasks
-  ROLE:     projectManager      (access guard: SB.requireRole('projectManager'))
-  FLOW:     dashboard.html → tasks.html  (assign prompter/tester slots by status)
-  PURPOSE:  Browse all tasks and assign people to the slot the task currently needs.
-  READS (SBData): tasks, STATUS, skillDomains, domainLabel, allUsers, ROLES,
-            userRoleKeys, userHasRole, getTaskById; ?tab, ?status query params.
-  CAPTURES/WRITES: mutates task assignee fields on SBData.tasks (prompter, tester,
-            domainReviewer, or taskReviewer slot) via Assign modal confirm — no
-            dedicated SB helper; does not change lifecycle status.
-  ACTIONS:  Tab/filter browse; Assign modal → sets task[slot] assignee.
+  PAGE:        Project Manager · All tasks
+  ROLE:        projectManager      (access guard: SB.requireRole('projectManager'))
+  ROUTE:       project-manager/tasks.html        [query: ?tab=<tabId> · ?status=<statusKey>]
+  PURPOSE:     Browse and filter the full task pipeline; assign UserRef slots on
+               tasks without changing lifecycle status.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       project-manager/dashboard.html (KPI deep-links, "View all tasks",
+               attention items) or nav → All Tasks.
+  EXIT:        stays on page after Assign; Cancel closes modal.
+  LIFECYCLE:   reads Task.status for display/filtering; Assign does NOT advance status.
+               Slot choice driven by status + assignee roles (see WRITES).
+  ACTOR/ACTIONS: PM. Lifecycle tabs + search/status/domain filters; row "Assign" opens
+               modal → pick active user → confirm writes assignee to task slot.
+  PERMISSIONS: projectManager-only; mutates Task assignee FK refs in SBData.tasks.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (assignee slots), User (assignee picker)
+  READS:       SBData.tasks, STATUS, skillDomains, domainLabel, allUsers, ROLES,
+               userRoleKeys, userHasRole, getTaskById; URL ?tab, ?status.
+  WRITES:      in-place Task[slot] = UserRef { id, name, initials, email, role } where
+               slot is one of prompter | tester | domainReviewer | taskReviewer.
+               Slot resolution (deterministic, see STATUS_SLOT / preferredSlot):
+               prompter-draft→prompter, domain-review→domainReviewer, with-tester→tester,
+               in-review→taskReviewer, changes-requested→changesTarget. Statuses with no
+               obvious owner fall back to a role-priority match the user actually holds.
+               Does NOT write status, history, or other Task fields.
+  FIELDS SHOWN (table):
+     name, description, reworkReason/changesTarget : Task : identity + rework context
+     prompter, tester                              : UserRef : assignee or "Unassigned"
+     status                                        : enum   : lifecycle pill
+     domain                                        : FK     : domainLabel(t.domain)
+  TABS (client filter): all | new (prompter-draft) | inprogress (domain-review,
+               with-tester, in-review) | rework (changes-requested) | completed
+               (approved, published).
+  RELATIONSHIPS: Task n—1 User per assignee slot; Task n—1 Domain; eligible assignees
+               filtered by User.roles[] ∩ targetRoleKeys for current status.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      page header · lifecycle tab pills (with counts) · filter bar · tasks
+               table · Assign modal.
+  COMPONENTS:  tab buttons (rework highlighted when count>0), search input, status
+               and domain <select>s, result count, tasks table, Assign modal (task
+               name subtitle, assignee <select> of active qualified users).
+  STATES:      URL pre-selects tab/status from dashboard KPIs; empty filter → zero
+               rows; Assign validation toast if no person selected; success toast on
+               assign; rework rows show amber rework note inline.
+
+  AI-FIRST NOTE: primary PM assignment surface; only mutates assignee FK slots, not
+               lifecycle — status transitions happen on role-specific workflow pages.
   ============================================================================
 -->
 <html lang="en">
@@ -106,6 +146,23 @@
     const resultCount = document.getElementById('result-count');
     const tabsEl = document.getElementById('tabs');
 
+    /* Each lifecycle status maps to the ONE assignee slot the PM is naturally filling.
+     * This keeps assignment deterministic (no guessing) and drives both the eligible-
+     * person picker and the slot the assignee is written into. Statuses with no obvious
+     * owner (completed) return null → PM may assign any role, resolved by priority. */
+    const STATUS_SLOT = {
+      'prompter-draft': 'prompter',
+      'domain-review':  'domainReviewer',
+      'with-tester':    'tester',
+      'in-review':      'taskReviewer',
+    };
+    function preferredSlot(t) {
+      if (!t) return null;
+      // Rework returns to whoever the reviewer/tester flagged (changesTarget).
+      if (t.status === 'changes-requested') return t.changesTarget || 'prompter';
+      return STATUS_SLOT[t.status] || null;
+    }
+
     const TABS = [
       { id: 'all',        label: 'All',         match: () => true },
       { id: 'new',        label: 'New',         match: t => t.status === 'prompter-draft' },
@@ -118,6 +175,8 @@
     const urlParams = new URLSearchParams(location.search);
     if (urlParams.get('tab') && TABS.some(x => x.id === urlParams.get('tab'))) activeTab = urlParams.get('tab');
     if (urlParams.get('status') && SBData.STATUS[urlParams.get('status')]) statusSel.value = urlParams.get('status');
+    // ?q= lets the dashboard "Needs attention" items deep-link to a single task.
+    if (urlParams.get('q')) search.value = urlParams.get('q');
     function countFor(id) { const tab = TABS.find(x => x.id === id); return SBData.tasks.filter(tab.match).length; }
     function renderTabs() {
       tabsEl.innerHTML = TABS.map(tab => {
@@ -173,14 +232,15 @@
     function openAssign(id) {
       assignTaskId = id;
       const t = SBData.getTaskById(id);
-      document.getElementById('assign-task-name').textContent = t ? t.name : '';
+      const pref = preferredSlot(t);
+      const slotLabel = pref ? SBData.roleLabel(pref) : null;
+      document.getElementById('assign-task-name').textContent =
+        (t ? t.name : '') + (slotLabel ? '  ·  needs: ' + slotLabel : '');
       const sel = document.getElementById('assign-to');
       sel.innerHTML = '<option value="">Select person...</option>';
       // Suggest people whose ROLES are relevant to the task's current stage.
       // Multi-role aware: a user qualifies if they hold ANY of the target roles.
-      const targetRoleKeys = t && t.status === 'with-tester' ? ['tester']
-                           : t && t.status === 'prompter-draft' ? ['prompter']
-                           : ['prompter','tester','domainReviewer','taskReviewer'];
+      const targetRoleKeys = pref ? [pref] : ['prompter','tester','domainReviewer','taskReviewer'];
       SBData.allUsers.filter(u => u.status === 'active' && SBData.userRoleKeys(u).some(r => targetRoleKeys.includes(r))).forEach(u => {
         const roleLabels = SBData.userRoleKeys(u).map(SBData.roleLabel).join(', ');
         sel.innerHTML += `<option value="${u.id}">${u.name} (${roleLabels})</option>`;
@@ -199,16 +259,17 @@
       if (task && user) {
         var assignee = { id: user.id, name: user.name, initials: user.initials, email: user.email, role: user.role };
         var roles = SBData.userRoleKeys(user);
-        // Prefer the slot the task currently needs; otherwise fall back to the
-        // user's first relevant role. Multi-role users can fill any slot they hold.
-        var slot = task.status === 'with-tester' && roles.includes('tester') ? 'tester'
-                 : task.status === 'prompter-draft' && roles.includes('prompter') ? 'prompter'
+        // Write into the slot the task's status calls for (deterministic). Only fall
+        // back to a role-priority slot when the status has no single obvious owner.
+        var pref = preferredSlot(task);
+        var slot = pref && roles.includes(pref) ? pref
                  : roles.includes('tester') ? 'tester'
                  : roles.includes('prompter') ? 'prompter'
                  : roles.includes('domainReviewer') ? 'domainReviewer'
                  : roles.includes('taskReviewer') ? 'taskReviewer' : null;
         if (slot) task[slot] = assignee;
-        SB.toast('Assigned "' + task.name.split('/')[1] + '" to ' + user.name, 'success');
+        var shortName = task.name.split('/')[1] || task.name;
+        SB.toast('Assigned "' + shortName + '" to ' + user.name + (slot ? ' as ' + SBData.roleLabel(slot) : ''), 'success');
       }
       assignOverlay.classList.add('hidden'); assignOverlay.classList.remove('flex');
       renderTabs();

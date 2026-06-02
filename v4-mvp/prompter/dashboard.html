@@ -1,17 +1,45 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Prompter · My Tasks (task list)
-  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
-  FLOW:     prompter hub → dashboard.html  (lists prompter-draft through
-            published; Continue/View → wizard or task-detail)
-  PURPOSE:  Browse, filter, and open the signed-in prompter's tasks by lifecycle tab.
-  READS (SBData): tasks, STATUS, skillDomains, domainLabel; getSession().userId
-            (filters to this prompter's tasks).
-  CAPTURES/WRITES: none (read-only). Sets active wizard task id via
-            SB.setWizardTaskId on "New task" and row links.
-  ACTIONS:  "New task" → wizard-1-brief.html; row Continue/Address changes →
-            wizard-1-brief.html?id=…; View → task-detail.html?id=….
+  PAGE:        Prompter · My Tasks (task list)
+  ROLE:        prompter            (access guard: SB.requireRole('prompter'))
+  ROUTE:       prompter/dashboard.html
+  PURPOSE:     Browse, filter, and open the signed-in prompter's tasks by lifecycle tab.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       app nav · SB.getHomePage() for prompter role · post-wizard submit
+  EXIT:        → wizard-1-brief.html (New task / Continue / Address changes) or
+               task-detail.html?id=… (View for in-pipeline / published tasks)
+  LIFECYCLE:   read-only view of all statuses (prompter-draft through published);
+               row action routes draft/rework → wizard, pipeline → detail view.
+  ACTOR/ACTIONS: Prompter filters by tab/search/domain; "New task" clears wizard id;
+               row link label from getAction() (Continue | Address changes | View).
+  PERMISSIONS: prompter-only; tasks filtered to session.userId === task.prompter.id.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task[] (read-only aggregate for this prompter)
+  READS:       SBData.tasks, STATUS, skillDomains, domainLabel(); SB.getSession()
+  WRITES:      none to SBData.tasks. SB.setWizardTaskId(null) on "New task" only.
+  FIELDS SHOWN:
+     name        : string   : task identifier (table primary column)
+     description : string   : one-line subtitle under name
+     domain      : enum(id) : FK → Domain.id (filter + badge)
+     status      : enum     : lifecycle pill + changesTarget hint when rework
+     updatedAt   : string   : last modified timestamp
+     reworkReason: string?  : inline amber callout when changesTarget === prompter
+  RELATIONSHIPS: Task n—1 Domain; Task filtered by Task.prompter → User.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      page title + New task CTA · lifecycle badge strip · pill tabs ·
+               search/domain filter bar · task table · empty state · wizard info box.
+  COMPONENTS:  pill tabs (All, Drafts, In review, Rework, Published with counts),
+               search input, domain <select>, sortable-style table, status pills,
+               per-row action link, empty-state illustration.
+  STATES:      empty table when no matches; rework tab highlighted amber when count>0;
+               inline rework reason on prompter-targeted changes-requested rows.
+
+  AI-FIRST NOTE: prompter hub; maps lifecycle status → navigation target (wizard vs
+               read-only detail) without mutating task data.
   ============================================================================
 -->
 <html lang="en">

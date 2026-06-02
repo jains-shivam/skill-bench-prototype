@@ -1,15 +1,40 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Role switcher (demo hub)
-  ROLE:     public              (no auth guard; redirects to login.html if not
-            authenticated)
-  FLOW:     login.html → index.html → role dashboard (demo role impersonation)
-  PURPOSE:  Demo gallery to jump into each pipeline role's landing page.
-  READS (SBData): ROLES (via role-card data-role keys and SB.demoLoginAs).
-  CAPTURES/WRITES: SB.demoLoginAs(role) → localStorage auth for the chosen role.
-  ACTIONS:  Role cards → super-admin/admin/project-manager/prompter/domain-reviewer/
-            tester/reviewer dashboards after SB.demoLoginAs.
+  PAGE:        Role switcher (demo hub)
+  ROLE:        authenticated       (redirects to login.html if !SB.isAuthenticated())
+  ROUTE:       index.html
+  PURPOSE:     Demo gallery to impersonate any pipeline role and jump to that
+               role's landing dashboard.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       login.html (after SB.login; multi-role users may return here)
+  EXIT:        → role dashboards after SB.demoLoginAs + card href (super-admin,
+               admin, project-manager, prompter, domain-reviewer, tester, reviewer)
+  LIFECYCLE:   n/a — navigation hub only; does not mutate Task lifecycle.
+  ACTOR/ACTIONS: Authenticated user clicks role card → preventDefault →
+               SB.demoLoginAs(data-role) → location.href to role home.
+  PERMISSIONS: any authenticated user; demo-only impersonation (production uses
+               sidebar "My roles" via SB.goToRole).
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      User (session) + Role enum
+  READS:       SB.isAuthenticated(), SBData users via SB.demoLoginAs(roleKey)
+  WRITES:      SB.demoLoginAs(role) → SB.login + switchActiveRole + setRole →
+               localStorage sb-mvp-auth, sb-mvp-role
+  FIELDS CAPTURED:
+     primaryRole : enum     : roleKey impersonated for the demo session (superAdmin,
+                              admin, projectManager, prompter, domainReviewer,
+                              tester, taskReviewer)
+  RELATIONSHIPS: User n—n Role; demo card picks one representative user per role.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      brand header · centered 7-card role grid · platform capabilities
+               panel · footer.
+  COMPONENTS:  role cards (avatar, demo user name, role blurb, colored border),
+               pipeline badge strip (PM → Prompter → Domain Review → … → Published).
+  STATES:      unauthenticated → redirect login.html; card click swaps session role.
+
   AI-FIRST NOTE: demo-only entry; production users land on SB.getHomePage() after login.
   ============================================================================
 -->

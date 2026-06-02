@@ -1,14 +1,45 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Domain Reviewer · Review queue
-  ROLE:     domainReviewer      (access guard: SB.requireRole('domainReviewer'))
-  FLOW:     domain-reviewer hub → queue.html → workspace.html?id=…
-            (domain-review pending; changes-requested → prompter rework tab)
-  PURPOSE:  List tasks awaiting domain review or returned to the prompter.
-  READS (SBData): tasks, STATUS, skillDomains, domainLabel.
-  CAPTURES/WRITES: none (read-only).
-  ACTIONS:  Row click → workspace.html?id=… (Review or View on rework tab).
+  PAGE:        Domain Reviewer · Review queue
+  ROLE:        domainReviewer      (access guard: SB.requireRole('domainReviewer'))
+  ROUTE:       domain-reviewer/queue.html
+  PURPOSE:     List tasks awaiting domain review or previously returned to the prompter;
+               filter and open a task in the review workspace.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       app nav / domain-reviewer hub → queue.html
+  EXIT:        → domain-reviewer/workspace.html?id=<taskId>   (row click)
+  LIFECYCLE:   Pending review tab: status domain-review (post-prompter submit).
+               Returned for rework tab: status changes-requested, changesTarget=prompter.
+  ACTOR/ACTIONS: Domain Reviewer. Switch tabs; search; filter by domain; row click opens
+               workspace (CTA "Review" on pending, "View" on rework).
+  PERMISSIONS: read-only list; approve/reject/edit happen in workspace.html.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (list rows)
+  READS:       SBData.tasks, STATUS, skillDomains, domainLabel
+  WRITES:      none on this page.
+  FIELDS SHOWN:
+     name            : string   : task identifier (mono)
+     description     : string   : one-line summary
+     prompter        : UserRef  : FK → User (author)
+     domain          : enum(id) : FK → Domain (badge)
+     updatedAt       : string   : submission / last update time
+     reworkReason    : string   : shown on rework tab ("Sent back: …")
+  RELATIONSHIPS: Task n—1 Prompter; Task n—1 Domain; pending rows precede tester assignment.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      h1 + count badge · subtitle · pill tabs · search + domain filter ·
+               task table · empty state with icon.
+  COMPONENTS:  dynamic tab buttons (Pending review / Returned for rework + counts),
+               search input, domain <select>, table (Task, Prompter, Domain, Submitted,
+               CTA), #empty panel, #count-badge (active tab list length).
+  STATES:      empty queue message when no rows match; rework tab uses amber styling when
+               count > 0; search + domain filter re-render table live.
+
+  AI-FIRST NOTE: gateway queue between prompter submit (domain-review) and tester pool
+               (with-tester after approve); rework tab tracks prompter-targeted bounce-backs.
   ============================================================================
 -->
 <html lang="en">

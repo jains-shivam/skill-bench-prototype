@@ -1,19 +1,60 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Tester · Task context (wizard step 1)
-  ROLE:     tester              (access guard: SB.requireRole('tester'))
-  FLOW:     queue.html → wizard-1-context → wizard-3-solution  (with-tester;
-            loads persisted task into session working copy)
-  PURPOSE:  Read full prompter package; pick up, minor-fix, send back, or proceed.
-  READS (SBData): ?id, getWizardTaskId(), getWizardTaskFromSession(),
-            getTaskById, domainLabel, skillsLibrary, getDomain, skillDomainIds,
-            VERIFIER_CATEGORIES, VERIFIER_VALIDATION; task content fields.
-  CAPTURES/WRITES: hydrates session from getTaskById; SB.pickUpTask + tester on
-            session; SB.updateTaskFields (instructionMd, verifiers minor edits);
-            SB.testerSendBack (status changes-requested, rework fields).
-  ACTIONS:  Pick up task; Edit (minor fixes); Send back → queue.html;
-            Next → wizard-3-solution.html.
+  PAGE:        Tester · Task context (wizard step 1 of 5)
+  ROLE:        tester              (access guard: SB.requireRole('tester'))
+  ROUTE:       tester/wizard-1-context.html        [query: ?id=<taskId>]
+  PURPOSE:     Read the full prompter package (instruction, verifiers, golden solution,
+               attachments, skills); claim the task, apply minor spec fixes, send back
+               broken specs, or advance to solution authoring.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       tester/queue.html → wizard-1-context.html?id=<taskId>
+  EXIT:        → wizard-2-environment.html?id=…   |  Send back / Save & Exit → queue.html
+  LIFECYCLE:   operates on with-tester (or changes-requested→tester rework) tasks;
+               hydrates a session working copy from SBData.getTaskById; status unchanged
+               here until Send back (→ changes-requested) or wizard submit at step 4.
+  ACTOR/ACTIONS: Tester. "Pick up task" (if unclaimed); "Edit (minor)" opens modal;
+               "Send back" modal → prompter or domainReviewer target; "Next: Environment".
+  PERMISSIONS: SB.taskPermissions(task,'tester') — canEditMinor (instructionMd, verifiers),
+               canSendBack; identity/status/assignees locked in edit modal.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (session working copy + SBData.tasks row when persisted)
+  READS:       URL ?id, SB.getWizardTaskId(), SB.getWizardTaskFromSession(),
+               SBData.getTaskById, domainLabel, skillsLibrary, getDomain,
+               skillDomainIds, VERIFIER_CATEGORIES, VERIFIER_VALIDATION
+  WRITES:      sessionStorage wizard copy via SB.saveWizardTaskToSession (hydrate +
+               after pickup); SB.pickUpTask(id) + session tester ref on pickup;
+               SB.updateTaskFields(id, patch, …) on minor edit (instructionMd, verifiers);
+               SB.testerSendBack → status changes-requested, changesTarget, reworkReason,
+               reworkRequestedBy, reworkCount, testOutcome, comments[], history[].
+  FIELDS SHOWN (read):
+     name            : string     : task title (header + breadcrumb)
+     description     : string     : one-line summary
+     domain          : enum(id)   : FK → Domain
+     difficulty      : enum       : easy | medium | hard
+     prompter        : UserRef    : FK → User
+     instructionMd   : markdown   : full problem statement
+     verifiers       : Verifier[] : type, category, validationStatus, description
+     goldenSolution  : markdown   : prompter reference answer
+     attachments     : Attachment[] : name, kind, size
+     selectedSkills  : string[]   : FK → Skill (n—n, rendered as domain-colored tags)
+  RELATIONSHIPS: Task n—1 Domain; Task n—n Skill; Task 1—n Verifier; Task 1—n Attachment.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      breadcrumb + Save & Exit · tester stepper · header card (meta + actions) ·
+               2-col grid (instruction full-width; verifiers | golden solution; attachments) ·
+               footer Back / Next.
+  COMPONENTS:  SB.renderWizardStepper(1,'tester'), pickup button, Edit/Send back action bar,
+               instruction <pre>, verifiers list (category + validation badges), golden
+               solution panel, attachments list, skills tag chips, SB.renderEditTaskModal,
+               SB.renderSendBackModal.
+  STATES:      unclaimed → shows Pick up; owned → shows Edit/Send back; empty placeholders
+               for missing instruction/verifiers/attachments/skills; page reload after save.
+
+  AI-FIRST NOTE: first tester wizard step — read-only review of prompter-authored content;
+               minor edits and send-back are the only spec mutations before artifact work.
   ============================================================================
 -->
 <html lang="en">
@@ -80,7 +121,7 @@
 
     <div class="mt-8 flex justify-between items-center">
       <a href="queue.html" class="text-sm text-slate-600 hover:text-slate-900">Back to queue</a>
-      <a id="next" href="wizard-3-solution.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md font-medium">Next: Solution &rarr;</a>
+      <a id="next" href="wizard-2-environment.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md font-medium">Next: Environment &rarr;</a>
     </div>
   </main>
   <div id="toast-container"></div>
@@ -203,7 +244,7 @@
       });
     };
 
-    const nextHref = 'wizard-3-solution.html' + (id ? '?id=' + encodeURIComponent(id) : '');
+    const nextHref = 'wizard-2-environment.html' + (id ? '?id=' + encodeURIComponent(id) : '');
     document.getElementById('next').href = nextHref;
   </script>
 </body>

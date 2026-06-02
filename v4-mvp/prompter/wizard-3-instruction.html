@@ -1,15 +1,45 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Prompter · Problem statement (wizard step 3)
-  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
-  FLOW:     wizard-2-skills → wizard-3-instruction → wizard-4-solution
-  PURPOSE:  Author instruction.md content (agent problem statement) in Markdown.
-  READS (SBData): getWizardTaskFromSession(), getWizardTaskId().
-  CAPTURES/WRITES: sessionStorage wizard task: instructionMd via
-            SB.saveWizardTaskToSession (incl. file import).
-  ACTIONS:  Back → wizard-2-skills.html; Next → wizard-4-solution.html.
-  AI-FIRST NOTE: primary capture point for the agent-facing prompt text.
+  PAGE:        Prompter · Problem statement (wizard step 3 of 7)
+  ROLE:        prompter            (access guard: SB.requireRole('prompter'))
+  ROUTE:       prompter/wizard-3-instruction.html   [query: ?id=<taskId> when editing]
+  PURPOSE:     Author instruction.md content — the agent-facing problem statement
+               in Markdown with live preview.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       wizard-2-skills.html ("Next: Problem")
+  EXIT:        → wizard-4-solution.html  |  Save&Exit → dashboard.html
+  LIFECYCLE:   draft working copy; status unchanged until wizard-7-submit.
+  ACTOR/ACTIONS: Prompter types Markdown or imports .md/.txt file; Back/Next
+               auto-persist instructionMd on input and before advance.
+  PERMISSIONS: author-only while task is prompter-draft or prompter-rework.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (wizard session copy)
+  READS:       getWizardTaskFromSession(), getWizardTaskId()
+  WRITES:      sessionStorage wizard copy via SB.saveWizardTaskToSession on input,
+               import, and Next click
+  FIELDS CAPTURED:
+     instructionMd : markdown      : agent prompt text → persisted as instruction.md
+     attachments   : Attachment[]  : input/context files → Harbor inputs/ folder
+                                      each {name, kind(data|code|text), size, content}
+  RELATIONSHIPS: primary agent-facing content; referenced by verifier validation
+               (SB.validateVerifierMock prompt arg) and mock model run later;
+               attachments travel with the task to tester + reviewer.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      breadcrumb + Save&Exit · stepper · left help aside · split editor
+               card (Editor | Preview) · footer Back/Next.
+  COMPONENTS:  SB.renderWizardStepper(3), <textarea> Markdown editor, live preview
+               pane (renderMd: h1/h2, lists, code blocks, bold, inline code),
+               "Import file" label + hidden file input (.md, .txt, .markdown),
+               "Input files & context" card (multi-file add/remove → attachments[]).
+  STATES:      pre-fills instructionMd; preview updates on every keystroke; empty
+               editor shows "Start typing to see a preview..." placeholder.
+
+  AI-FIRST NOTE: primary capture point for the agent-facing prompt; downstream
+               verifiers and domain review gate on this content quality.
   ============================================================================
 -->
 <html lang="en">
@@ -75,6 +105,22 @@
         </div>
       </section>
     </div>
+
+    <!-- Input files & context: captured into task.attachments[] → Harbor inputs/ folder.
+         Optional; the tester and reviewer see these alongside the problem statement. -->
+    <section class="mt-6 bg-white border border-slate-200 rounded-lg p-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+        <h2 class="text-base font-semibold">Input files &amp; context <span class="text-xs font-normal text-slate-400">(optional)</span></h2>
+        <label class="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-dashed border-slate-300 rounded-md bg-white hover:bg-slate-50 hover:border-indigo-400 cursor-pointer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-500"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          Add files
+          <input id="attach-input" type="file" multiple class="hidden">
+        </label>
+      </div>
+      <p class="text-sm text-slate-500 mb-3">Sample data, fixtures, or reference files the agent receives in <code class="bg-slate-100 px-1 rounded text-xs">inputs/</code>. The tester and reviewer see these too.</p>
+      <div id="attach-list" class="space-y-2"></div>
+    </section>
+
     <div class="mt-8 flex justify-between">
       <a id="back" href="wizard-2-skills.html" class="text-sm text-slate-600 hover:text-slate-900">Back</a>
       <a id="next" href="wizard-4-solution.html"
@@ -192,6 +238,57 @@
     });
 
     document.getElementById('next').addEventListener('click', () => { persist(); updatePreview(); });
+
+    /* ── Input files (task.attachments) ──────────────────────────────────────
+       Attachments are reference/context files (sample data, fixtures). They are
+       stored on the session task and bundled into the Harbor inputs/ folder at
+       submit. kind is inferred from extension purely for display grouping. */
+    const attachInput = document.getElementById('attach-input');
+    const attachList = document.getElementById('attach-list');
+    if (!Array.isArray(t.attachments)) t.attachments = [];
+
+    function fmtSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+    function kindFor(name) {
+      const ext = (name.split('.').pop() || '').toLowerCase();
+      if (['csv', 'json', 'tsv', 'xlsx', 'parquet', 'db', 'sqlite'].includes(ext)) return 'data';
+      if (['py', 'js', 'ts', 'sh', 'java', 'go', 'rb', 'sql', 'c', 'cpp'].includes(ext)) return 'code';
+      return 'text';
+    }
+    function renderAttach() {
+      if (!t.attachments.length) {
+        attachList.innerHTML = '<p class="text-sm text-slate-400 italic">No input files attached.</p>';
+        return;
+      }
+      attachList.innerHTML = t.attachments.map((a, i) => `
+        <div class="flex items-center gap-3 px-3 py-2 border border-slate-200 rounded-md">
+          <span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${SB.escapeHtml(a.kind || 'text')}</span>
+          <span class="font-mono text-sm text-slate-900 truncate flex-1">${SB.escapeHtml(a.name)}</span>
+          <span class="text-xs text-slate-400">${SB.escapeHtml(a.size || '')}</span>
+          <button type="button" data-rm="${i}" class="text-xs text-rose-600 hover:underline">Remove</button>
+        </div>`).join('');
+      attachList.querySelectorAll('[data-rm]').forEach(b => {
+        b.onclick = () => { t.attachments.splice(parseInt(b.dataset.rm, 10), 1); persist(); renderAttach(); };
+      });
+    }
+    attachInput.addEventListener('change', e => {
+      const files = Array.from(e.target.files || []);
+      let pending = files.length;
+      if (!pending) return;
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          t.attachments.push({ name: file.name, kind: kindFor(file.name), size: fmtSize(file.size), content: reader.result });
+          if (--pending === 0) { persist(); renderAttach(); SB.toast('Added ' + files.length + ' file(s)', 'success'); }
+        };
+        reader.readAsText(file);
+      });
+      e.target.value = '';
+    });
+    renderAttach();
   </script>
 </body>
 </html>

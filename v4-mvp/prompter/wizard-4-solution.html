@@ -1,16 +1,41 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Prompter · Golden solution (wizard step 4)
-  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
-  FLOW:     wizard-3-instruction → wizard-4-solution → wizard-5-verifiers
-  PURPOSE:  Author the reference golden solution before defining verifiers.
-  READS (SBData): getWizardTaskFromSession(), getWizardTaskId().
-  CAPTURES/WRITES: sessionStorage wizard task: goldenSolution via
-            SB.saveWizardTaskToSession (incl. file import).
-  ACTIONS:  Back → wizard-3-instruction.html; Next → wizard-5-verifiers.html;
-            Save & Exit → dashboard.html.
-  AI-FIRST NOTE: reference answer used to validate verifiers in the next step.
+  PAGE:        Prompter · Golden solution (wizard step 4 of 7)
+  ROLE:        prompter            (access guard: SB.requireRole('prompter'))
+  ROUTE:       prompter/wizard-4-solution.html   [query: ?id=<taskId> when editing]
+  PURPOSE:     Author the reference golden solution before defining verifiers so
+               each check can be validated against concrete output.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       wizard-3-instruction.html ("Next: Solution")
+  EXIT:        → wizard-5-verifiers.html  |  Save&Exit → dashboard.html (persists)
+  LIFECYCLE:   draft working copy; status unchanged until wizard-7-submit.
+  ACTOR/ACTIONS: Prompter writes Markdown/code or imports file; auto-save on input;
+               Save&Exit and Next both call persist().
+  PERMISSIONS: author-only while task is prompter-draft or prompter-rework.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (wizard session copy)
+  READS:       getWizardTaskFromSession(), getWizardTaskId()
+  WRITES:      sessionStorage wizard copy via SB.saveWizardTaskToSession on input,
+               import, Save&Exit, and Next
+  FIELDS CAPTURED:
+     goldenSolution : markdown : reference answer (approach, code, expected output)
+  RELATIONSHIPS: consumed by step 5 SB.validateVerifierMock(goldenSolution) and
+               required at step 7 submit (hasGolden gate).
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      breadcrumb + Save&Exit · stepper · left help aside (approach/code/
+               output guidance) · split editor card · footer Back/Next.
+  COMPONENTS:  SB.renderWizardStepper(4), <textarea> editor with placeholder sections,
+               live Markdown preview (renderMd), dashed "Import from file" label
+               (.md, .txt, .py, .sh, .json).
+  STATES:      pre-fills goldenSolution; preview on type; import toast on success;
+               no hard validation here (required check at submit step 7).
+
+  AI-FIRST NOTE: reference answer authored BEFORE verifiers by design — step 5
+               validates each verifier description against this content.
   ============================================================================
 -->
 <html lang="en">

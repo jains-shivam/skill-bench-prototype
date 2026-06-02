@@ -1,14 +1,49 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Admin · Dashboard
-  ROLE:     admin               (access guard: SB.requireRole('admin'))
-  FLOW:     admin hub → dashboard.html  (org overview; links to people / skills)
-  PURPOSE:  Pipeline KPIs, task/user tables, activity feed, skills summary, health metrics.
-  READS (SBData): tasks, STATUS, allUsers, ROLES, userRoleKeys, skillsLibrary,
-            skillDomains, getDomain, skillDomainIds, getSkillById; task history.
-  CAPTURES/WRITES: none (read-only).
-  ACTIONS:  Quick links → people.html, skills.html; View skill modal (read-only).
+  PAGE:        Admin · Dashboard
+  ROLE:        admin               (access guard: SB.requireRole('admin'))
+  ROUTE:       admin/dashboard.html
+  PURPOSE:     Org-wide read-only overview: pipeline KPIs, all tasks, team roster,
+               recent activity, skills catalog summary, and pipeline health metrics.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       admin login landing (nav → Dashboard).
+  EXIT:        → people.html (Add person) · skills.html (Manage skills / catalog).
+  LIFECYCLE:   aggregates Task rows across all statuses; does not mutate lifecycle.
+  ACTOR/ACTIONS: Admin browses KPIs/tables/feed; "View" on a skill opens
+               SB.renderSkillViewModal (read-only); quick-action links to CRUD pages.
+  PERMISSIONS: admin-only; no task or user writes on this page.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITIES:    Task (aggregate counts + table rows), User (team table), Skill +
+               Domain (catalog summary), History (activity feed).
+  READS:       SBData.tasks, STATUS, allUsers, ROLES, userRoleKeys, skillsLibrary,
+               skillDomains, getDomain, skillDomainIds, getSkillById; Task.history[].
+  WRITES:      none (read-only dashboard).
+  FIELDS SHOWN:
+     KPI counts  : derived   : per status (prompter-draft, domain-review, with-tester,
+                                  in-review, changes-requested, published|approved)
+     task row      : Task      : name, description, prompter.name, status, updatedAt
+     user row      : User      : name, email, initials, roles[], lastSeen, tasksCount
+     activity      : History   : who, event, when (+ task name context)
+     pipeline health : derived : oracle pass rate (oraclePassed), rework count,
+                                  published/approved count, active prompter set size
+     skill summary : Skill     : name, domain badges; View → file.content via modal
+  RELATIONSHIPS: Task n—1 User (prompter); Task n—1 Domain; Skill n—n Domain;
+               User n—n Role; Task 1—n History.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      page header · 7 KPI cards · 2-col grid (left: task + team tables +
+               quick actions; right: activity feed, skills summary, pipeline health).
+  COMPONENTS:  KPI stat cards (non-clickable), "All tasks" table, "Team members"
+               table, quick-action link cards, scrollable activity feed, skills list
+               with View buttons, pipeline health metric rows, toast container.
+  STATES:      KPI placeholders "-" until computed; empty activity → "No activity yet";
+               skill View opens shared read-only modal (SB.renderSkillViewModal).
+
+  AI-FIRST NOTE: admin aggregate hub; surfaces cross-cutting Task lifecycle counts and
+               Skill catalog inspection without leaving the dashboard.
   ============================================================================
 -->
 <html lang="en">

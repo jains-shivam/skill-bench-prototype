@@ -1,16 +1,51 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Tester · Task queue
-  ROLE:     tester              (access guard: SB.requireRole('tester'))
-  FLOW:     tester hub → queue.html → wizard-1-context.html?id=…
-            (with-tester available/mine; changes-requested rework; submitted)
-  PURPOSE:  Pick up, continue, or view tasks across tester lifecycle tabs.
-  READS (SBData): tasks, STATUS, skillDomains, domainLabel, allUsers,
-            getSession().userId (multi-role tester identity).
-  CAPTURES/WRITES: SB.pickUpTask (available tab → assigns tester on SBData.tasks);
-            SB.setWizardTaskId when opening a task.
-  ACTIONS:  Row click → wizard-1-context.html?id=… (Pick up / Continue / Fix / View).
+  PAGE:        Tester · Task queue
+  ROLE:        tester              (access guard: SB.requireRole('tester'))
+  ROUTE:       tester/queue.html
+  PURPOSE:     Browse domain-reviewed tasks; pick up unclaimed work, continue in-progress
+               testing, fix tester-targeted rework, or view submitted history.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       app nav / tester hub → queue.html
+  EXIT:        → wizard-1-context.html?id=<taskId>   (row click on any tab)
+  LIFECYCLE:   lists Task rows filtered by status + tester assignment:
+               Available (with-tester, no tester) | In progress (with-tester, mine) |
+               Rework (changes-requested, changesTarget=tester, mine) |
+               Submitted (in-review | approved | published, mine).
+  ACTOR/ACTIONS: Tester. Switch tabs; filter by domain; search name/description/domain;
+               row click — Available tab calls SB.pickUpTask then navigates; other tabs
+               call SB.setWizardTaskId then navigate (CTA: Pick up / Continue / Fix / View).
+  PERMISSIONS: queue is read-only except pickUpTask on Available (assigns tester UserRef).
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (list rows; no inline editing on this page)
+  READS:       SBData.tasks, STATUS, skillDomains, domainLabel, allUsers,
+               SB.getSession().userId (multi-role tester identity → me)
+  WRITES:      SB.pickUpTask(taskId) → Task.tester UserRef, updatedAt, history[];
+               SB.setWizardTaskId(taskId) when opening non-available rows (session only).
+  FIELDS SHOWN:
+     name            : string   : task identifier (mono)
+     description     : string   : one-line summary
+     prompter        : UserRef  : FK → User (author)
+     domain          : enum(id) : FK → Domain.id (badge via domainLabel)
+     updatedAt       : string   : last activity timestamp
+     reworkReason    : string   : shown on Rework tab when present
+     reworkRequestedBy : string : appended to rework note when present
+  RELATIONSHIPS: Task n—1 Prompter (User); Task n—1 Domain; Task n—0..1 Tester (claim).
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      h1 + subtitle · lifecycle pipeline badges · tab-bar + filters ·
+               task table · empty state · tip callout.
+  COMPONENTS:  tab-bar (Available / In progress / Rework / Submitted + count badges),
+               domain <select>, search input, sortable-style table (Task, Prompter,
+               Domain, Submitted, CTA column), empty #empty panel, toast container.
+  STATES:      per-tab empty ("Nothing in this tab"); rework rows show amber rework note;
+               tab-specific CTA label; domain + search re-filter live.
+
+  AI-FIRST NOTE: tester entry hub after domain-review; pickUpTask is the claim transition
+               from with-tester/unassigned → with-tester/owned before the 4-step wizard.
   ============================================================================
 -->
 <html lang="en">

@@ -1,16 +1,48 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Tester · Solution / solve.sh (wizard step 3)
-  ROLE:     tester              (access guard: SB.requireRole('tester'))
-  FLOW:     wizard-1-context → wizard-3-solution → wizard-4-tests
-  PURPOSE:  Implement solution/solve.sh from the prompter golden solution; preview Harbor.
-  READS (SBData): getWizardTaskFromSession(); t.instructionMd, t.goldenSolution,
-            t.attachments; harborFiles (SB.renderHarborPreview).
-  CAPTURES/WRITES: sessionStorage wizard task: solveSh, dockerfile (default init)
-            via SB.saveWizardTaskToSession.
-  ACTIONS:  Back → wizard-1-context.html; Next → wizard-4-tests.html; file import.
-  AI-FIRST NOTE: primary capture of executable solve.sh before test compilation.
+  PAGE:        Tester · Solution / solve.sh (wizard step 3 of 5)
+  ROLE:        tester              (access guard: SB.requireRole('tester'))
+  ROUTE:       tester/wizard-3-solution.html        [query: ?id=<taskId> via stepper]
+  PURPOSE:     Convert the prompter's golden solution into an executable solution/solve.sh;
+               preview Harbor layout as artifacts are edited.
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       wizard-2-environment.html → wizard-3-solution.html
+  EXIT:        → wizard-4-tests.html   |  Back → wizard-2-environment.html  |  Save & Exit → queue.html
+  LIFECYCLE:   session working copy only (status unchanged); artifacts persist to session
+               until wizard-5-oracle submit commits to SBData.tasks.
+  ACTOR/ACTIONS: Tester. Edit solve.sh textarea (auto-save); Import file (.sh/.bash/.py/.txt);
+               Back to Environment; Next to Tests (persists on click).
+  PERMISSIONS: SB.taskPermissions(task,'tester').canEditArtifacts — solveSh.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITY:      Task (session working copy)
+  READS:       SB.getWizardTaskFromSession(); t.instructionMd, t.goldenSolution,
+               t.attachments; SB.renderHarborPreview → harborFiles layout
+  WRITES:      sessionStorage via SB.saveWizardTaskToSession on every input/Next:
+               solveSh. (dockerfile is captured in the Environment step; a fallback
+               default is applied here only if it is still empty.)
+  FIELDS CAPTURED:
+     solveSh     : string   : executable bash script (solution/solve.sh)
+     dockerfile  : string   : set in the Environment step (step 2); fallback only if empty
+  FIELDS SHOWN (reference, read-only left panel):
+     goldenSolution : markdown : prompter reference
+     instructionMd  : markdown : problem statement
+     attachments    : Attachment[] : name, size
+  RELATIONSHIPS: solveSh + dockerfile become Harbor artifacts bundled on Task at submit.
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      breadcrumb + Save & Exit · tester stepper · 2-col grid (left reference
+               panels | right editor) · Harbor preview · footer Back / Next.
+  COMPONENTS:  golden-solution card, problem-statement card, attachments list, monospace
+               textarea #f-solve, file-import label, line-count footer, SB.renderHarborPreview
+               (initial: solution/solve.sh).
+  STATES:      pre-fills from session solveSh or STARTER_TEMPLATE; auto-save on input;
+               import replaces editor + toast; empty attachments message.
+
+  AI-FIRST NOTE: primary capture of executable solve.sh; environment/dockerfile is now
+               captured in the dedicated Environment step (step 2), fallback kept for safety.
   ============================================================================
 -->
 <html lang="en">
@@ -76,7 +108,7 @@
     </div>
     <div class="mt-6"><div id="harbor-preview"></div></div>
     <div class="mt-8 flex justify-between">
-      <a href="wizard-1-context.html" class="text-sm text-slate-600">&larr; Back: Context</a>
+      <a href="wizard-2-environment.html" class="text-sm text-slate-600">&larr; Back: Environment</a>
       <a id="next" href="wizard-4-tests.html" class="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-md">Next: Tests &rarr;</a>
     </div>
   </main>
@@ -86,7 +118,7 @@
   <script>
     if (!SB.requireRole('tester')) throw 'auth';
     SB.renderNav();
-    SB.renderWizardStepper(2, 'tester');
+    SB.renderWizardStepper(3, 'tester');
     const t = SB.getWizardTaskFromSession();
     document.getElementById('task-name').textContent = t.name;
     // Context shown in step 1; left panel has golden solution

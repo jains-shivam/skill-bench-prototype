@@ -1,16 +1,52 @@
 <!doctype html>
 <!--
   ============================================================================
-  PAGE:     Admin · Skills catalog
-  ROLE:     admin               (access guard: SB.requireRole('admin'))
-  FLOW:     admin/dashboard.html → skills.html
-  PURPOSE:  Manage skill domains and skills library entries incl. required skill files.
-  READS (SBData): skillDomains, skillsLibrary, getSkillsByDomain, getDomain,
-            skillDomainIds, getSkillById.
-  CAPTURES/WRITES: SBData.skillDomains CRUD (id, name, color, desc);
-            SBData.skillsLibrary CRUD (name, domains, desc, tags, file content).
-  ACTIONS:  Add/Edit/Delete domain; Add/Edit/Delete skill; View skill (read-only modal).
-  AI-FIRST NOTE: skill file.content is captured inline for catalog inspection.
+  PAGE:        Admin · Skills catalog
+  ROLE:        admin               (access guard: SB.requireRole('admin'))
+  ROUTE:       admin/skills.html
+  PURPOSE:     CRUD for Domain taxonomy and Skill library entries, including the
+               required skill definition file (stored inline as file.content).
+
+  ── FLOW / WORKFLOW ───────────────────────────────────────────────────────
+  ENTRY:       admin/dashboard.html ("Manage skills") or nav → Skills Catalog.
+  EXIT:        stays on page after Save/Delete; Cancel closes modals.
+  LIFECYCLE:   catalog maintenance; independent of Task lifecycle.
+  ACTOR/ACTIONS: Admin. Domain panel: select filter, Add/Edit/Delete domain. Skills
+               panel: search, View/Edit/Delete skill, Add skill. View is read-only.
+  PERMISSIONS: admin-only; mutates SBData.skillDomains and SBData.skillsLibrary.
+
+  ── DATA (DB design) ──────────────────────────────────────────────────────
+  ENTITIES:    Domain, Skill
+  READS:       SBData.skillDomains, skillsLibrary, getSkillsByDomain, getDomain,
+               skillDomainIds, getSkillById.
+  WRITES:      Domain CRUD on SBData.skillDomains; Skill CRUD on SBData.skillsLibrary.
+               Domain delete blocked if skills still reference the domain.
+  FIELDS CAPTURED (Domain modal):
+     id    : string : PK/key; lowercase [a-z0-9-]+; immutable on edit
+     name  : string : display label
+     color : string : Tailwind badge class pair
+     desc  : string : optional description
+  FIELDS CAPTURED (Skill modal):
+     name    : string   : skill title; id auto-generated from name on create
+     domains : string[] : FK → Domain.id (multi-checkbox, at least one required)
+     desc    : string   : optional description
+     tags    : string[] : comma-separated input parsed on save
+     file    : object   : REQUIRED { name, size, content } from file input (.md/.txt/.json/.yaml)
+  RELATIONSHIPS: Skill n—n Domain; Task.selectedSkills[] FK → Skill (consumed in wizard).
+
+  ── UI / UX ───────────────────────────────────────────────────────────────
+  LAYOUT:      page header · 2-col grid (left: domains list; right: skills table +
+               search) · Domain modal · Skill modal · View skill modal.
+  COMPONENTS:  domain sidebar (All + per-domain rows with edit/delete), skills table
+               (name, domain badges, tags, View/Edit/Delete), domain modal form,
+               skill modal (multi-domain checkboxes, file drop zone + remove), view
+               modal (desc, domains, tags, <pre> file content).
+  STATES:      activeDomain filter highlights sidebar; empty skills → "No skills found";
+               domain delete error if skills attached; skill save validation (name,
+               domains, file required); confirm dialogs on delete; toasts on CRUD.
+
+  AI-FIRST NOTE: skill file.content is REQUIRED and inlined for catalog inspection;
+               Task tagging in the prompter wizard depends on this catalog.
   ============================================================================
 -->
 <html lang="en">
