@@ -1,4 +1,15 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Project Manager · Assignments (workload view)
+  ROLE:     projectManager      (access guard: SB.requireRole('projectManager'))
+  FLOW:     dashboard.html → assignments.html → tasks.html (Assign link)
+  PURPOSE:  Per-person workload cards and list of with-tester tasks awaiting pickup.
+  READS (SBData): tasks, STATUS, ROLES, domainLabel (implicit via task rows).
+  CAPTURES/WRITES: none (read-only).
+  ACTIONS:  Unassigned row "Assign" → tasks.html.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

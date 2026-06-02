@@ -1,4 +1,18 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Role switcher (demo hub)
+  ROLE:     public              (no auth guard; redirects to login.html if not
+            authenticated)
+  FLOW:     login.html → index.html → role dashboard (demo role impersonation)
+  PURPOSE:  Demo gallery to jump into each pipeline role's landing page.
+  READS (SBData): ROLES (via role-card data-role keys and SB.demoLoginAs).
+  CAPTURES/WRITES: SB.demoLoginAs(role) → localStorage auth for the chosen role.
+  ACTIONS:  Role cards → super-admin/admin/project-manager/prompter/domain-reviewer/
+            tester/reviewer dashboards after SB.demoLoginAs.
+  AI-FIRST NOTE: demo-only entry; production users land on SB.getHomePage() after login.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

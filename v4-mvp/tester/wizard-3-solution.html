@@ -1,4 +1,18 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Tester · Solution / solve.sh (wizard step 3)
+  ROLE:     tester              (access guard: SB.requireRole('tester'))
+  FLOW:     wizard-1-context → wizard-3-solution → wizard-4-tests
+  PURPOSE:  Implement solution/solve.sh from the prompter golden solution; preview Harbor.
+  READS (SBData): getWizardTaskFromSession(); t.instructionMd, t.goldenSolution,
+            t.attachments; harborFiles (SB.renderHarborPreview).
+  CAPTURES/WRITES: sessionStorage wizard task: solveSh, dockerfile (default init)
+            via SB.saveWizardTaskToSession.
+  ACTIONS:  Back → wizard-1-context.html; Next → wizard-4-tests.html; file import.
+  AI-FIRST NOTE: primary capture of executable solve.sh before test compilation.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

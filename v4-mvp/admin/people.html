@@ -1,4 +1,16 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Admin · People management
+  ROLE:     admin               (access guard: SB.requireRole('admin'))
+  FLOW:     admin/dashboard.html → people.html
+  PURPOSE:  Add, edit, activate/deactivate users and assign multi-role membership.
+  READS (SBData): allUsers, ROLES, userRoleKeys, userHasRole, roleLabel.
+  CAPTURES/WRITES: SBData.allUsers CRUD (name, email, roles, primaryRole, status,
+            initials); inline status toggle on user rows.
+  ACTIONS:  Add person / Edit modal Save; Activate / Deactivate row toggle.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

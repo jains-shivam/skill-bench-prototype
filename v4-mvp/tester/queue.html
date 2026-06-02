@@ -1,4 +1,18 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Tester · Task queue
+  ROLE:     tester              (access guard: SB.requireRole('tester'))
+  FLOW:     tester hub → queue.html → wizard-1-context.html?id=…
+            (with-tester available/mine; changes-requested rework; submitted)
+  PURPOSE:  Pick up, continue, or view tasks across tester lifecycle tabs.
+  READS (SBData): tasks, STATUS, skillDomains, domainLabel, allUsers,
+            getSession().userId (multi-role tester identity).
+  CAPTURES/WRITES: SB.pickUpTask (available tab → assigns tester on SBData.tasks);
+            SB.setWizardTaskId when opening a task.
+  ACTIONS:  Row click → wizard-1-context.html?id=… (Pick up / Continue / Fix / View).
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

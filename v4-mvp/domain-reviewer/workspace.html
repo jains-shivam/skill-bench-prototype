@@ -1,4 +1,20 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Domain Reviewer · Review workspace
+  ROLE:     domainReviewer      (access guard: SB.requireRole('domainReviewer'))
+  FLOW:     queue.html → workspace.html  (acts on domain-review status;
+            approve → with-tester; reject → changes-requested / prompter)
+  PURPOSE:  Review prompter-authored content; approve, request changes, or edit inline.
+  READS (SBData): getTaskById(?id), STATUS, skillsLibrary, getDomain,
+            skillDomainIds, VERIFIER_CATEGORIES, VERIFIER_VALIDATION; t.comments,
+            t.history.
+  CAPTURES/WRITES: SB.updateTaskFields (edit modal: domain, difficulty,
+            instructionMd, goldenSolution, verifiers, skills); SB.domainReviewerApprove;
+            SB.domainReviewerReject (status, rework fields, comments, history).
+  ACTIONS:  Edit task; Request changes (modal) → queue.html; Approve → queue.html.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

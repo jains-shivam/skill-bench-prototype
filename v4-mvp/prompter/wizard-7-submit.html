@@ -1,4 +1,22 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Prompter · Submit (wizard step 7)
+  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
+  FLOW:     wizard-6-trymodel → wizard-7-submit → domain-review  (via
+            SB.submitPrompterToDomainReview) → prompter/dashboard.html
+  PURPOSE:  Review checklist and submit the completed task to domain review.
+  READS (SBData): getWizardTaskFromSession(), getWizardTaskId(), domainLabel;
+            summary reads name, domain, difficulty, selectedSkills, goldenSolution,
+            verifiers, attachments.
+  CAPTURES/WRITES: SB.saveWizardTaskToSession then SB.submitPrompterToDomainReview
+            → SBData.tasks (status domain-review, prompter content fields); clears
+            wizard session (setWizardTaskId null, sessionStorage wizard data).
+  ACTIONS:  Submit for domain review → dashboard.html; Back → wizard-6-trymodel.html;
+            Save & Exit → dashboard.html.
+  AI-FIRST NOTE: terminal prompter capture — persists session wizard fields to SBData.tasks.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

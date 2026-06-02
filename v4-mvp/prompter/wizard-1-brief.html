@@ -1,4 +1,18 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Prompter · Task brief (wizard step 1)
+  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
+  FLOW:     dashboard.html → wizard-1-brief → wizard-2-skills  (prompter-draft /
+            prompter-rework working copy in session)
+  PURPOSE:  Capture task identity: name, description, domain, difficulty.
+  READS (SBData): getWizardTaskFromSession(), getWizardTaskId(), skillDomains.
+  CAPTURES/WRITES: sessionStorage wizard task via SB.saveWizardTaskToSession:
+            name, description, domain, difficulty.
+  ACTIONS:  "Next: Skills" → wizard-2-skills.html; Save & Exit / Cancel → dashboard.
+  AI-FIRST NOTE: first wizard step that writes core task metadata to the session copy.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

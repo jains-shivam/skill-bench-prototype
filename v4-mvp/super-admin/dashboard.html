@@ -1,4 +1,16 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Super Admin · Platform dashboard
+  ROLE:     superAdmin          (access guard: SB.requireRole('superAdmin'))
+  FLOW:     super-admin hub → dashboard.html  (platform stats; links to people/skills)
+  PURPOSE:  Platform-wide user, task, role-distribution, and pipeline state overview.
+  READS (SBData): tasks, STATUS, allUsers, ROLES, userRoleKeys, skillDomains,
+            skillsLibrary.
+  CAPTURES/WRITES: none (read-only).
+  ACTIONS:  Quick links → people.html, skills.html.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

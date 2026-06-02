@@ -1,4 +1,18 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Admin · Skills catalog
+  ROLE:     admin               (access guard: SB.requireRole('admin'))
+  FLOW:     admin/dashboard.html → skills.html
+  PURPOSE:  Manage skill domains and skills library entries incl. required skill files.
+  READS (SBData): skillDomains, skillsLibrary, getSkillsByDomain, getDomain,
+            skillDomainIds, getSkillById.
+  CAPTURES/WRITES: SBData.skillDomains CRUD (id, name, color, desc);
+            SBData.skillsLibrary CRUD (name, domains, desc, tags, file content).
+  ACTIONS:  Add/Edit/Delete domain; Add/Edit/Delete skill; View skill (read-only modal).
+  AI-FIRST NOTE: skill file.content is captured inline for catalog inspection.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

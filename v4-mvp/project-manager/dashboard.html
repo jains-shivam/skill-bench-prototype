@@ -1,4 +1,15 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Project Manager · Dashboard
+  ROLE:     projectManager      (access guard: SB.requireRole('projectManager'))
+  FLOW:     PM hub → dashboard.html  (pipeline overview; links to tasks.html)
+  PURPOSE:  KPI counts, attention items, team workload, and recent activity feed.
+  READS (SBData): tasks, STATUS, allUsers, ROLES, userRoleKeys; task history.
+  CAPTURES/WRITES: none (read-only).
+  ACTIONS:  Attention items → tasks.html; sidebar nav to tasks / assignments.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

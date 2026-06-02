@@ -1,4 +1,18 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Project Manager · All tasks
+  ROLE:     projectManager      (access guard: SB.requireRole('projectManager'))
+  FLOW:     dashboard.html → tasks.html  (assign prompter/tester slots by status)
+  PURPOSE:  Browse all tasks and assign people to the slot the task currently needs.
+  READS (SBData): tasks, STATUS, skillDomains, domainLabel, allUsers, ROLES,
+            userRoleKeys, userHasRole, getTaskById; ?tab, ?status query params.
+  CAPTURES/WRITES: mutates task assignee fields on SBData.tasks (prompter, tester,
+            domainReviewer, or taskReviewer slot) via Assign modal confirm — no
+            dedicated SB helper; does not change lifecycle status.
+  ACTIONS:  Tab/filter browse; Assign modal → sets task[slot] assignee.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

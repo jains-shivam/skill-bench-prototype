@@ -1,4 +1,18 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Prompter · Try model (wizard step 6)
+  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
+  FLOW:     wizard-5-verifiers → wizard-6-trymodel → wizard-7-submit
+  PURPOSE:  Mock-run the selected model against defined verifiers before submit.
+  READS (SBData): getWizardTaskFromSession(), getWizardTaskId(), t.verifiers,
+            VERIFIER_TYPES; SB.runMockModel (simulated run only).
+  CAPTURES/WRITES: none substantive (mock run results are not persisted to the
+            task). Save & Exit re-saves the unchanged session copy.
+  ACTIONS:  Run model / Run again; Back → wizard-5-verifiers.html;
+            Next → wizard-7-submit.html.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

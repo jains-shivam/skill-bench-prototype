@@ -1,4 +1,20 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Task Reviewer · Review workspace
+  ROLE:     taskReviewer        (access guard: SB.requireRole('taskReviewer'))
+  FLOW:     queue.html → workspace.html  (in-review → approve → published, or
+            request changes → changes-requested)
+  PURPOSE:  Final review of complete Harbor package, tester notes, and Oracle result.
+  READS (SBData): getTaskById(?id), STATUS, VERIFIER_CATEGORIES, VERIFIER_VALIDATION,
+            harborFiles (SB.renderHarborPreview); t.solveSh, t.goldenSolution,
+            t.testingNotes, t.testOutcome, t.comments, t.history.
+  CAPTURES/WRITES: direct SBData.tasks mutations on t: comments push; Request changes
+            sets status/changesTarget/history; Approve sets status published + history
+            (requires t.oraclePassed). No SB.submit* helper on approve path.
+  ACTIONS:  Add comment; Request changes (modal); Approve & publish (if Oracle PASS).
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

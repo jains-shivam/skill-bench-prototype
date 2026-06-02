@@ -1,4 +1,19 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Prompter · My Tasks (task list)
+  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
+  FLOW:     prompter hub → dashboard.html  (lists prompter-draft through
+            published; Continue/View → wizard or task-detail)
+  PURPOSE:  Browse, filter, and open the signed-in prompter's tasks by lifecycle tab.
+  READS (SBData): tasks, STATUS, skillDomains, domainLabel; getSession().userId
+            (filters to this prompter's tasks).
+  CAPTURES/WRITES: none (read-only). Sets active wizard task id via
+            SB.setWizardTaskId on "New task" and row links.
+  ACTIONS:  "New task" → wizard-1-brief.html; row Continue/Address changes →
+            wizard-1-brief.html?id=…; View → task-detail.html?id=….
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

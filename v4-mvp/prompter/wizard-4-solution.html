@@ -1,4 +1,18 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Prompter · Golden solution (wizard step 4)
+  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
+  FLOW:     wizard-3-instruction → wizard-4-solution → wizard-5-verifiers
+  PURPOSE:  Author the reference golden solution before defining verifiers.
+  READS (SBData): getWizardTaskFromSession(), getWizardTaskId().
+  CAPTURES/WRITES: sessionStorage wizard task: goldenSolution via
+            SB.saveWizardTaskToSession (incl. file import).
+  ACTIONS:  Back → wizard-3-instruction.html; Next → wizard-5-verifiers.html;
+            Save & Exit → dashboard.html.
+  AI-FIRST NOTE: reference answer used to validate verifiers in the next step.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

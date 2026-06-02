@@ -1,4 +1,16 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Super Admin · Skills catalog
+  ROLE:     superAdmin          (access guard: SB.requireRole('superAdmin'))
+  FLOW:     super-admin/dashboard.html → skills.html
+  PURPOSE:  Manage skill domains and skills library (same surface as admin skills page).
+  READS (SBData): skillDomains, skillsLibrary, getSkillsByDomain, getDomain,
+            skillDomainIds, getSkillById.
+  CAPTURES/WRITES: SBData.skillDomains CRUD; SBData.skillsLibrary CRUD incl. file.content.
+  ACTIONS:  Add/Edit/Delete domain; Add/Edit/Delete skill; View skill (read-only modal).
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

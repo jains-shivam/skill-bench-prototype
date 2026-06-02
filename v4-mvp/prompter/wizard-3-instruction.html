@@ -1,4 +1,17 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Prompter · Problem statement (wizard step 3)
+  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
+  FLOW:     wizard-2-skills → wizard-3-instruction → wizard-4-solution
+  PURPOSE:  Author instruction.md content (agent problem statement) in Markdown.
+  READS (SBData): getWizardTaskFromSession(), getWizardTaskId().
+  CAPTURES/WRITES: sessionStorage wizard task: instructionMd via
+            SB.saveWizardTaskToSession (incl. file import).
+  ACTIONS:  Back → wizard-2-skills.html; Next → wizard-4-solution.html.
+  AI-FIRST NOTE: primary capture point for the agent-facing prompt text.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

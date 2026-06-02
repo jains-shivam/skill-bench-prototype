@@ -1,4 +1,17 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Prompter · Skills (wizard step 2)
+  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
+  FLOW:     wizard-1-brief → wizard-2-skills → wizard-3-instruction
+  PURPOSE:  Attach optional skills from the platform catalog to the task.
+  READS (SBData): getWizardTaskFromSession(), getWizardTaskId(), skillsLibrary,
+            skillDomains, getSkillsByDomain (via SB.renderSkillsPicker).
+  CAPTURES/WRITES: sessionStorage wizard task: selectedSkills via
+            SB.saveWizardTaskToSession.
+  ACTIONS:  Back → wizard-1-brief.html; Next → wizard-3-instruction.html.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

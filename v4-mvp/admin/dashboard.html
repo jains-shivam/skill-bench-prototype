@@ -1,4 +1,16 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Admin · Dashboard
+  ROLE:     admin               (access guard: SB.requireRole('admin'))
+  FLOW:     admin hub → dashboard.html  (org overview; links to people / skills)
+  PURPOSE:  Pipeline KPIs, task/user tables, activity feed, skills summary, health metrics.
+  READS (SBData): tasks, STATUS, allUsers, ROLES, userRoleKeys, skillsLibrary,
+            skillDomains, getDomain, skillDomainIds, getSkillById; task history.
+  CAPTURES/WRITES: none (read-only).
+  ACTIONS:  Quick links → people.html, skills.html; View skill modal (read-only).
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

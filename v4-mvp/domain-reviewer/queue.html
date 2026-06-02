@@ -1,4 +1,16 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Domain Reviewer · Review queue
+  ROLE:     domainReviewer      (access guard: SB.requireRole('domainReviewer'))
+  FLOW:     domain-reviewer hub → queue.html → workspace.html?id=…
+            (domain-review pending; changes-requested → prompter rework tab)
+  PURPOSE:  List tasks awaiting domain review or returned to the prompter.
+  READS (SBData): tasks, STATUS, skillDomains, domainLabel.
+  CAPTURES/WRITES: none (read-only).
+  ACTIONS:  Row click → workspace.html?id=… (Review or View on rework tab).
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

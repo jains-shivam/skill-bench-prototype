@@ -1,4 +1,21 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Prompter · Verifiers (wizard step 5)
+  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
+  FLOW:     wizard-4-solution → wizard-5-verifiers → wizard-6-trymodel
+  PURPOSE:  Define plain-language verifier checks; mock-validate each against the
+            golden solution and prompt.
+  READS (SBData): getWizardTaskFromSession(), getWizardTaskId(),
+            VERIFIER_CATEGORIES, VERIFIER_VALIDATION; t.goldenSolution,
+            t.instructionMd (SB.validateVerifierMock).
+  CAPTURES/WRITES: sessionStorage wizard task: verifiers[] (description, category,
+            type, validationStatus, rationale) via SB.saveWizardTaskToSession.
+  ACTIONS:  Add verifier / AI suggest; Back → wizard-4-solution.html;
+            Next → wizard-6-trymodel.html; Save & Exit → dashboard.html.
+  AI-FIRST NOTE: captures grading criteria; validationStatus is mock LLM output today.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

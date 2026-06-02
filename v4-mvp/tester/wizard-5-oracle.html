@@ -1,4 +1,22 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Tester · Oracle run (wizard step 5)
+  ROLE:     tester              (access guard: SB.requireRole('tester'))
+  FLOW:     wizard-4-tests → wizard-5-oracle → in-review  (via
+            SB.submitTesterToReview) or send-back → changes-requested
+  PURPOSE:  Run mock Oracle, record testing notes, submit package or send back.
+  READS (SBData): getWizardTaskFromSession(); task summary fields; harborFiles
+            (SB.renderHarborPreview); t.verifiers (alignment check mock).
+  CAPTURES/WRITES: sessionStorage: testingNotes, oraclePassed, oracleReward via
+            SB.saveWizardTaskToSession; SB.submitTesterToReview → SBData.tasks
+            (solveSh, testSh, dockerfile, oracle fields, testingNotes, status
+            in-review); SB.testerSendBack (rework + notes).
+  ACTIONS:  Run Oracle (pass/fail sim); Submit for tech review → queue.html;
+            Send back → queue.html; Back → wizard-4-tests.html.
+  AI-FIRST NOTE: terminal tester capture — persists Harbor artifacts and Oracle outcome.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

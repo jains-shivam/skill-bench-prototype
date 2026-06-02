@@ -1,4 +1,16 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Tester · Tests / test.sh (wizard step 4)
+  ROLE:     tester              (access guard: SB.requireRole('tester'))
+  FLOW:     wizard-3-solution → wizard-4-tests → wizard-5-oracle
+  PURPOSE:  Compile prompter verifiers into tests/test.sh; preview Harbor layout.
+  READS (SBData): getWizardTaskFromSession(); renderVerifiersMd(t), t.goldenSolution;
+            harborFiles (SB.renderHarborPreview).
+  CAPTURES/WRITES: sessionStorage wizard task: testSh via SB.saveWizardTaskToSession.
+  ACTIONS:  Back → wizard-3-solution.html; Next → wizard-5-oracle.html; file import.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

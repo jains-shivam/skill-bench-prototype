@@ -1,4 +1,22 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Prompter · Task detail (read-only, role-specific view)
+  ROLE:     prompter            (access guard: SB.requireRole('prompter'))
+  FLOW:     prompter/dashboard.html → task-detail.html  (observes any lifecycle
+            status; editable only when prompter owns it: draft / prompter-rework)
+  PURPOSE:  Human-readable view of one task for the Prompter. Raw Harbor folder
+            is intentionally hidden behind an "Advanced" disclosure.
+  READS (SBData): getTaskById(?id), STATUS, domainLabel, getSkillById,
+            skillDomainIds, getDomain, VERIFIER_CATEGORIES, VERIFIER_VALIDATION,
+            harborFiles (via SB.renderHarborPreview).
+  CAPTURES/WRITES: none (read-only). Sets the active wizard task id
+            (SB.setWizardTaskId) when the Prompter chooses to continue/revise.
+  ACTIONS:  "Continue editing / Revise task" → wizard-1-brief.html (when owned).
+  AI-FIRST NOTE: data capture for these task fields happens in the Prompter
+            wizard (wizard-1..7); this page only renders persisted task data.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

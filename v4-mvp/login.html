@@ -1,4 +1,19 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Sign in (authentication entry)
+  ROLE:     public              (no auth guard)
+  FLOW:     unauthenticated entry → login.html → role home via SB.getHomePage()
+            after successful SB.login
+  PURPOSE:  Email/password and demo sign-in. Clears stale session on
+            ?logout / ?expired / ?switch query params.
+  READS (SBData): users (via SB.login credential lookup).
+  CAPTURES/WRITES: SB.login → localStorage auth (sb-mvp-auth, sb-mvp-role);
+            logout/expired/switch clears localStorage + sessionStorage.
+  ACTIONS:  "Sign in" / Google / demo quick-fill → SB.getHomePage(); banner
+            "Continue to dashboard" → SB.getHomePage(); "Sign out & switch" clears auth.
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">

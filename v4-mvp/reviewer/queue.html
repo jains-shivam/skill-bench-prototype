@@ -1,4 +1,17 @@
 <!doctype html>
+<!--
+  ============================================================================
+  PAGE:     Task Reviewer · Review queue
+  ROLE:     taskReviewer        (access guard: SB.requireRole('taskReviewer'))
+  FLOW:     reviewer hub → queue.html → workspace.html?id=…
+            (in-review pending; changes-requested; approved/published done)
+  PURPOSE:  List tasks awaiting final technical review or in rework/done states.
+  READS (SBData): tasks, STATUS, skillDomains, domainLabel; t.oraclePassed,
+            t.oracleReward, t.prompter, t.tester, rework fields.
+  CAPTURES/WRITES: none (read-only).
+  ACTIONS:  Row Open → workspace.html?id=….
+  ============================================================================
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">
